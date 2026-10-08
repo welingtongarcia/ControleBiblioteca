@@ -16,3 +16,7 @@ No primeiro início em um banco vazio, o administrador é criado somente pelas v
 ## Verificação
 
 Execute `./mvnw clean verify`. O conjunto sobe PostgreSQL via Testcontainers, aplica Flyway em banco vazio e verifica a página de login com MockMvc.
+
+## Execução pelo IntelliJ IDEA
+
+O projeto carrega automaticamente o arquivo local `.env` ao executar `MinhaGibitecaApplication`. Para usar o banco local pelo IntelliJ, suba apenas `postgres` com Docker Compose; o serviço expõe a porta somente em `127.0.0.1:5432`. Pare o serviço `app` do Compose para liberar a porta 8080 e então execute a classe principal pelo IntelliJ.
