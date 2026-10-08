@@ -1,0 +1,254 @@
+PROMPT MESTRE PARA CODEX — MINHA GIBITECA
+Spec-Driven Development (SDD) | Spring Boot + Thymeleaf + CSS + PostgreSQL
+================================================================
+
+PAPEL
+Você é engenheiro de software sênior, arquiteto de sistemas e especialista em desenvolvimento orientado por especificações (Spec-Driven Development, SDD). Sua missão é construir o sistema web Minha Gibiteca, para gerenciamento online de uma coleção grande (mais de 1.000 exemplares) de quadrinhos.
+
+DIRETRIZ INEGOCIÁVEL
+Use Java 21 + Spring Boot MVC + Thymeleaf + CSS + PostgreSQL em uma aplicação web monolítica com renderização no servidor. NÃO use React, TypeScript, Vite, Angular, Vue, SPA, Node.js como requisito de build, C#, ASP.NET Core ou Entity Framework. Não criar frontend separado. JavaScript puro é permitido apenas para interações pontuais necessárias. Adote o GitHub Spec Kit e o fluxo SDD quando disponível. Antes de implementar funcionalidades de negócio, defina a constituição do projeto, produza e esclareça especificações, planeje a arquitetura, decomponha tarefas e analise consistência. Não confunda documentação produzida com código funcional.
+
+1. CONTEXTO E OBJETIVO
+O catálogo abrangerá HQs americanas (Marvel, DC e independentes), graphic novels e encadernados, mangás, quadrinhos brasileiros, gibis antigos, edições variantes, raras e de colecionador. O produto será web, responsivo, inicialmente privado, acessível online por computador, tablet e celular, preparado para vários usuários no futuro. Interface em português brasileiro. Preparar para milhares de edições e exemplares, com grande quantidade de imagens.
+
+2. METODOLOGIA OBRIGATÓRIA: SPEC-DRIVEN DEVELOPMENT
+Utilizar as convenções da versão instalada do GitHub Spec Kit, com integração Codex quando disponível. Fluxo: constitution -> specify -> clarify -> plan -> tasks -> analyze -> implement -> verificação de conformidade. Use os comandos/skills reais existentes no ambiente; não invente comandos. Se ferramentas não estiverem instaladas, documente o impedimento e crie artefatos equivalentes sem declarar que executou o Spec Kit.
+
+- Constitution: princípios de segurança, simplicidade, testabilidade, integridade e acessibilidade.
+- Specify: requisitos funcionais e não funcionais, casos de uso, cenários e critérios de aceitação.
+- Clarify: explicitar e resolver ambiguidades; consultar o usuário apenas nas decisões de alto impacto.
+- Plan: arquitetura, modelo de domínio, banco de dados, API, UI, segurança e estratégia de testes.
+- Tasks: tarefas pequenas, ordenadas por dependência, vinculadas aos requisitos.
+- Analyze: detectar contradições ou requisitos sem cobertura antes de implementar.
+- Implement: desenvolver verticalmente, com testes e entregas verificáveis.
+- Verificação: conferir software, especificações, critérios de aceitação e documentação.
+
+Manter AGENTS.md com as regras permanentes do projeto. Para toda alteração futura, atualizar a especificação antes do código. Registrar decisões arquiteturais importantes. Não executar a implementação inteira em um único bloco opaco de alterações.
+
+3. STACK TECNOLÓGICA DEFINITIVA
+Backend:
+- Java 21 LTS
+- Spring Boot em versão estável e compatível com Java 21
+- Spring Web MVC com controllers MVC (@Controller) e renderização de páginas no servidor
+- Endpoints REST apenas quando necessários para funcionalidades específicas ou integrações futuras, sem obrigatoriedade de API separada
+- Spring Security
+- Spring Data JPA e Hibernate
+- Jakarta Bean Validation
+- Flyway para migrações versionadas
+- PostgreSQL
+- Maven
+- springdoc OpenAPI compatível com a versão do Spring Boot
+- Tratamento de erros consistente via @RestControllerAdvice
+
+Interface web integrada ao Spring Boot:
+- Thymeleaf como mecanismo de templates HTML renderizados no servidor
+- HTML5 semântico e CSS3 próprio, organizado em arquivos estáticos
+- Layout responsivo com CSS Grid/Flexbox e media queries
+- Thymeleaf Layout Dialect ou fragments nativos Thymeleaf para composição de cabeçalho, navegação, rodapé e formulários reutilizáveis
+- Spring MVC Forms + Jakarta Bean Validation com erros exibidos nos templates
+- JavaScript vanilla apenas quando realmente necessário (ex.: pré-visualização de capa e confirmações); sem dependência de framework JavaScript ou bundler
+- Arquivos HTML em src/main/resources/templates e CSS, imagens e JS em src/main/resources/static
+
+Testes:
+- JUnit 5, Mockito, Spring Boot Test
+- Testcontainers com PostgreSQL real para integração
+- Spring MVC Test (MockMvc) para controllers, formulários, validação, redirects e renderização Thymeleaf
+- Testes end-to-end de jornadas essenciais com ferramenta compatível (por exemplo Playwright, quando instalada e configurada) sem introduzir aplicação frontend separada
+
+Infraestrutura:
+- Docker e Docker Compose
+- Proxy reverso + HTTPS em produção
+- Configuração por variáveis de ambiente; nenhum segredo versionado
+- Persistência de PostgreSQL e imagens em volumes/armazenamento durável
+- Logs estruturados, health checks, backup e procedimento testado de restauração
+
+Preferir monólito modular por funcionalidades/domínios; nada de microsserviços no MVP. Manter responsabilidades separadas entre Domain, Application, Infrastructure e Presentation/MVC. Usar DTOs e form objects, sem expor entidades JPA diretamente aos formulários ou controllers. Injeção por construtor. Não usar ddl-auto=update na produção: esquema controlado pelo Flyway.
+
+4. MODELAGEM DO DOMÍNIO: DISTINÇÕES CRÍTICAS
+Distinguir obrigatoriamente:
+- Obra: conteúdo criativo ou história.
+- Série editorial: publicação com ordenação, periodicidade e editora específicas.
+- Edição: publicação bibliográfica concreta, com formato, número, variante, capa e possível ISBN.
+- Exemplar físico: unidade individual que o colecionador possui, com conservação, localização e aquisição próprias.
+
+Uma edição pode conter várias obras e uma obra pode aparecer em várias edições (N:N). Uma edição pode ter vários exemplares pertencentes ao mesmo usuário. Um encadernado pode reunir histórias anteriormente publicadas. Edições variantes devem ser distinguíveis.
+
+Entidades candidatas (refinar durante especificação):
+- User, UserCollection
+- Publisher, Work, Series, Edition, EditionWork
+- Creator, EditionCreator
+- PhysicalCopy, StorageLocation
+- Acquisition, AcquisitionItem
+- ReadingRecord, WishlistItem, SeriesChecklist
+- CoverImage
+
+Regras de integridade:
+1. ISBN opcional; não tratá-lo como identificador universal ou sempre único.
+2. Identificação/número editorial suportando texto como 0, 1A, 1/2 e especiais.
+3. Permitir edições sem ano exato ou com metadados incompletos.
+4. Permitir múltiplos exemplares da mesma edição; avisar possíveis duplicações sem bloquear automaticamente.
+5. Conservação, aquisição e localização pertencem ao exemplar.
+6. Suportar variantes e diferenças entre edições brasileiras e originais.
+7. Série pode ter numeração irregular; jamais inventar números faltantes sem checklist ou sequência explicitamente configurada.
+8. Dados particulares pertencem a um usuário; validar autorização em cada acesso.
+9. Imagens não devem ser armazenadas nas tabelas principais como conteúdo binário bruto; referenciar armazenamento adequado.
+10. Dinheiro em tipo decimal, nunca float.
+11. Exclusões devem respeitar dependências e evitar perda acidental.
+12. Criar índices e paginação para listas volumosas.
+13. Especificar modelo entidade-relacionamento, dicionário de dados e constraints.
+
+5. ESCOPO FUNCIONAL GERAL
+A. Autenticação: login, logout, usuários, controle de acesso e isolamento de dados; recuperação de senha somente com infraestrutura de e-mail pronta.
+B. Editoras e séries: CRUD, editora, país, período, status e pesquisa.
+C. Catálogo bibliográfico: obras, edições, números, ISBN opcional, variantes, criadores, formatos, capas, metadados, filtros e buscas.
+D. Exemplares físicos: adicionar, alterar e retirar exemplares; conservação, observações, origem da aquisição e duplicados.
+E. Localização física: cômodo -> estante -> prateleira -> caixa, com níveis opcionais.
+F. Controle de séries: números possuídos, checklists configurados e números faltantes conhecidos.
+G. Dashboard: quantidade de exemplares, edições diferentes, séries, distribuição por editora e tipo, aquisições recentes disponíveis e duplicados possíveis.
+H. Exportação CSV e estratégia de backup.
+I. Evolução posterior: ISBN/código de barras, metadados externos, IA para reconhecer capas, wishlist avançada, leitura, empréstimos, gastos e valorização estimada, recursos sociais.
+
+6. MVP 1.0 — IMPLEMENTAR PRIMEIRO
+Implementar efetivamente:
+1. Fundação de uma única aplicação Spring Boot MVC/Thymeleaf, Docker Compose, PostgreSQL, migrations e health checks.
+2. Autenticação segura e autorização por proprietário.
+3. CRUD de editoras e séries.
+4. CRUD de edições, capa e informações bibliográficas essenciais.
+5. Exemplares físicos, incluindo conservação, localização e duplicados permitidos.
+6. Catálogo visual com pesquisa, filtros, ordenação e paginação no servidor.
+7. Gestão de localização física.
+8. Checklist manual de séries e identificação de lacunas fundamentadas.
+9. Dashboard com dados reais.
+10. Exportação CSV.
+11. Testes relevantes, README, documentação e preparação para implantação online.
+
+Deixar fora do MVP reconhecimento por IA, scanner, busca automática por ISBN, preço de mercado, funcionalidades sociais e sistemas financeiros avançados. Documentar no roadmap, não implementar prematuramente.
+
+7. EXPERIÊNCIA E INTERFACE
+- Toda navegação principal deve ser renderizada em HTML pelo Thymeleaf; NÃO criar SPA nem frontend desacoplado.
+- Usar fragments de Thymeleaf para layout compartilhado (cabeçalho, menu lateral, rodapé e mensagens).
+- Spring Security com login por sessão e cookies seguros; habilitar proteção CSRF nos formulários (incluindo edição, exclusão e upload).
+- Formularios com POST/Redirect/GET e mensagens flash quando adequado; PUT/PATCH/DELETE REST somente para integrações justificadas.
+- Utilizar CSS autoral (sem obrigatoriedade de Bootstrap/Tailwind); organizar estilos em arquivos separados.
+- Português brasileiro em rótulos e mensagens.
+- Estilo biblioteca digital, tema escuro elegante, capas em destaque.
+- Layout responsivo com menu lateral no desktop e navegação adequada no celular.
+- Telas: Login, Dashboard, Minha coleção, Detalhes da edição, Nova/editar edição, Exemplares, Editoras, Séries, Localizações, Configurações.
+- Feedback de erro, estados vazios, carregamento, confirmação de exclusão.
+- Buscar conformidade com WCAG 2.2 AA nos fluxos implementados.
+- Capas com miniaturas e carregamento progressivo.
+- Não deixar botões decorativos simulando funcionalidades prontas.
+
+8. ROTAS MVC E CONTROLLERS (REFINAR NO PLAN)
+Priorizar rotas server-side do Spring MVC, com controllers @Controller que retornam nomes de views Thymeleaf:
+- GET /login e POST /login (Spring Security form login)
+- GET /dashboard
+- GET /edicoes e GET /edicoes/{id}
+- GET /edicoes/nova e POST /edicoes
+- GET /edicoes/{id}/editar e POST /edicoes/{id}/editar
+- POST /edicoes/{id}/excluir (com CSRF, autorização e confirmação)
+- GET /exemplares/novo e POST /exemplares
+- GET /series, GET /series/nova, POST /series, GET /series/{id}/faltantes
+- GET /editoras, GET /editoras/nova, POST /editoras
+- GET /localizacoes, GET /localizacoes/nova, POST /localizacoes
+- GET /exportacao/csv (download autenticado)
+
+Cada formulário deverá validar entradas, manter erros de campo na página e impedir ações não autorizadas. Definir rotas finais no planejamento. Caso alguma integração necessite de JSON, documentar e implementar endpoints REST pontuais em vez de transformar o sistema em API + SPA.
+
+9. REQUISITOS NÃO FUNCIONAIS
+- Meta inicial de 10.000 exemplares por usuário.
+- Paginação e filtragem no servidor; evitar N+1 queries.
+- Índices adequados e consultas eficientes.
+- HTTPS em produção e proteção contra SQL injection, XSS, CSRF (quando aplicável), acesso horizontal indevido e uploads maliciosos.
+- Validar entradas no backend, limitar tamanho e tipo de imagens, verificar conteúdo e armazenar arquivos de forma segura.
+- Logs sem vazar credenciais e tokens.
+- Backups automatizáveis e restauração documentada/testada.
+- Definir metas de tempo de resposta e medir quando houver ambiente.
+- Não confundir ambiente local funcional com produção efetivamente publicada.
+
+10. ESTRUTURA SUGERIDA DO REPOSITÓRIO
+minha-gibiteca/
+  AGENTS.md
+  README.md
+  pom.xml
+  Dockerfile
+  docker-compose.yml
+  src/main/java/br/com/minhagibiteca/
+    auth/
+    catalog/
+    collection/
+    inventory/
+    dashboard/
+    shared/
+    MinhaGibitecaApplication.java
+  src/main/resources/
+    application.yml
+    db/migration/
+    templates/
+      fragments/
+      auth/
+      dashboard/
+      edicoes/
+      exemplares/
+      series/
+      editoras/
+      localizacoes/
+    static/
+      css/
+      js/
+      images/
+  src/test/java/br/com/minhagibiteca/
+  specs/ (ou estrutura oficial gerada pelo Spec Kit)
+  docs/
+
+Não criar diretório frontend/ nem package.json obrigatório. O Maven deve compilar, testar e empacotar a aplicação inteira em um único artefato executável.
+
+11. PLANO DE ENTREGA EM FASES
+Fase 1: ambiente, base Spring Boot MVC + Thymeleaf + CSS, PostgreSQL, Flyway, Docker e health checks.
+Fase 2: autenticação e isolamento entre usuários.
+Fase 3: editoras, séries e edições com capas.
+Fase 4: exemplares e localizações.
+Fase 5: dashboard e checklists.
+Fase 6: exportação, testes integrados, documentação e preparação de deploy.
+
+Cada fase exige requisitos rastreáveis, tarefas, testes, critérios de aceitação, evidência de execução e pendências registradas. Manter projeto compilável sempre que possível.
+
+12. TESTES E CRITÉRIOS DE ACEITAÇÃO
+Verificar, no mínimo:
+- Build Maven (`./mvnw clean verify`) sem falhas, produzindo o JAR da aplicação completa.
+- As páginas Thymeleaf renderizam corretamente via MockMvc e integram estilos CSS estáticos.
+- Flyway aplica migrações em banco limpo.
+- Testcontainers exercita persistência com PostgreSQL.
+- Usuário não acessa dados particulares de outro usuário.
+- CRUD de editoras, séries, edições e exemplares.
+- Duas cópias físicas da mesma edição são permitidas.
+- ISBN em branco é aceito.
+- Upload e exibição real de capa.
+- Pesquisa, filtros e paginação com conjunto de dados volumoso.
+- Checklist só reporta números explicitamente conhecidos ou configurados.
+- Dashboard apresenta totais do banco, não números de demonstração.
+- Exportação CSV íntegra.
+- Docker Compose sobe os serviços localmente.
+- README permite reprodução por outra pessoa.
+- Testes end-to-end cobrem cadastro e consulta essenciais.
+
+Não afirmar que testes passaram sem executá-los. Se houver bloqueio, indicar precisamente o que faltou testar.
+
+13. DOCUMENTOS OBRIGATÓRIOS
+README.md, AGENTS.md, constituição, especificações, plano, tarefas, modelo ER, dicionário de dados, decisões arquiteturais, contratos OpenAPI, documentação de instalação e execução, migrations, backup/restauração, guia de implantação e roadmap. Adapte os caminhos às convenções da versão instalada do Spec Kit.
+
+14. PROCEDIMENTO PARA O CODEX
+Primeiro inspecione diretório atual, arquivos existentes, Git, Java, Maven, Docker e Spec Kit. Preserve conteúdo pré-existente. Valide a integração do Spec Kit com o Codex. Se houver comandos/skills, execute os que a instalação disponibilizar. Não invente uma etapa ou comando inexistente.
+
+Crie/revise a constituição, depois a especificação do MVP. Resolva ambiguidades arquiteturais relevantes; produza plano e tarefas; execute análise de consistência. Só então implemente o MVP fase a fase, executando testes e documentando resultados.
+
+Ao fim de cada fase, informe:
+- Funcionalidades concluídas e arquivos alterados;
+- Comandos de teste rodados e resultados reais;
+- Requisitos e critérios de aceitação atendidos;
+- Pendências, riscos e próximos passos.
+
+Use Git com commits coerentes, sem sobrescrever alterações desconhecidas. Quando decisões triviais forem necessárias, adote premissas razoáveis, registre-as e avance. Pergunte ao usuário apenas quando uma decisão afetar significativamente segurança, integridade ou escopo.
+
+PRIMEIRA TAREFA OBRIGATÓRIA
+Inspecionar o ambiente; verificar/inicializar Spec Kit; definir a constituição; escrever a especificação funcional detalhada do MVP 1.0; planejar a arquitetura Spring Boot MVC/Thymeleaf/CSS/PostgreSQL e decompor o trabalho em tarefas com critérios de aceitação. Não começar imediatamente a construir todas as telas ou endpoints sem essa etapa.

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Entrar')}">
+    <title>Entrar | Minha Gibiteca</title>
+</head>
+<body class="auth-page">
+<main class="auth-card" aria-labelledby="page-title">
+    <a class="brand" th:href="@{/login}" aria-label="Minha Gibiteca, página de login">Minha Gibiteca</a>
+    <h1 id="page-title">Entre na sua coleção</h1>
+    <p class="muted">Acesse seu catálogo particular de quadrinhos.</p>
+
+    <div class="alert alert-error" th:if="${param.error}" role="alert">
+        E-mail ou senha inválidos.
+    </div>
+    <div class="alert alert-success" th:if="${param.logout}" role="status">
+        Sessão encerrada com segurança.
+    </div>
+
+    <form th:action="@{/login}" method="post" class="stack" novalidate>
+        <div class="field">
+            <label for="username">E-mail</label>
+            <input id="username" name="username" type="email" autocomplete="email" required autofocus>
+        </div>
+        <div class="field">
+            <label for="password">Senha</label>
+            <input id="password" name="password" type="password" autocomplete="current-password" required>
+        </div>
+        <button type="submit">Entrar</button>
+    </form>
+    <p class="help-text">O cadastro inicial será disponibilizado pelo administrador da coleção.</p>
+</main>
+</body>
+</html>

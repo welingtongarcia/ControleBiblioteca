@@ -1,0 +1,34 @@
+:root {
+    color-scheme: dark;
+    --background: #111318;
+    --surface: #1c2028;
+    --text: #f4f1e8;
+    --muted: #b7bdc9;
+    --accent: #e9b949;
+    --error: #ffb4ab;
+    --success: #a5d6a7;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+* { box-sizing: border-box; }
+body { background: radial-gradient(circle at top, #242b38, var(--background) 45%); color: var(--text); margin: 0; min-height: 100vh; }
+a { color: var(--accent); }
+button, input { font: inherit; }
+button { background: var(--accent); border: 0; border-radius: .5rem; color: #241a00; cursor: pointer; font-weight: 700; min-height: 2.75rem; padding: .65rem 1rem; }
+button:hover { filter: brightness(1.08); }
+button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+.auth-page { align-items: center; display: grid; padding: 1.5rem; place-items: center; }
+.auth-card { background: color-mix(in srgb, var(--surface) 94%, black); border: 1px solid #3a4251; border-radius: 1rem; box-shadow: 0 1rem 3rem #0008; max-width: 28rem; padding: clamp(1.5rem, 4vw, 2.5rem); width: 100%; }
+.brand { display: inline-block; font-size: 1.15rem; font-weight: 800; margin-bottom: 2rem; text-decoration: none; }
+h1 { font-size: clamp(1.8rem, 5vw, 2.4rem); line-height: 1.1; margin: 0 0 .75rem; }
+.muted, .help-text { color: var(--muted); line-height: 1.5; }
+.stack { display: grid; gap: 1.2rem; margin-top: 1.8rem; }
+.field { display: grid; gap: .45rem; }
+label { font-weight: 650; }
+input { background: #11151d; border: 1px solid #657084; border-radius: .5rem; color: var(--text); min-height: 2.75rem; padding: .65rem .75rem; }
+input:invalid:not(:placeholder-shown) { border-color: var(--error); }
+.alert { border-left: .3rem solid; margin-top: 1rem; padding: .8rem 1rem; }
+.alert-error { background: #592c2a; border-color: var(--error); }
+.alert-success { background: #24462b; border-color: var(--success); }
+.content { margin: 0 auto; max-width: 72rem; padding: clamp(1.5rem, 5vw, 4rem); }
+.eyebrow { color: var(--accent); font-weight: 700; text-transform: uppercase; }
