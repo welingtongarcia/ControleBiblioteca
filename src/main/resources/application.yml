@@ -41,3 +41,8 @@ springdoc:
     enabled: false
   swagger-ui:
     enabled: false
+
+app:
+  bootstrap-admin:
+    email: ${BOOTSTRAP_ADMIN_EMAIL:}
+    password: ${BOOTSTRAP_ADMIN_PASSWORD:}

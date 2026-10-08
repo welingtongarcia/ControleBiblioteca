@@ -2,19 +2,29 @@ package br.com.minhagibiteca;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrlPattern;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
+import br.com.minhagibiteca.auth.domain.UserAccount;
+import br.com.minhagibiteca.auth.domain.UserRole;
+import br.com.minhagibiteca.auth.application.BootstrapAdministratorService;
+import br.com.minhagibiteca.auth.infrastructure.UserAccountRepository;
 import java.sql.Connection;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -33,11 +43,25 @@ class MinhaGibitecaApplicationTest {
     @Autowired
     private DataSource dataSource;
 
+    @Autowired
+    private UserAccountRepository userAccountRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private BootstrapAdministratorService bootstrapAdministratorService;
+
     @DynamicPropertySource
     static void databaseProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
         registry.add("spring.datasource.username", POSTGRES::getUsername);
         registry.add("spring.datasource.password", POSTGRES::getPassword);
+    }
+
+    @BeforeEach
+    void clearUsers() {
+        userAccountRepository.deleteAll();
     }
 
     @Test
@@ -64,5 +88,38 @@ class MinhaGibitecaApplicationTest {
         mockMvc.perform(get("/actuator/health/readiness"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("\"status\":\"UP\"")));
+    }
+
+    @Test
+    void authenticatesPersistedUserAndProtectsDashboard() throws Exception {
+        userAccountRepository.save(UserAccount.create(
+                "colecionador@example.com", passwordEncoder.encode("senha-segura-123"), UserRole.USER));
+
+        mockMvc.perform(get("/dashboard"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrlPattern("**/login"));
+
+        mockMvc.perform(post("/login")
+                        .with(SecurityMockMvcRequestPostProcessors.csrf())
+                        .param("username", "COLECIONADOR@EXAMPLE.COM")
+                        .param("password", "senha-segura-123"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/"));
+    }
+
+    @Test
+    void logsOutOnlyWithCsrfProtection() throws Exception {
+        mockMvc.perform(post("/logout").with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/login?logout"));
+    }
+
+    @Test
+    void bootstrapsOnlyTheFirstAdministrator() {
+        assertThat(bootstrapAdministratorService.createFirstAdministrator(
+                "admin@example.com", "senha-segura-123")).isTrue();
+        assertThat(userAccountRepository.findByEmail("admin@example.com")).isPresent();
+        assertThat(bootstrapAdministratorService.createFirstAdministrator(
+                "outro@example.com", "senha-segura-456")).isFalse();
     }
 }

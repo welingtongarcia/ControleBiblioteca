@@ -1,0 +1,12 @@
+CREATE TABLE users (
+    id UUID PRIMARY KEY,
+    email VARCHAR(320) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    role VARCHAR(30) NOT NULL,
+    enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT chk_users_role CHECK (role IN ('USER', 'ADMIN'))
+);
+
+CREATE UNIQUE INDEX uk_users_email_normalized ON users (LOWER(email));

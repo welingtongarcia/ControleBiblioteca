@@ -11,8 +11,8 @@ Cada tarefa só começa após suas dependências e os requisitos associados esta
 
 ## Fase 2 — Autenticação
 
-- [ ] T005 Modelar usuário e bootstrap documentado; criar migration e repositório. **Dep.:** T003. **Aceite:** usuário inicial criado sem segredo no Git. (FR-004)
-- [ ] T006 Configurar login/logout, sessão, CSRF e política de acesso. **Dep.:** T005. **Aceite:** testes de acesso anônimo, login e logout. (FR-001/002)
+- [x] T005 Modelar usuário e bootstrap documentado; criar migration e repositório. **Dep.:** T003. **Aceite:** usuário inicial criado sem segredo no Git. (FR-004)
+- [x] T006 Configurar login/logout, sessão, CSRF e política de acesso. **Dep.:** T005. **Aceite:** testes de acesso anônimo, login e logout. (FR-001/002)
 - [ ] T007 Criar mecanismo reutilizável de resolução/autorização por dono. **Dep.:** T006. **Aceite:** teste de recurso alheio retorna 404. (FR-003, AC-001)
 
 ## Fase 3 — Catálogo

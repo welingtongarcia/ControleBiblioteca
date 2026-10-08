@@ -22,6 +22,8 @@ services:
       DB_NAME: ${POSTGRES_DB:?Configure POSTGRES_DB em .env}
       DB_USERNAME: ${POSTGRES_USER:?Configure POSTGRES_USER em .env}
       DB_PASSWORD: ${DB_PASSWORD:?Configure DB_PASSWORD em .env}
+      BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:?Configure BOOTSTRAP_ADMIN_EMAIL em .env}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:?Configure BOOTSTRAP_ADMIN_PASSWORD em .env}
     ports:
       - "8080:8080"
     depends_on:
