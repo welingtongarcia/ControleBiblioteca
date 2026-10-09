@@ -12,6 +12,13 @@ import org.springframework.web.client.RestClient;
 public class IsbnClientConfiguration {
     @Bean RestClient isbnRestClient(RestClient.Builder builder,
             @Value("${app.isbn.user-agent:MinhaGibiteca/0.1}") String userAgent) {
+        return client(builder, "https://openlibrary.org", userAgent);
+    }
+    @Bean RestClient googleBooksRestClient(RestClient.Builder builder,
+            @Value("${app.isbn.user-agent:MinhaGibiteca/0.1}") String userAgent) {
+        return client(builder, "https://www.googleapis.com", userAgent);
+    }
+    private RestClient client(RestClient.Builder builder, String baseUrl, String userAgent) {
         var factory = new SimpleClientHttpRequestFactory() {
             @Override protected void prepareConnection(HttpURLConnection connection, String method) throws IOException {
                 super.prepareConnection(connection, method); connection.setInstanceFollowRedirects(false);
@@ -19,7 +26,7 @@ public class IsbnClientConfiguration {
         };
         factory.setConnectTimeout(Duration.ofSeconds(3));
         factory.setReadTimeout(Duration.ofSeconds(5));
-        return builder.baseUrl("https://openlibrary.org").requestFactory(factory)
+        return builder.baseUrl(baseUrl).requestFactory(factory)
                 .defaultHeader("User-Agent", userAgent)
                 .defaultHeader("Accept", "application/json").build();
     }

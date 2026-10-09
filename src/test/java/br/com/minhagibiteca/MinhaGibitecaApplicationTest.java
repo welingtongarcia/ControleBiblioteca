@@ -185,6 +185,28 @@ class MinhaGibitecaApplicationTest {
     }
 
     @Test
+    void rendersGoogleBooksSuggestionsAndSafeSourceWithoutSaving() throws Exception {
+        var owner = userAccountRepository.save(UserAccount.create("google-isbn@example.com", "hash", UserRole.USER));
+        var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
+        var found = new br.com.minhagibiteca.catalog.application.IsbnMetadata("9786559601325", "Sugestão <script>", 2021,
+                List.of("Editora da fonte"), List.of("Autor da fonte"), true, br.com.minhagibiteca.catalog.application.IsbnMetadata.Source.GOOGLE_BOOKS);
+        org.mockito.Mockito.when(isbnLookup.lookup("978-6559601325")).thenReturn(java.util.Optional.of(found));
+        var result = mockMvc.perform(post("/edicoes/isbn").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                        .param("isbn", "978-6559601325").param("referencePaidPrice", "12,50").param("notes", "Meu rascunho"))
+                .andExpect(redirectedUrl("/edicoes/nova")).andReturn();
+        var rendered = mockMvc.perform(get("/edicoes/nova").with(auth).flashAttrs(result.getFlashMap()))
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("Sugestões — Google Books")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("https://books.google.com/books?vid=ISBN9786559601325")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Sugestão &lt;script&gt;")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("12,50")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Meu rascunho"))).andReturn();
+        assertThat(editionRepository.count()).isZero();
+        var preview = java.nio.file.Path.of("target/ui-google-isbn"); java.nio.file.Files.createDirectories(preview.resolve("css"));
+        java.nio.file.Files.writeString(preview.resolve("index.html"), rendered.getResponse().getContentAsString());
+        for (String css : List.of("main.css", "dashboard.css")) java.nio.file.Files.copy(java.nio.file.Path.of("src/main/resources/static/css", css), preview.resolve("css").resolve(css), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+    }
+
+    @Test
     void preservesIsbnDraftWhenLookupFailsOrBindingIsInvalid() throws Exception {
         var owner = userAccountRepository.save(UserAccount.create("isbn-failure@example.com", "hash", UserRole.USER));
         var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));

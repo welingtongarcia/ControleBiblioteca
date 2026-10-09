@@ -1,5 +1,9 @@
 # Plano técnico — MVP 1.0
 
+### T028 — segunda fonte ISBN (2026-10-09)
+
+CompositeIsbnProvider @Primary ordena Open Library → Google Books apenas quando ausência; IsbnLookupService continua validando/cacheando o resultado composto. GoogleBooksIsbnProvider usa RestClient separado com host HTTPS fixo www.googleapis.com/books/v1/volumes?q=isbn:...&maxResults=5, chave GOOGLE_BOOKS_API_KEY opcional no ambiente (obrigatória para consultar essa fonte), timeout 3/5s e 256 KiB, sem redirects/logs com segredo. Ausência de chave gera mensagem de consulta incompleta sem HTTP. Identificadores ISBN normalizados e convertidos para ISBN-13 para equivalência (ISBN-10 somente 978), nunca escolher por título. Fonte tipada no DTO controla nome e URL fixa; nenhuma URL recebida usada. Sem migração ou mudança nas associações/gravação. Testes adapter HTTP, composição/cache/erros, renderização MVC e smoke separado. Cota real depende da configuração do usuário; não contornar limites.
+
 ## Arquitetura
 
 Monólito modular Spring Boot 3.x compatível com Java 21, Maven e PostgreSQL. A versão exata do Spring Boot será selecionada na Fase 1 dentre versões estáveis disponíveis e registrada no ADR correspondente. A aplicação terá módulos `auth`, `catalog`, `collection`, `inventory`, `dashboard` e `shared`; cada módulo separa `presentation` (MVC/form/view model), `application` (casos de uso), `domain` (regras) e `infrastructure` (JPA/arquivo/configuração).

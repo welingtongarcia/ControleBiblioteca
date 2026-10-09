@@ -45,6 +45,14 @@ public class IsbnLookupService {
         throw invalid();
     }
     private static LookupException invalid() { return new LookupException("Informe um ISBN-10 ou ISBN-13 válido para buscar. O cadastro manual continua disponível."); }
+    public static String canonical(String input) {
+        String isbn = normalize(input);
+        if (isbn.length() == 13) return isbn;
+        String prefix = "978" + isbn.substring(0, 9);
+        int sum = 0;
+        for (int i = 0; i < 12; i++) sum += (i % 2 == 0 ? 1 : 3) * (prefix.charAt(i) - '0');
+        return prefix + ((10 - sum % 10) % 10);
+    }
     private record Cached(Optional<IsbnMetadata> result, Instant expires) { }
     public static class LookupException extends RuntimeException {
         public LookupException(String message) { super(message); }

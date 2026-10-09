@@ -54,6 +54,7 @@ springdoc:
 app:
   isbn:
     user-agent: ${ISBN_USER_AGENT:MinhaGibiteca/0.1}
+    google-books-api-key: ${GOOGLE_BOOKS_API_KEY:}
   cover-storage-path: ${COVER_STORAGE_PATH:./data/capas}
   bootstrap-admin:
     email: ${BOOTSTRAP_ADMIN_EMAIL:}

@@ -42,7 +42,7 @@ import br.com.minhagibiteca.auth.application.CurrentAuthenticatedUser; import br
      }
      try {
          var result = isbnLookup.lookup(f.getIsbn());
-         if (result.isEmpty()) a.addFlashAttribute("isbnMessage", "Nenhum cadastro encontrado para este ISBN na Open Library. Continue preenchendo manualmente.");
+         if (result.isEmpty()) a.addFlashAttribute("isbnMessage", "Nenhum cadastro encontrado para este ISBN na Open Library ou no Google Books. Continue preenchendo manualmente.");
          else {
              var found = result.get(); f.setIsbn(found.isbn());
              if (f.getTitle() == null || f.getTitle().isBlank()) f.setTitle(found.title());

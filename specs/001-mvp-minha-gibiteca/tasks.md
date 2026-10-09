@@ -18,6 +18,7 @@ Cada tarefa só começa após suas dependências e os requisitos associados esta
 ## Fase 3 — Catálogo
 
 - [x] T027 Buscar metadados por ISBN no cadastro novo, preencher vazios/revisar sugestões, preservar rascunho e fallback manual; testar checksum/HTTP/CSRF/isolamento/PRG. **Dep.:** T026. **Aceite:** AC-015, FR-027/028; evidências e limites em verification-isbn.md; sem importação automática de capa.
+- [x] T028 Google Books como segunda fonte após ausência na Open Library; chave servidor, ISBN equivalente, fonte segura, erros distintos e cache composto. **Dep.:** T027. **Aceite:** FR-029, AC-016; verification-google-isbn.md registra testes e configuração/cota pendente para validação externa real.
 
 - [x] T021 Adicionar suporte físico/digital, preço de capa e valor pago de referência no cadastro, edição, lista e detalhe; migration preserva registros antigos; testes de decimal, validação e isolamento. **Dep.:** T010. (FR-026, AC-009, NFR-001/004)
 
