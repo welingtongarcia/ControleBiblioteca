@@ -1,0 +1,21 @@
+<!DOCTYPE html><html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(${pageTitle})}"><title>Checklist</title></head>
+<body><main class="content form-content" aria-labelledby="page-title">
+    <a class="brand" th:href="@{/series/{id}/checklist(id=${series.id})}">Minha Gibiteca</a>
+    <h1 id="page-title" th:text="${pageTitle}"></h1><p th:text="${series.name}"></p>
+    <form th:fragment="entryForm" class="stack copy-form" th:action="${formAction}" th:object="${checklistForm}" method="post">
+        <div class="field"><label for="editorialNumber">Número editorial <span aria-hidden="true">*</span></label>
+            <input id="editorialNumber" th:field="*{editorialNumber}" required maxlength="40" aria-describedby="number-help number-error" th:attr="aria-invalid=${#fields.hasErrors('editorialNumber')}">
+            <p id="number-help" class="help-text">Informe um número conhecido, como 0, 1A, 1/2 ou Especial. Nenhuma sequência será gerada.</p>
+            <p id="number-error" class="field-error" th:if="${#fields.hasErrors('editorialNumber')}" th:errors="*{editorialNumber}"></p></div>
+        <div class="field"><label for="label">Descrição do item</label><input id="label" th:field="*{label}" maxlength="180" aria-describedby="label-error" th:attr="aria-invalid=${#fields.hasErrors('label')}">
+            <p id="label-error" class="field-error" th:if="${#fields.hasErrors('label')}" th:errors="*{label}"></p></div>
+        <div class="field"><label for="owned">Você possui este quadrinho?</label><select id="owned" th:field="*{owned}" aria-describedby="owned-help owned-error">
+            <option value="false">Não possuo</option><option value="true">Possuo</option></select>
+            <p id="owned-help" class="help-text">Estado manual, independente dos exemplares cadastrados.</p>
+            <p id="owned-error" class="field-error" th:if="${#fields.hasErrors('owned')}" th:errors="*{owned}"></p></div>
+        <div class="field"><label for="notes">Observações</label><textarea id="notes" th:field="*{notes}" rows="3" maxlength="2000" aria-describedby="notes-error" th:attr="aria-invalid=${#fields.hasErrors('notes')}"></textarea>
+            <p id="notes-error" class="field-error" th:if="${#fields.hasErrors('notes')}" th:errors="*{notes}"></p></div>
+        <div class="form-actions"><button type="submit">Salvar item</button><a th:href="@{/series/{id}/checklist(id=${series.id})}">Cancelar</a></div>
+    </form>
+</main></body></html>

@@ -1,0 +1,11 @@
+<!DOCTYPE html><html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Excluir item do checklist')}"><title>Excluir item</title></head>
+<body><main class="content form-content" aria-labelledby="page-title">
+    <a class="brand" th:href="@{/series/{id}/checklist(id=${series.id})}">Minha Gibiteca</a><h1 id="page-title">Excluir item do checklist</h1>
+    <p>Excluir o item <strong th:text="${item.editorialNumber}"></strong> da série <strong th:text="${series.name}"></strong>?</p>
+    <p>A exclusão é permanente e não altera edições nem exemplares.</p>
+    <form class="stack" th:action="@{/checklist/itens/{id}/excluir(id=${item.id})}" method="post">
+        <label><input type="checkbox" name="confirmed" value="true" required> Confirmo a exclusão deste item.</label>
+        <div class="form-actions"><button type="submit">Excluir item</button><a th:href="@{/series/{id}/checklist(id=${series.id})}">Cancelar</a></div>
+    </form>
+</main></body></html>

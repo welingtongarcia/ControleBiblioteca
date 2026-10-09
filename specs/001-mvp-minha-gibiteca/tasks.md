@@ -32,7 +32,7 @@ Cada tarefa só começa após suas dependências e os requisitos associados esta
 
 ## Fase 5 — Consulta
 
-- [ ] T015 Implementar checklist explícito e faltantes. **Dep.:** T009/T014. **Aceite:** nenhuma lacuna é inferida. (FR-040/041, AC-006)
+- [x] T015 Implementar CRUD de checklist explícito, estado manual e faltantes paginados; proteger referências de séries e isolamento por dono. **Dep.:** T009/T014. **Aceite:** nenhuma lacuna é inferida, AC-006/duplicados/limites/CSRF/paginação/referências validados. (FR-040/041/033, AC-006; evidências em verification-checklist.md)
 - [ ] T016 Implementar consultas e tela de dashboard. **Dep.:** T012/T014. **Aceite:** totais e agregações conferem com banco. (FR-050, AC-007)
 
 ## Fase 6 — Entrega

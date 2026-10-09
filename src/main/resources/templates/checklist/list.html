@@ -1,0 +1,22 @@
+<!DOCTYPE html><html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(${pageTitle})}"><title>Checklist</title></head>
+<body><main class="content" aria-labelledby="page-title">
+    <a class="brand" th:href="@{/series}">Minha Gibiteca</a>
+    <h1 id="page-title" th:text="${pageTitle}"></h1><h2 th:text="${series.name}"></h2>
+    <nav class="form-actions" aria-label="Consulta da série"><a th:href="@{/series/{id}/checklist(id=${series.id})}">Checklist completo</a><a th:href="@{/series/{id}/faltantes(id=${series.id})}">Quadrinhos faltantes</a></nav>
+    <p class="alert alert-success" th:if="${successMessage}" role="status" th:text="${successMessage}"></p>
+    <p class="help-text">Somente números cadastrados por você são listados. Exemplares não alteram este checklist automaticamente.</p>
+    <p class="empty-state" th:if="${items.empty}" th:text="${missingOnly ? 'Nenhum item marcado como Não possuo nesta página. Cadastre os números conhecidos no checklist completo.' : 'Nenhum item nesta página. Cadastre os números editoriais conhecidos abaixo.'}"></p>
+    <ul class="resource-list checklist-list" th:unless="${items.empty}"><li th:each="item : ${items}">
+        <div><strong th:text="${item.editorialNumber}"></strong><span th:text="${item.label}"></span><p th:text="${item.ownedLabel}"></p><p th:if="${item.notes}" th:text="${item.notes}"></p></div>
+        <div class="resource-actions"><a th:href="@{/checklist/itens/{id}/editar(id=${item.id})}" th:attr="aria-label=|Editar item ${item.editorialNumber}|">Editar</a><a th:href="@{/checklist/itens/{id}/excluir(id=${item.id})}" th:attr="aria-label=|Excluir item ${item.editorialNumber}|">Excluir</a></div>
+    </li></ul>
+    <nav class="pagination" th:if="${items.totalPages > 1}" aria-label="Paginação do checklist">
+        <a th:if="${items.hasPrevious()}" th:href="@{${listPath}(page=${items.number - 1})}">Anterior</a>
+        <span th:text="|Página ${items.number + 1} de ${items.totalPages}|"></span>
+        <a th:if="${items.hasNext()}" th:href="@{${listPath}(page=${items.number + 1})}">Próxima</a>
+    </nav>
+    <section class="details-section form-content" th:unless="${missingOnly}" aria-labelledby="new-item-title">
+        <h2 id="new-item-title">Adicionar item</h2><form th:replace="~{checklist/form :: entryForm}"></form>
+    </section>
+</main></body></html>

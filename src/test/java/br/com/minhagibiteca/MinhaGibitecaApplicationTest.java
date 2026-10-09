@@ -87,6 +87,9 @@ class MinhaGibitecaApplicationTest {
 
     @Autowired private CopyService copyService;
     @Autowired private PhysicalCopyRepository physicalCopyRepository;
+    @Autowired private br.com.minhagibiteca.collection.application.ChecklistService checklistService;
+    @Autowired private br.com.minhagibiteca.collection.infrastructure.ChecklistRepository checklistRepository;
+    @Autowired private br.com.minhagibiteca.catalog.application.ComicSeriesService seriesService;
 
     @Autowired
     private WorkService workService;
@@ -122,6 +125,7 @@ class MinhaGibitecaApplicationTest {
 
     @BeforeEach
     void clearUsers() {
+        checklistRepository.deleteAllInBatch();
         physicalCopyRepository.deleteAllInBatch();
         editionRepository.deleteAll();
         workRepository.deleteAll();
@@ -703,6 +707,125 @@ class MinhaGibitecaApplicationTest {
             }
             try (var sql = connection.prepareStatement("delete from editions where id = ?")) {
                 sql.setObject(1, edition.getId()); assertThatThrownBy(sql::executeUpdate).isInstanceOf(java.sql.SQLException.class);
+            }
+        }
+    }
+
+    @Test
+    void managesExplicitChecklistWithoutInferringOrSynchronizingNumbers() throws Exception {
+        var owner = userAccountRepository.save(UserAccount.create("checklist@example.com", "hash", UserRole.USER));
+        var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
+        var series = comicSeriesRepository.save(ComicSeries.create(owner.getId(), null, "Série irregular", null, null, null, null));
+        mockMvc.perform(get("/series/{id}/faltantes", series.getId()).with(auth)).andExpect(status().isOk()).andExpect(view().name("checklist/list"));
+        assertThat(checklistRepository.count()).isZero();
+        for (String number : List.of("0", "1A", "Especial")) {
+            mockMvc.perform(post("/series/{id}/checklist", series.getId()).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                            .param("editorialNumber", number).param("owned", number.equals("1A") ? "false" : "true"))
+                    .andExpect(redirectedUrl("/series/" + series.getId() + "/checklist"));
+        }
+        var missing = checklistService.list(series.getId(), owner.getId(), true, 0);
+        assertThat(missing.getContent()).extracting(br.com.minhagibiteca.collection.application.ChecklistView::editorialNumber).containsExactly("1A");
+        var id = missing.getContent().getFirst().id();
+        var edition = editionService.create(owner.getId(), new EditionService.Command(null, series.getId(), "Edição 1A", "1A", null, null, null, null, null));
+        var copy = copyService.create(edition.getId(), owner.getId(), new CopyService.Command(null, CopyCondition.GOOD, null, null, null, null, null));
+        assertThat(checklistService.find(id, owner.getId()).owned()).isFalse();
+        assertThat(checklistRepository.count()).isEqualTo(3);
+        mockMvc.perform(get("/checklist/itens/{id}/editar", id).with(auth)).andExpect(status().isOk()).andExpect(view().name("checklist/form"));
+        mockMvc.perform(post("/checklist/itens/{id}/editar", id).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                        .param("editorialNumber", "1A").param("owned", "true").param("label", "<script>texto</script>").param("seriesId", java.util.UUID.randomUUID().toString()))
+                .andExpect(redirectedUrl("/series/" + series.getId() + "/checklist"));
+        assertThat(checklistService.find(id, owner.getId()).seriesId()).isEqualTo(series.getId());
+        copyService.delete(copy, owner.getId());
+        assertThat(checklistService.find(id, owner.getId()).owned()).isTrue();
+        assertThat(checklistService.list(series.getId(), owner.getId(), true, 0).getTotalElements()).isZero();
+        mockMvc.perform(get("/series/{id}/checklist", series.getId()).with(auth)).andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("&lt;script&gt;texto&lt;/script&gt;")));
+        mockMvc.perform(post("/checklist/itens/{id}/editar", id).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                        .param("editorialNumber", "1A").param("owned", "false"))
+                .andExpect(redirectedUrl("/series/" + series.getId() + "/checklist"));
+        assertThat(checklistService.list(series.getId(), owner.getId(), true, 0).getTotalElements()).isEqualTo(1);
+    }
+
+    @Test
+    void validatesChecklistNumbersAndKeepsOwnersAndSeriesIsolated() throws Exception {
+        var owner = userAccountRepository.save(UserAccount.create("valid-checklist@example.com", "hash", UserRole.USER));
+        var other = userAccountRepository.save(UserAccount.create("foreign-checklist@example.com", "hash", UserRole.USER));
+        var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
+        var foreign = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(other));
+        var series = comicSeriesRepository.save(ComicSeries.create(owner.getId(), null, "Checklist privado", null, null, null, null));
+        var second = comicSeriesRepository.save(ComicSeries.create(owner.getId(), null, "Outra série", null, null, null, null));
+        var id = checklistService.create(series.getId(), owner.getId(), new br.com.minhagibiteca.collection.application.ChecklistService.Command("1A", null, false, null));
+        for (String number : List.of("", " ", "x".repeat(41), " 1a ")) {
+            mockMvc.perform(post("/series/{id}/checklist", series.getId()).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("editorialNumber", number))
+                    .andExpect(status().isOk()).andExpect(view().name("checklist/list"))
+                    .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.model().attributeHasFieldErrors("checklistForm", "editorialNumber"));
+        }
+        mockMvc.perform(post("/series/{id}/checklist", series.getId()).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                        .param("editorialNumber", "2").param("label", "x".repeat(181)).param("notes", "x".repeat(2001)).param("owned", "inválido"))
+                .andExpect(status().isOk()).andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.model().attributeHasFieldErrors("checklistForm", "label", "notes", "owned"));
+        mockMvc.perform(post("/series/{id}/checklist", second.getId()).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("editorialNumber", "1A"))
+                .andExpect(redirectedUrl("/series/" + second.getId() + "/checklist"));
+        for (String action : List.of("checklist", "faltantes")) mockMvc.perform(get("/series/{id}/" + action, series.getId()).with(foreign)).andExpect(status().isNotFound());
+        mockMvc.perform(post("/series/{id}/checklist", series.getId()).with(foreign).with(SecurityMockMvcRequestPostProcessors.csrf()).param("editorialNumber", "3"))
+                .andExpect(status().isNotFound());
+        for (String action : List.of("editar", "excluir")) {
+            mockMvc.perform(get("/checklist/itens/{id}/" + action, id).with(foreign)).andExpect(status().isNotFound());
+            mockMvc.perform(post("/checklist/itens/{id}/" + action, id).with(foreign).with(SecurityMockMvcRequestPostProcessors.csrf())).andExpect(status().isNotFound());
+        }
+        assertThat(checklistRepository.count()).isEqualTo(2);
+        mockMvc.perform(post("/series/{id}/checklist", series.getId()).with(auth).param("editorialNumber", "3")).andExpect(status().isForbidden());
+        mockMvc.perform(post("/checklist/itens/{id}/editar", id).with(auth).param("editorialNumber", "3")).andExpect(status().isForbidden());
+    }
+
+    @Test
+    void protectsChecklistSeriesAndConfirmsCsrfDeletionWithoutRemovingCatalog() throws Exception {
+        var owner = userAccountRepository.save(UserAccount.create("delete-checklist@example.com", "hash", UserRole.USER));
+        var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
+        var series = comicSeriesRepository.save(ComicSeries.create(owner.getId(), null, "Série protegida", null, null, null, null));
+        var id = checklistService.create(series.getId(), owner.getId(), new br.com.minhagibiteca.collection.application.ChecklistService.Command("Especial", null, false, null));
+        mockMvc.perform(post("/series/{id}/excluir", series.getId()).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(redirectedUrl("/series")).andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash().attributeExists("errorMessage"));
+        mockMvc.perform(get("/checklist/itens/{id}/excluir", id).with(auth)).andExpect(status().isOk()).andExpect(view().name("checklist/delete"));
+        mockMvc.perform(post("/checklist/itens/{id}/excluir", id).with(auth).param("confirmed", "true")).andExpect(status().isForbidden());
+        mockMvc.perform(post("/checklist/itens/{id}/excluir", id).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(redirectedUrl("/checklist/itens/" + id + "/excluir"));
+        assertThat(checklistRepository.existsById(id)).isTrue();
+        mockMvc.perform(post("/checklist/itens/{id}/excluir", id).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("confirmed", "true"))
+                .andExpect(redirectedUrl("/series/" + series.getId() + "/checklist"));
+        assertThat(checklistRepository.existsById(id)).isFalse();
+        assertThat(comicSeriesRepository.existsById(series.getId())).isTrue();
+        var edition = editionService.create(owner.getId(), new EditionService.Command(null, series.getId(), "HQ vinculada", null, null, null, null, null, null));
+        assertThatThrownBy(() -> seriesService.delete(series.getId(), owner.getId())).hasMessageContaining("possui edições");
+        editionService.delete(edition.getId(), owner.getId()); seriesService.delete(series.getId(), owner.getId());
+        assertThat(comicSeriesRepository.existsById(series.getId())).isFalse();
+    }
+
+    @Test
+    void paginatesMissingChecklistAndEnforcesSeriesOwnershipAndDuplicatesInDatabase() throws Exception {
+        var owner = userAccountRepository.save(UserAccount.create("page-checklist@example.com", "hash", UserRole.USER));
+        var other = userAccountRepository.save(UserAccount.create("fk-checklist@example.com", "hash", UserRole.USER));
+        var series = comicSeriesRepository.save(ComicSeries.create(owner.getId(), null, "Lista longa", null, null, null, null));
+        var foreignSeries = comicSeriesRepository.save(ComicSeries.create(other.getId(), null, "Lista alheia", null, null, null, null));
+        for (int i = 0; i < 25; i++) checklistService.create(series.getId(), owner.getId(), new br.com.minhagibiteca.collection.application.ChecklistService.Command("E" + i, null, false, null));
+        var ownedId = checklistService.create(series.getId(), owner.getId(), new br.com.minhagibiteca.collection.application.ChecklistService.Command("00", null, true, null));
+        assertThat(checklistService.list(series.getId(), owner.getId(), true, 0).getContent()).hasSize(20);
+        assertThat(checklistService.list(series.getId(), owner.getId(), true, 1).getContent()).hasSize(5);
+        assertThat(checklistService.list(series.getId(), owner.getId(), false, 1).getContent()).hasSize(6);
+        assertThat(checklistService.list(series.getId(), owner.getId(), true, -1).getNumber()).isZero();
+        var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
+        mockMvc.perform(get("/series/{id}/faltantes", series.getId()).with(auth)).andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("/faltantes?page=1")));
+        mockMvc.perform(get("/series/{id}/checklist", series.getId()).with(auth)).andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("/checklist?page=1")));
+        mockMvc.perform(get("/series/{id}/faltantes", series.getId()).with(auth).param("page", "1")).andExpect(status().isOk());
+        mockMvc.perform(get("/series/{id}/checklist", series.getId()).with(auth).param("page", "texto")).andExpect(status().isBadRequest());
+        try (Connection connection = dataSource.getConnection()) {
+            for (String sqlText : List.of("update series_checklist_items set series_id = ? where id = ?", "update series_checklist_items set normalized_number = ? where id = ?", "delete from series where id = ?")) {
+                try (var sql = connection.prepareStatement(sqlText)) {
+                    if (sqlText.startsWith("delete")) sql.setObject(1, series.getId());
+                    else { sql.setObject(1, sqlText.contains("normalized_number") ? "e0" : foreignSeries.getId()); sql.setObject(2, ownedId); }
+                    assertThatThrownBy(sql::executeUpdate).isInstanceOf(java.sql.SQLException.class);
+                }
             }
         }
     }

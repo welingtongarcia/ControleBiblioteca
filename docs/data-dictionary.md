@@ -14,10 +14,12 @@ Este é o contrato de modelagem para migrations da Fase 1 em diante; os nomes f�
 | `edition_creators` | `edition_id`, `creator_id`, `role?`, `sequence?` | unicidade `(edition_id, creator_id, role)`; role não nulo se usado na unicidade. |
 | `storage_locations` | `id`, `owner_user_id`, `parent_id?`, `level`, `name`, `notes?` | índice dono/pai/nome; ciclo/profundidade na aplicação. |
 | `physical_copies` | `id`, `owner_user_id`, `edition_id`, `storage_location_id?`, `condition`, `condition_notes?`, `acquisition_source?`, `acquisition_date?`, `acquisition_price?`, `notes?`, auditoria | V11: preço `numeric(12,2)` nullable e não negativo; FKs compostas de edição/localização e proprietário; índice dono/edição/data/id e dono/localização. |
-| `series_checklist_items` | `id`, `owner_user_id`, `series_id`, `editorial_number`, `label?`, `owned`, `notes?` | único `(owner_user_id, series_id, editorial_number)`; nenhum número é gerado. |
+| `series_checklist_items` | `id`, `owner_user_id`, `series_id`, `editorial_number` (40), `normalized_number` (40), `label?` (180), `owned`, `notes?` (2000), auditoria | V12: único `(owner_user_id, series_id, normalized_number)`; FK composta de série/proprietário; índices dono/série/data/id e dono/série/owned/data/id; nenhum número é gerado. |
 | `cover_images` | `id`, `owner_user_id`, `edition_id`, `storage_key`, `original_filename`, `content_type`, `byte_size`, `sha256`, auditoria | um por edição no MVP; `storage_key` único; nenhuma coluna binária. |
 
 Todos os timestamps usam instante UTC; valores monetários usam `numeric`, nunca `float`. Comprimentos, enums e regras exatas serão consolidados nos forms e na migration correspondente antes de implementação.
+
+Checklist T015 (V12): número textual obrigatório, normalizado com trim/Locale.ROOT, sem conversão numérica; 0 e 00 são distintos, 1A e 1a são duplicados na mesma série. owned boolean obrigatório com padrão false, alterado manualmente; não consulta nem sincroniza exemplares. Faltantes filtram owned=false no banco e ambas as listas paginam vinte registros. FK bloqueia exclusão de série referenciada sem cascata. Mutações serializadas por lock transacional do dono.
 
 Extensão FR-026 (V8): `editions.media_type` nullable PHYSICAL/DIGITAL; `cover_price` e `reference_paid_price` nullable `numeric(12,2)`, não negativos, em BRL. Null representa desconhecido e zero representa gratuito. Valor pago de referência não agrega preços de exemplares. Registros antigos preservam campos novos nulos.
 

@@ -8,6 +8,10 @@ Fluxo padrão: controller MVC → form DTO validado → serviço de aplicação 
 
 ## Modelo e persistência
 
+### T015 — checklist explícito (2026-10-09)
+
+Módulo collection com entidade ChecklistItem, serviço e DTOs, repositório JPA para escrita e consultas JDBC paginadas para leitura. V12 cria series_checklist_items e FK composta série/proprietário, número editorial/normalizado (40), rótulo (180), owned boolean, notas (2000), auditoria; unicidade dono/série/número normalizado e índices dono/série/data/id e dono/série/owned/data/id. Normalização Locale.ROOT com trim, sem conversão numérica. Mutações e remoção de série usam lock do dono; série referenciada bloqueada com mensagem. GET/POST checklist cria um item por vez; GET/POST /checklist/itens/{id}/editar e /excluir; GET faltantes filtra owned=false, sem consultas a exemplares nem sincronização automática. Form DTO/Bean Validation/PRG/CSRF e confirmação. Views recebem somente DTOs; série autorizada expõe id/nome. Testes JUnit/Mockito e MockMvc/PostgreSQL cobrem AC-006 e integridade.
+
 ### T014 — exemplares físicos (2026-10-09)
 
 V11 cria physical_copies: UUID/dono/edição, localização opcional, conservação e observações, origem/data/preço opcionais, timestamps UTC; numeric(12,2) BRL e FKs compostas por proprietário. Índices dono/edição/data/id e dono/localização. Módulo inventory retorna DTOs via consulta paginada com joins do caminho de localização e consulta separada da edição autorizada. Mutações usam o mesmo lock do proprietário de T013, incluindo mudança de suporte/exclusão de edição para não disputar referências. Detalhe bibliográfico integra contagem/avisos e paginação de exemplares. Formulários usam decimal pt-BR e confirmação server-side. Edições digitais rejeitadas para exemplares físicos; preços de referência não migram/inferem aquisições. Testar regras, proprietário, valores distintos, bloqueios de referência, CSRF e renderização.
@@ -36,6 +40,7 @@ T012 (2026-10-09): GET `/edicoes` aceita `q`, `publisherId`, `seriesId`, `format
 | Exemplares | `GET /edicoes/{editionId}/exemplares/novo`, `POST /edicoes/{editionId}/exemplares`, `GET/POST /exemplares/{id}/editar`, `GET/POST /exemplares/{id}/excluir` | Sempre valida dono da edição/exemplar; GET confirma exclusão, POST exige confirmação/CSRF. |
 | Editoras | `GET /editoras`, `GET/POST /editoras/nova`, `GET/POST /editoras/{id}/editar`, `POST /editoras/{id}/excluir` | Exclusão segura. |
 | Séries/checklist | `GET /series`, `GET/POST /series/nova`, `GET/POST /series/{id}/editar`, `POST /series/{id}/excluir`, `GET/POST /series/{id}/checklist`, `GET /series/{id}/faltantes` | Lacunas explícitas. |
+| Itens do checklist | `GET/POST /checklist/itens/{id}/editar`, `GET/POST /checklist/itens/{id}/excluir` | Série não é trocada; GET confirma remoção, POST exige confirmação e CSRF. |
 | Localizações | `GET /localizacoes`, `GET/POST /localizacoes/nova`, `GET/POST /localizacoes/{id}/editar`, `POST /localizacoes/{id}/excluir` | Árvore limitada a quatro níveis. |
 | Exportação | `GET /exportacao/csv` | `text/csv; charset=UTF-8`, autenticada. |
 

@@ -66,7 +66,9 @@ public class ComicSeriesController {
     }
 
     @PostMapping("/series/{id}/excluir") String delete(@PathVariable UUID id, RedirectAttributes redirect) {
-        seriesService.delete(id, currentUser.id()); redirect.addFlashAttribute("successMessage", "Série excluída com sucesso."); return "redirect:/series";
+        try { seriesService.delete(id, currentUser.id()); redirect.addFlashAttribute("successMessage", "Série excluída com sucesso."); }
+        catch (ComicSeriesService.ReferencedSeriesException error) { redirect.addFlashAttribute("errorMessage", error.getMessage()); }
+        return "redirect:/series";
     }
 
     private String populateForm(Model model, String title, String action) {

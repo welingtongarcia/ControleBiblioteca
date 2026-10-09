@@ -14,10 +14,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class ComicSeriesService {
     private final ComicSeriesRepository repository;
     private final PublisherService publisherService;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbc;
 
-    public ComicSeriesService(ComicSeriesRepository repository, PublisherService publisherService) {
+    public ComicSeriesService(ComicSeriesRepository repository, PublisherService publisherService, org.springframework.jdbc.core.JdbcTemplate jdbc) {
         this.repository = repository;
         this.publisherService = publisherService;
+        this.jdbc = jdbc;
     }
 
     @Transactional(readOnly = true)
@@ -48,7 +50,21 @@ public class ComicSeriesService {
     }
 
     @Transactional
-    public void delete(UUID id, UUID ownerUserId) { repository.delete(findOwned(id, ownerUserId)); }
+    public void delete(UUID id, UUID ownerUserId) {
+        if (jdbc.queryForList("select id from users where id = ? for update", UUID.class, ownerUserId).isEmpty()) throw new ResourceNotFoundException();
+        var item = findOwned(id, ownerUserId);
+        if (Boolean.TRUE.equals(jdbc.queryForObject("select exists(select 1 from series_checklist_items where series_id = ? and owner_user_id = ?)", Boolean.class, id, ownerUserId)))
+            throw new ReferencedSeriesException("Esta série possui itens de checklist. Remova os itens antes de excluí-la.");
+        if (Boolean.TRUE.equals(jdbc.queryForObject("select exists(select 1 from editions where series_id = ? and owner_user_id = ?)", Boolean.class, id, ownerUserId)))
+            throw new ReferencedSeriesException("Esta série possui edições. Desassocie as edições antes de excluí-la.");
+        repository.delete(item); repository.flush();
+    }
+
+    @Transactional(readOnly = true) public View viewOwned(UUID id, UUID owner) {
+        var item = findOwned(id, owner); return new View(item.getId(), item.getName());
+    }
+    public record View(UUID id, String name) { }
+    public static class ReferencedSeriesException extends RuntimeException { public ReferencedSeriesException(String message) { super(message); } }
 
     private void validatePublisher(UUID ownerUserId, UUID publisherId) {
         if (publisherId != null) publisherService.findOwned(publisherId, ownerUserId);
