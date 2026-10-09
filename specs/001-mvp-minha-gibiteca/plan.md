@@ -1,5 +1,9 @@
 # Plano técnico — MVP 1.0
 
+### T029 — hierarquia da página inicial (2026-10-09)
+
+Somente dashboard/index.html e CSS específico home-*; controller/serviços/SQL inalterados. Topo compacto com título, busca e ações; quatro cartões agrupam edições e suporte, cópias/cobertura, valores e leitura com progress nativo. Avisos de preço incompleto fora do details; details/summary oferece metodologia e valores de exemplares sem dupla contagem. Vazio contextual. Três atalhos acervo (catálogo/séries/localizações) e três cadastros de apoio (editoras/obras/criadores), sem hero promocional/footer CTA repetido. Manter IDs dos indicadores e fragment/sidebar compartilhados. Breakpoints 4→2→1 cartões; links alvos 44px/foco, sem JS/novos assets. MockMvc verifica estrutura, dados atuais e vazio; fixtures reais renderizadas para QA desktop/celular e disclosure por teclado.
+
 ### T028 — segunda fonte ISBN (2026-10-09)
 
 CompositeIsbnProvider @Primary ordena Open Library → Google Books apenas quando ausência; IsbnLookupService continua validando/cacheando o resultado composto. GoogleBooksIsbnProvider usa RestClient separado com host HTTPS fixo www.googleapis.com/books/v1/volumes?q=isbn:...&maxResults=5, chave GOOGLE_BOOKS_API_KEY opcional no ambiente (obrigatória para consultar essa fonte), timeout 3/5s e 256 KiB, sem redirects/logs com segredo. Ausência de chave gera mensagem de consulta incompleta sem HTTP. Identificadores ISBN normalizados e convertidos para ISBN-13 para equivalência (ISBN-10 somente 978), nunca escolher por título. Fonte tipada no DTO controla nome e URL fixa; nenhuma URL recebida usada. Sem migração ou mudança nas associações/gravação. Testes adapter HTTP, composição/cache/erros, renderização MVC e smoke separado. Cota real depende da configuração do usuário; não contornar limites.

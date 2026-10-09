@@ -312,6 +312,7 @@ class MinhaGibitecaApplicationTest {
         assertThat(empty.copies()).isZero(); assertThat(empty.editions()).isZero();
         assertThat(empty.totalPaidLabel()).contains("0,00");
         var edition = Edition.create(owner.getId(), null, null, "Coleção resumo", "1", null, null, null, null, null);
+        edition.markRead(true);
         edition.updatePricingAndMedia(br.com.minhagibiteca.catalog.domain.MediaType.PHYSICAL, new java.math.BigDecimal("100.00"), new java.math.BigDecimal("999.00"));
         editionRepository.save(edition);
         var digital = Edition.create(owner.getId(), null, null, "Digital resumo", "2", null, null, null, null, null);
@@ -338,12 +339,18 @@ class MinhaGibitecaApplicationTest {
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("30,30")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("pode estar incompleto"))).andReturn();
         var summary = (br.com.minhagibiteca.dashboard.application.CollectionSummary) result.getModelAndView().getModel().get("summary");
+        String overviewHtml = result.getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+        assertThat(overviewHtml).contains("33,3%", "Suporte não informado", "Gerencie seu acervo", "Cadastros de apoio")
+                .doesNotContain("Sua coleção começa com a primeira edição", "collection-hero");
+        for (String id : List.of("summary-editions", "summary-physical", "summary-digital", "summary-copies", "summary-owned-editions", "summary-total", "summary-copy-total"))
+            assertThat(overviewHtml).contains("id=\"" + id + "\"");
+        assertThat(overviewHtml.indexOf("pode estar incompleto")).isLessThan(overviewHtml.indexOf("<details"));
         assertThat(summary.editions()).isEqualTo(3); assertThat(summary.copies()).isEqualTo(4);
         assertThat(summary.registeredPaid()).isEqualByComparingTo("1499.00");
         assertThat(summary.physicalEditions()).isEqualTo(1); assertThat(summary.digitalEditions()).isEqualTo(1);
         assertThat(summary.ownedEditions()).isEqualTo(1); assertThat(summary.pricedCopies()).isEqualTo(3);
         assertThat(summary.totalPaid()).isEqualByComparingTo("30.30");
-        var preview = java.nio.file.Path.of("target/ui-summary"); java.nio.file.Files.createDirectories(preview.resolve("css"));
+        var preview = java.nio.file.Path.of("target/ui-home"); java.nio.file.Files.createDirectories(preview.resolve("css"));
         java.nio.file.Files.writeString(preview.resolve("index.html"), result.getResponse().getContentAsString());
         for (String css : List.of("main.css", "dashboard.css")) java.nio.file.Files.copy(java.nio.file.Path.of("src/main/resources/static/css", css), preview.resolve("css").resolve(css), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
         copyService.update(paid, owner.getId(), new CopyService.Command(null, CopyCondition.GOOD, null, null, null, new java.math.BigDecimal("15.15"), null));
@@ -433,21 +440,27 @@ class MinhaGibitecaApplicationTest {
             html = mockMvc.perform(get(path).with(auth)).andExpect(status().isOk()).andExpect(view().name("dashboard/index"))
                     .andExpect(content().string(org.hamcrest.Matchers.containsString("/css/dashboard.css")))
                     .andExpect(content().string(org.hamcrest.Matchers.containsString("Pular para o conteúdo")))
-                    .andExpect(content().string(org.hamcrest.Matchers.containsString("Seu espaço de colecionador")))
+                    .andExpect(content().string(org.hamcrest.Matchers.containsString("Visão geral da coleção")))
                     .andExpect(content().string(org.hamcrest.Matchers.containsString("action=\"/logout\" method=\"post\"")))
                     .andExpect(content().string(org.hamcrest.Matchers.containsString("name=\"_csrf\"")))
                     .andExpect(content().string(org.hamcrest.Matchers.containsString("name=\"q\"")))
                     .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
             for (String destination : List.of("edicoes", "edicoes/nova", "series", "localizacoes", "editoras", "obras", "criadores"))
                 assertThat(html).contains("href=\"/" + destination + "\"");
+            assertThat(html).contains("Sua coleção começa com a primeira edição", "Entenda os números e os valores", "Cadastros de apoio")
+                    .doesNotContain("collection-hero", "hero-art", "pode estar incompleto");
+            assertThat(html.indexOf("id=\"home-actions\"")).isLessThan(html.indexOf("id=\"home-overview\""));
+            assertThat(html.indexOf("id=\"home-overview\"")).isLessThan(html.indexOf("id=\"home-collection\""));
+            assertThat(html.indexOf("id=\"home-collection\"")).isLessThan(html.indexOf("id=\"home-support\""));
+            assertThat(html).contains("<details id=\"home-calculation\"", "<progress max=\"100\" value=\"0.0\"");
         }
         mockMvc.perform(get("/")).andExpect(status().is3xxRedirection()).andExpect(redirectedUrlPattern("**/login"));
         mockMvc.perform(post("/logout").with(auth)).andExpect(status().isForbidden());
         mockMvc.perform(post("/logout").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())).andExpect(redirectedUrl("/login?logout"));
         // Prévia local do HTML realmente renderizado; só contém conteúdo estático e sessão de teste.
-        var preview = java.nio.file.Path.of("target/ui-preview");
+        var preview = java.nio.file.Path.of("target/ui-home");
         java.nio.file.Files.createDirectories(preview.resolve("css"));
-        java.nio.file.Files.writeString(preview.resolve("dashboard.html"), html, java.nio.charset.StandardCharsets.UTF_8);
+        java.nio.file.Files.writeString(preview.resolve("empty.html"), html, java.nio.charset.StandardCharsets.UTF_8);
         for (String css : List.of("main.css", "dashboard.css")) java.nio.file.Files.copy(java.nio.file.Path.of("src/main/resources/static/css", css), preview.resolve("css").resolve(css), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
     }
 

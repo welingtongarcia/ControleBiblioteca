@@ -9,60 +9,78 @@
 <a class="skip-link" href="#main-content">Pular para o conteúdo</a>
 <div class="dashboard-layout">
     <aside th:replace="~{fragments/navigation :: sidebar}"></aside>
-    <main id="main-content" class="dashboard-main" aria-labelledby="page-title" tabindex="-1">
-        <header class="dashboard-topbar">
-            <div><p class="dashboard-kicker">Minha Gibiteca</p><h1 id="page-title">Seu espaço de colecionador</h1></div>
+    <main id="main-content" class="dashboard-main home-page" aria-labelledby="page-title" tabindex="-1">
+        <header class="home-header">
+            <div><p class="dashboard-kicker">Minha Gibiteca · Início</p><h1 id="page-title">Visão geral da coleção</h1><p class="home-intro">Acompanhe seu acervo e escolha sua próxima leitura.</p></div>
             <form class="dashboard-search" method="get" th:action="@{/edicoes}" role="search" aria-label="Pesquisar no catálogo">
                 <label class="visually-hidden" for="dashboard-query">Buscar por título, ISBN ou número editorial</label>
-                <input id="dashboard-query" name="q" type="search" maxlength="240" placeholder="Buscar na sua coleção…"><button type="submit">Buscar</button>
+                <input id="dashboard-query" name="q" type="search" maxlength="240" placeholder="Título, ISBN ou número…"><button type="submit">Buscar</button>
             </form>
         </header>
-        <section class="dashboard-section collection-summary" aria-labelledby="summary-title">
-            <div class="dashboard-section-heading"><h2 id="summary-title">Sua coleção em números</h2><span>Resumo dos seus registros</span></div>
-            <dl class="summary-grid">
-                <div class="summary-card"><dt>Total pago nos cadastros</dt><dd id="summary-total" th:text="${summary.registeredPaidLabel()}">Não informado</dd><p>Valor pago informado em cada edição, contado uma única vez.</p></div>
-                <div class="summary-card"><dt>Edições físicas</dt><dd id="summary-physical" th:text="${summary.physicalEditions}">0</dd><p>Cadastros marcados como físicos, mesmo sem exemplares.</p></div>
-                <div class="summary-card"><dt>Edições digitais</dt><dd id="summary-digital" th:text="${summary.digitalEditions}">0</dd><p>Cadastros marcados como digitais.</p></div>
-                <div class="summary-card"><dt>Exemplares físicos</dt><dd id="summary-copies" th:text="${summary.copies}">0</dd><p>Cada cópia cadastrada conta como um exemplar.</p></div>
-                <div class="summary-card"><dt>Edições com exemplares</dt><dd id="summary-owned-editions" th:text="${summary.ownedEditions}">0</dd><p>Edições distintas presentes no acervo físico.</p></div>
-                <div class="summary-card"><dt>Edições cadastradas</dt><dd id="summary-editions" th:text="${summary.editions}">0</dd><p>Inclui digitais e edições ainda sem exemplares.</p></div>
-            </dl>
-            <p class="summary-explanation" th:if="${summary.editions > 0}">Valor pago informado em <strong th:text="${summary.pricedEditions}">0</strong> de <strong th:text="${summary.editions}">0</strong> edições.</p>
-            <p class="summary-coverage" th:if="${summary.unpricedEditions() > 0}"><strong th:text="${summary.unpricedEditions()}">0</strong> edição(ões) sem valor pago informado. O total considera apenas os preços conhecidos e pode estar incompleto.</p>
-            <p class="summary-explanation" th:if="${summary.unknownMediaEditions() > 0}"><strong th:text="${summary.unknownMediaEditions()}">0</strong> edição(ões) com suporte não informado; não entram nas contagens de físicas ou digitais.</p>
-            <p class="summary-coverage" th:if="${summary.editions == 0}">Sua coleção ainda não tem edições cadastradas. Cadastre seus quadrinhos, suporte e valor pago para acompanhar o resumo.</p>
-            <p class="summary-explanation" th:if="${summary.copies > 0}">Aquisições dos exemplares físicos (separadas): <strong id="summary-copy-total" th:text="${summary.totalPaidLabel()}">Não informado</strong>. Valores informados em <strong th:text="${summary.pricedCopies}">0</strong> de <strong th:text="${summary.copies}">0</strong> exemplares; <strong th:text="${summary.unpricedCopies()}">0</strong> sem preço.</p>
-            <p class="summary-explanation">O total principal soma o campo “Valor pago” dos cadastros físicos, digitais e de suporte não informado. Não soma preços de capa nem valores dos exemplares, e não é avaliação de mercado. Exemplares físicos representam cópias cadastradas separadamente. <a th:href="@{/edicoes}">Consultar edições e exemplares →</a></p>
+        <nav id="home-actions" class="home-actions" aria-label="Ações principais">
+            <a class="button-link" th:href="@{/edicoes/nova}"><span aria-hidden="true">＋</span> Cadastrar edição</a>
+            <a class="home-secondary" th:href="@{/edicoes}">Ver catálogo <span aria-hidden="true">→</span></a>
+        </nav>
+        <section class="home-empty" th:if="${summary.editions == 0}" aria-labelledby="home-empty-title">
+            <h2 id="home-empty-title">Sua coleção começa com a primeira edição</h2>
+            <p>Use “Cadastrar edição” acima para registrar seus quadrinhos. Depois, acompanhe valores, exemplares e leituras aqui.</p>
         </section>
-        <section class="dashboard-section" aria-labelledby="reading-title">
-            <div class="dashboard-section-heading"><h2 id="reading-title">Leitura da coleção geral</h2><a th:href="@{/series}">Ver leitura por série →</a></div>
-            <div th:replace="~{fragments/reading :: progress(${readingProgress})}"></div>
-            <p class="summary-explanation">Percentual das suas edições cadastradas marcadas como “Já li”, incluindo digitais e sem série. Cada edição conta uma vez, independentemente dos exemplares.</p>
-            <a th:href="@{/edicoes}">Marcar minhas leituras no catálogo →</a>
-        </section>
-        <section class="collection-hero" aria-labelledby="hero-title">
-            <div class="hero-copy"><p class="hero-eyebrow">Organize. Encontre. Complete.</p><h2 id="hero-title">Sua coleção,<br>no lugar certo.</h2><p>Dos clássicos aos novos favoritos, guarde os detalhes de cada edição e encontre espaço para a próxima história.</p>
-                <div class="hero-actions"><a class="hero-primary" th:href="@{/edicoes/nova}"><span aria-hidden="true">＋</span>Cadastrar edição</a><a class="hero-secondary" th:href="@{/edicoes}">Explorar catálogo <span aria-hidden="true">↗</span></a></div>
+        <section id="home-overview" class="dashboard-section" aria-labelledby="summary-title">
+            <div class="dashboard-section-heading"><h2 id="summary-title">Sua coleção em números</h2><span>Seus registros, em um só lugar</span></div>
+            <div class="home-metrics">
+                <section class="home-metric" aria-labelledby="editions-metric-title">
+                    <h3 id="editions-metric-title">Edições cadastradas</h3><p id="summary-editions" class="home-value" th:text="${summary.editions}">0</p>
+                    <dl class="home-breakdown">
+                        <div><dt>Físicas</dt><dd id="summary-physical" th:text="${summary.physicalEditions}">0</dd></div>
+                        <div><dt>Digitais</dt><dd id="summary-digital" th:text="${summary.digitalEditions}">0</dd></div>
+                        <div th:if="${summary.unknownMediaEditions() > 0}"><dt>Suporte não informado</dt><dd th:text="${summary.unknownMediaEditions()}">0</dd></div>
+                    </dl>
+                </section>
+                <section class="home-metric" aria-labelledby="copies-metric-title">
+                    <h3 id="copies-metric-title">Exemplares físicos</h3><p id="summary-copies" class="home-value" th:text="${summary.copies}">0</p>
+                    <p class="home-caption">Cópias cadastradas separadamente.</p>
+                    <p class="home-caption">Edições com exemplares: <strong id="summary-owned-editions" th:text="${summary.ownedEditions}">0</strong>.</p>
+                </section>
+                <section class="home-metric" aria-labelledby="paid-metric-title">
+                    <h3 id="paid-metric-title">Total pago nos cadastros</h3><p id="summary-total" class="home-value home-money" th:text="${summary.registeredPaidLabel()}">Não informado</p>
+                    <p class="home-caption">Valor pago em cada edição, sem somar os exemplares.</p>
+                    <p class="home-caption" th:if="${summary.editions > 0}">Informado em <strong th:text="${summary.pricedEditions}">0</strong> de <strong th:text="${summary.editions}">0</strong> edições.</p>
+                </section>
+                <section class="home-metric home-reading" aria-labelledby="reading-title">
+                    <h3 id="reading-title">Leitura da coleção geral</h3><p class="home-value" th:text="${readingProgress.percentageLabel()}">0,0%</p>
+                    <progress max="100" th:value="${readingProgress.percentage()}" th:aria-label="${readingProgress.label()}">Progresso de leitura</progress>
+                    <p class="home-caption"><strong th:text="${readingProgress.read}">0</strong> de <strong th:text="${readingProgress.total}">0</strong> edições lidas.</p>
+                    <a class="home-metric-link" th:href="@{/edicoes}">Atualizar leituras <span aria-hidden="true">→</span></a>
+                </section>
             </div>
-            <div class="hero-art" aria-hidden="true"><div class="art-orbit"></div><div class="comic-book comic-book-back"><span>HQ</span><div></div></div><div class="comic-book comic-book-front"><span class="comic-category">MINHA COLEÇÃO</span><strong>Uma nova<br>aventura.</strong><div class="comic-burst">HQ!</div><span class="comic-bottom">CADA EDIÇÃO, UMA HISTÓRIA.</span></div><span class="art-spark">✦</span></div>
+            <p class="summary-coverage" th:if="${summary.unpricedEditions() > 0}"><strong th:text="${summary.unpricedEditions()}">0</strong> <span th:text="${summary.unpricedEditions() == 1 ? 'edição sem valor pago informado.' : 'edições sem valor pago informado.'}">edições sem valor pago informado.</span> O total considera apenas os preços conhecidos e pode estar incompleto.</p>
+            <details id="home-calculation" class="home-calculation">
+                <summary>Entenda os números e os valores</summary>
+                <div class="home-calculation-content">
+                    <p>O total principal soma o campo “Valor pago” de cada edição física, digital ou de suporte não informado, uma única vez. Não soma preços de capa nem valores dos exemplares, e não é avaliação de mercado.</p>
+                    <p>Edições físicas e digitais são cadastros do catálogo. Exemplares físicos são as cópias dessas edições registradas separadamente; uma edição pode ter vários exemplares ou nenhum.</p>
+                    <p th:if="${summary.copies > 0}">Aquisições dos exemplares físicos (separadas): <strong id="summary-copy-total" th:text="${summary.totalPaidLabel()}">Não informado</strong>. Valores informados em <strong th:text="${summary.pricedCopies}">0</strong> de <strong th:text="${summary.copies}">0</strong> exemplares; <strong th:text="${summary.unpricedCopies()}">0</strong> sem preço.</p>
+                    <p>O percentual de leitura considera suas edições cadastradas marcadas como “Já li”, incluindo digitais e sem série. Cada edição conta uma vez, independentemente dos exemplares; números ainda não cadastrados não entram no cálculo.</p>
+                </div>
+            </details>
         </section>
-        <section class="dashboard-section" aria-labelledby="collection-title">
-            <div class="dashboard-section-heading"><h2 id="collection-title">Cuide da sua coleção</h2><span>Do catálogo à estante</span></div>
-            <div class="collection-shortcuts">
-                <a class="collection-card" th:href="@{/edicoes}"><span class="shortcut-icon icon-gold" aria-hidden="true">▤</span><div><h3>Catálogo de edições</h3><p>Consulte capas, valores e exemplares físicos ou identifique suas edições digitais.</p><span class="card-action">Ver minhas edições <span aria-hidden="true">→</span></span></div></a>
-                <a class="collection-card" th:href="@{/series}"><span class="shortcut-icon icon-green" aria-hidden="true">✓</span><div><h3>Séries e checklist</h3><p>Registre o que você possui e acompanhe os quadrinhos que faltam em cada série.</p><span class="card-action">Acompanhar minhas séries <span aria-hidden="true">→</span></span></div></a>
+        <section id="home-collection" class="dashboard-section" aria-labelledby="collection-title">
+            <div class="dashboard-section-heading"><h2 id="collection-title">Gerencie seu acervo</h2><span>Consulte, acompanhe e encontre</span></div>
+            <div class="home-shortcuts">
+                <a class="collection-card" th:href="@{/edicoes}"><span class="shortcut-icon icon-gold" aria-hidden="true">▤</span><div><h3>Catálogo de edições</h3><p>Veja suas edições, valores, capas e exemplares.</p><span class="card-action">Abrir catálogo <span aria-hidden="true">→</span></span></div></a>
+                <a class="collection-card" th:href="@{/series}"><span class="shortcut-icon icon-green" aria-hidden="true">✓</span><div><h3>Séries e checklist</h3><p>Acompanhe faltantes e o progresso de leitura por série.</p><span class="card-action">Ver minhas séries <span aria-hidden="true">→</span></span></div></a>
+                <a class="collection-card" th:href="@{/localizacoes}"><span class="shortcut-icon icon-blue" aria-hidden="true">▦</span><div><h3>Localizações</h3><p>Organize os lugares onde guarda seus exemplares físicos.</p><span class="card-action">Ver localizações <span aria-hidden="true">→</span></span></div></a>
             </div>
         </section>
-        <section class="dashboard-section" aria-labelledby="organize-title">
-            <div class="dashboard-section-heading"><h2 id="organize-title">Tudo conectado</h2><span>Organize os detalhes</span></div>
-            <div class="organization-shortcuts">
-                <a class="organization-card" th:href="@{/localizacoes}"><span class="small-shortcut icon-blue" aria-hidden="true">▦</span><h3>Localizações</h3><p>Do cômodo à caixa, encontre o lugar de cada exemplar.</p><span class="organization-arrow" aria-hidden="true">↗</span></a>
-                <a class="organization-card" th:href="@{/editoras}"><span class="small-shortcut icon-gold" aria-hidden="true">◇</span><h3>Editoras</h3><p>Organize os selos e as editoras do seu catálogo.</p><span class="organization-arrow" aria-hidden="true">↗</span></a>
-                <a class="organization-card" th:href="@{/obras}"><span class="small-shortcut icon-purple" aria-hidden="true">▧</span><h3>Obras</h3><p>Conecte histórias às edições da sua coleção.</p><span class="organization-arrow" aria-hidden="true">↗</span></a>
-                <a class="organization-card" th:href="@{/criadores}"><span class="small-shortcut icon-green" aria-hidden="true">✎</span><h3>Criadores</h3><p>Registre quem dá vida às suas histórias favoritas.</p><span class="organization-arrow" aria-hidden="true">↗</span></a>
+        <section id="home-support" class="dashboard-section" aria-labelledby="organize-title">
+            <div class="dashboard-section-heading"><h2 id="organize-title">Cadastros de apoio</h2><span>Dados que complementam as edições</span></div>
+            <div class="home-support-links">
+                <a th:href="@{/editoras}"><span class="small-shortcut icon-gold" aria-hidden="true">◇</span><span><strong>Editoras</strong><span>Editoras e selos do catálogo</span></span><span aria-hidden="true">→</span></a>
+                <a th:href="@{/obras}"><span class="small-shortcut icon-purple" aria-hidden="true">▧</span><span><strong>Obras</strong><span>Histórias associadas às edições</span></span><span aria-hidden="true">→</span></a>
+                <a th:href="@{/criadores}"><span class="small-shortcut icon-green" aria-hidden="true">✎</span><span><strong>Criadores</strong><span>Autores e artistas dos quadrinhos</span></span><span aria-hidden="true">→</span></a>
             </div>
         </section>
-        <footer class="dashboard-footer"><span>Minha Gibiteca · Sua coleção, do seu jeito.</span><a th:href="@{/edicoes/nova}">Adicionar uma nova história <span aria-hidden="true">→</span></a></footer>
+        <footer class="dashboard-footer"><span>Minha Gibiteca · Sua coleção, do seu jeito.</span><span>Informações baseadas nos seus cadastros.</span></footer>
     </main>
 </div>
 </body>
