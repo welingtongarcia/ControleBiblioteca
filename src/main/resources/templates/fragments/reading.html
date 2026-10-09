@@ -5,12 +5,14 @@
     <p th:if="${progress.total == 0}">Sem edições cadastradas.</p>
 </div>
 <div th:fragment="status(edition, fromCatalog)" class="reading-status">
-    <span th:text="${edition.read ? 'Já li' : 'Não li'}">Não li</span>
     <form method="post" th:action="@{/edicoes/{id}/leitura(id=${edition.id})}">
         <input type="hidden" name="read" th:value="${!edition.read}">
         <input type="hidden" name="fromCatalog" th:value="${fromCatalog}">
         <input type="hidden" name="returnTo" th:value="${navigation.pageReturnUrl}">
-        <button type="submit" th:text="${edition.read ? 'Marcar como não lida' : 'Marcar como já lida'}" th:aria-label="${(edition.read ? 'Marcar como não lida: ' : 'Marcar como já lida: ') + edition.title}">Marcar como já lida</button>
+        <button class="reading-switch" type="submit" role="switch" th:aria-checked="${edition.read}" th:aria-label="|Edição lida: ${edition.title}|">
+            <span class="reading-switch-track" aria-hidden="true"><span class="reading-switch-thumb"></span></span>
+            <span class="reading-switch-state" aria-hidden="true" th:text="${edition.read ? 'Já li' : 'Não li'}">Não li</span>
+        </button>
     </form>
 </div>
 </body></html>

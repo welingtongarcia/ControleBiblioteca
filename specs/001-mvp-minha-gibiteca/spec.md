@@ -77,6 +77,9 @@ Uma edição contém zero ou mais obras e uma obra pode estar em várias ediçõ
 
 ## Cenários de aceitação prioritários
 
+- **FR-048:** controle de leitura no catálogo e detalhe tem aparência de interruptor e semântica role=switch com aria-checked correspondente ao estado persistido, nome acessível estável por edição, texto de estado e posição/cor do indicador. Ativação por clique/Enter/Espaço envia POST existente para alternar, sem JavaScript obrigatório; CSRF, proprietário, PRG/retorno e percentuais preservados.
+- **AC-020 / FR-048:** renderizar ligado/desligado em ambas as telas, nome estável e próximo valor correto; alternar nos dois sentidos com contexto preservado e comprovar estado após redirect. Regressão de CSRF/dono/percentuais; conferir aparência, alvo mínimo 44px, foco/teclado e 320px. Testes não substituem auditoria WCAG integral.
+
 - **FR-047:** formulário de cadastro/edição organizado em grupos semânticos (ISBN opcional, identificação, suporte/valores, vínculos e observações), obrigatório explícito e orientações sobre capa/exemplar após salvar. Busca assistida continua exclusiva do cadastro e preserva rascunho. Obras/criadores selecionáveis por checkboxes rotulados, com vazio explicado. Resumo de erros no topo com links e mensagens/aria-invalid associadas a cada campo; layout pt-BR responsivo, sem novo esquema/regra ou saída que perca rascunho.
 - **AC-019 / FR-047:** GET novo e edição, sugestões ISBN, POST inválido (título/ano/preços/vínculos) e POST válido com múltiplas obras/criadores; preservar valores, associações, CSRF, proprietário e retorno contextual. Conferir novo/preenchido/erros e opções vazias em desktop e 320 px, teclado e foco; clean verify com PostgreSQL/MockMvc. Sem alegar lookup externo real ou auditoria WCAG integral.
 

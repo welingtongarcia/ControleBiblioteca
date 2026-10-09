@@ -94,6 +94,12 @@
 .reading-status { display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin:12px 0; }
 .reading-status form { margin:0; }
 .reading-status button { min-height:44px; }
+.reading-status .reading-switch { display:inline-flex; align-items:center; gap:.75rem; background:transparent; color:var(--text); border:1px solid #657084; padding:.5rem .75rem; min-height:44px; text-align:left; }
+.reading-switch .reading-switch-track { position:relative; display:inline-block; width:46px; height:26px; flex:0 0 46px; border:1px solid #b7bdc9; border-radius:20px; background:#414954; margin:0; }
+.reading-switch .reading-switch-thumb { position:absolute; width:18px; height:18px; top:3px; left:3px; border-radius:50%; background:#f4f1e8; margin:0; }
+.reading-switch[aria-checked=true] .reading-switch-track { background:var(--accent); border-color:var(--accent); }
+.reading-switch[aria-checked=true] .reading-switch-thumb { left:23px; background:#241a00; }
+.reading-switch .reading-switch-state { color:var(--text); margin:0; font-weight:600; }
 .isbn-suggestions { border:1px solid #414954; border-radius:12px; padding:16px; margin:16px 0; overflow-wrap:anywhere; }
 .home-header { display:flex; align-items:center; flex-wrap:wrap; gap:24px; }
 .home-header > div { flex:1 1 320px; min-width:0; }

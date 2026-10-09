@@ -94,8 +94,6 @@ select { background: #11151d; border: 1px solid #657084; border-radius: .5rem; c
 .edition-card-prices dt { color: var(--muted); font-size: .8rem; margin-bottom: .35rem; }
 .edition-card-prices dd { margin: 0; font-weight: 700; }
 .edition-card .reading-status { margin: auto 0 1rem; gap: .75rem; }
-.edition-card .reading-status > span { color: var(--text); margin: 0; font-weight: 600; }
-.edition-card .reading-status button { background: transparent; border: 1px solid #657084; color: var(--text); font-size: .85rem; }
 .edition-card-actions { display: flex; flex-wrap: wrap; align-items: start; gap: .5rem 1rem; border-top: 1px solid #3a4251; padding-top: .5rem; }
 .edition-card-actions > a { display: inline-flex; align-items: center; min-height: 2.75rem; }
 .edition-delete { flex: 1 1 100%; }

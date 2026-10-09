@@ -259,6 +259,41 @@ class MinhaGibitecaApplicationTest {
         saveEditionFormPreview("errors.html", html);
     }
 
+    @Test
+    void rendersReadingSwitchInBothStatesAndPreservesPostContext() throws Exception {
+        var owner = userAccountRepository.save(UserAccount.create("switch@example.com", "hash", UserRole.USER));
+        var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
+        var edition = editionService.create(owner.getId(), new EditionService.Command(null, null, "Leitura com interruptor", null, null, null, null, null, null));
+        var preview = java.nio.file.Path.of("target/ui-reading-switch");
+        java.nio.file.Files.createDirectories(preview.resolve("css"));
+        for (String css : List.of("main.css", "dashboard.css"))
+            java.nio.file.Files.copy(java.nio.file.Path.of("src/main/resources/static/css", css),
+                    preview.resolve("css").resolve(css), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        for (boolean read : List.of(false, true)) {
+            for (boolean catalog : List.of(true, false)) {
+                var path = catalog ? "/edicoes" : "/edicoes/" + edition.getId();
+                var request = get(path).with(auth);
+                if (catalog) request.param("q", "Leitura"); else request.param("returnTo", "/edicoes?q=Leitura");
+                var html = mockMvc.perform(request).andExpect(status().isOk()).andReturn().getResponse()
+                        .getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+                assertThat(html).contains("role=\"switch\"", "aria-checked=\"" + read + "\"",
+                        "aria-label=\"Edição lida: Leitura com interruptor\"",
+                        "name=\"read\" value=\"" + !read + "\"", "name=\"_csrf\"", "reading-switch-track",
+                        read ? "Já li" : "Não li", "/edicoes/" + edition.getId() + "/leitura")
+                        .doesNotContain("Marcar como já lida", "Marcar como não lida");
+                java.nio.file.Files.writeString(preview.resolve((catalog ? "catalog-" : "detail-") + (read ? "on" : "off") + ".html"), html);
+            }
+            var expectedRedirect = read ? "/edicoes/" + edition.getId() + "?returnTo=/edicoes?q%3DLeitura" : "/edicoes?q=Leitura";
+            mockMvc.perform(post("/edicoes/{id}/leitura", edition.getId()).with(auth)
+                    .with(SecurityMockMvcRequestPostProcessors.csrf()).param("read", Boolean.toString(!read))
+                    .param("fromCatalog", Boolean.toString(!read)).param("returnTo", "/edicoes?q=Leitura"))
+                    .andExpect(redirectedUrl(expectedRedirect));
+            assertThat(editionService.viewOwned(edition.getId(), owner.getId()).read()).isEqualTo(!read);
+        }
+        mockMvc.perform(get("/edicoes/{id}", edition.getId()).with(auth)).andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("aria-checked=\"false\"")));
+    }
+
     private void saveEditionFormPreview(String name, String html) throws java.io.IOException {
         var preview = java.nio.file.Path.of("target/ui-edition-form");
         java.nio.file.Files.createDirectories(preview.resolve("css"));

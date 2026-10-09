@@ -103,6 +103,10 @@ Reforço T024 (2026-10-09): teste PostgreSQL/MockMvc exercita POST real com CSRF
 
 ## Marcos de entrega
 
+### T032 — interruptor de leitura
+
+Clarificação: ligado significa Já li; desligado Não li. Um botão submit nativo com role=switch mantém MVC/POST sem script; aria-checked só reflete estado realmente salvo na resposta, nome acessível não muda. Alterar fragment compartilhado e CSS, sem controller/migração. Testar renderização e alternância nas duas telas, parâmetros de retorno e regressão de segurança/progresso; conferir prévia sintética desktop/móvel e registrar commit.
+
 ### T031 — formulário de edição
 
 Clarificação comunicada: reorganizar apresentação compartilhada de novo/editar, sem upload antecipado nem mudança de campos/regras. Fieldsets, grid de duas colunas adaptável, bloco ISBN com detalhe de privacidade, resumo de erros navegável e checkboxes de associações já existentes. Reutilizar BindingResult/DTO/opções autorizadas/rotas e PRG; nenhum JavaScript/dependência. Testar renderização, estado preservado, vínculo múltiplo/remoção e regressões ISBN/contexto/segurança; gerar fixtures de teste para inspeção visual; registrar evidência e commit.

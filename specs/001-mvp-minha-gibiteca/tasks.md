@@ -17,6 +17,8 @@ Cada tarefa só começa após suas dependências e os requisitos associados esta
 
 ## Fase 3 — Catálogo
 
+- [x] T032 Trocar controle de leitura por interruptor acessível no catálogo/detalhe, preservando POST/CSRF/retorno/percentuais; testar estados e conferir desktop/móvel. **Dep.:** T026/T030. **Aceite:** FR-048, AC-020; verification-reading-switch.md.
+
 - [x] T031 Reorganizar formulário de edição, grupos semânticos, erros navegáveis e associações por checkboxes; preservar ISBN/dados/CSRF/retorno e verificar desktop/móvel. **Dep.:** T010/T021/T023/T027. **Aceite:** FR-047, AC-019; verification-edition-form.md.
 
 - [x] T030 Reorganizar catálogo com cartões, filtros expansíveis, valores/leitura, faixa de resultados e vazio contextual; preservar consultas/retornos/CSRF e conferir desktop/móvel. **Dep.:** T012/T021/T023/T026. **Aceite:** FR-046, AC-018; verification-catalog-layout.md.
