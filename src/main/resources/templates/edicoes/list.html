@@ -1,1 +1,50 @@
-<!DOCTYPE html><html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"><head th:replace="~{fragments/head :: head('Edições')}"><title>Edições</title></head><body><main class="content"><a class="brand" th:href="@{/dashboard}">Minha Gibiteca</a><div class="page-heading"><h1>Edições</h1><a class="button-link" th:href="@{/edicoes/nova}">Nova edição</a></div><form class="search-form" method="get"><label for="q">Buscar edição</label><input id="q" name="q" th:value="${query}"><button>Buscar</button></form><section th:if="${editions.empty}" class="empty-state"><h2>Nenhuma edição encontrada</h2></section><ul class="resource-list" th:unless="${editions.empty}"><li th:each="edition:${editions.content}"><a th:href="@{/edicoes/{id}(id=${edition.id})}" th:text="${edition.title}"></a><span th:text="${edition.editorialNumber}"></span></li></ul></main></body></html>
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Edições')}">
+    <title>Edições | Minha Gibiteca</title>
+</head>
+<body>
+<main class="content" aria-labelledby="page-title">
+    <a class="brand" th:href="@{/dashboard}">Minha Gibiteca</a>
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">Catálogo</p>
+            <h1 id="page-title">Edições</h1>
+        </div>
+        <a class="button-link" th:href="@{/edicoes/nova}">Nova edição</a>
+    </div>
+    <p class="alert alert-success" th:if="${successMessage}" role="status" th:text="${successMessage}"></p>
+    <form class="search-form" method="get" th:action="@{/edicoes}">
+        <label for="q">Buscar edição</label>
+        <input id="q" name="q" th:value="${query}" type="search" maxlength="240" placeholder="Digite o título da edição">
+        <button type="submit">Buscar</button>
+    </form>
+    <section th:if="${editions.empty}" class="empty-state">
+        <h2>Nenhuma edição encontrada</h2>
+        <p>Cadastre uma edição para começar a organizar a sua coleção.</p>
+    </section>
+    <section th:unless="${editions.empty}">
+        <ul class="resource-list">
+            <li th:each="edition : ${editions.content}">
+                <div>
+                    <a th:href="@{/edicoes/{id}(id=${edition.id})}" th:text="${edition.title}">Título da edição</a>
+                    <span th:if="${edition.editorialNumber}" th:text="|Nº ${edition.editorialNumber}|"></span>
+                </div>
+                <div class="resource-actions">
+                    <a th:href="@{/edicoes/{id}/editar(id=${edition.id})}">Editar</a>
+                    <form th:action="@{/edicoes/{id}/excluir(id=${edition.id})}" method="post">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                        <button class="link-button" type="submit">Excluir</button>
+                    </form>
+                </div>
+            </li>
+        </ul>
+        <nav class="pagination" th:if="${editions.totalPages > 1}" aria-label="Paginação">
+            <a th:if="${editions.hasPrevious()}" th:href="@{/edicoes(q=${query},page=${editions.number - 1})}">Anterior</a>
+            <span th:text="|Página ${editions.number + 1} de ${editions.totalPages}|">Página 1 de 1</span>
+            <a th:if="${editions.hasNext()}" th:href="@{/edicoes(q=${query},page=${editions.number + 1})}">Próxima</a>
+        </nav>
+    </section>
+</main>
+</body>
+</html>

@@ -1,1 +1,69 @@
-<!DOCTYPE html><html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"><head th:replace="~{fragments/head :: head(${pageTitle})}"><title>Edição</title></head><body><main class="content form-content"><h1 th:text="${pageTitle}"></h1><form class="stack" th:action="${formAction}" th:object="${editionForm}" method="post"><div class="field"><label>Título</label><input th:field="*{title}" required><p class="field-error" th:errors="*{title}"></p></div><div class="field"><label>Número editorial</label><input th:field="*{editorialNumber}" placeholder="Ex.: 1A, 1/2"></div><div class="field"><label>Variante</label><input th:field="*{variant}"></div><div class="year-grid"><div class="field"><label>ISBN</label><input th:field="*{isbn}"></div><div class="field"><label>Ano</label><input th:field="*{publicationYear}" type="number"></div></div><div class="field"><label>Formato</label><input th:field="*{format}" placeholder="Mensal, encadernado..."></div><div class="field"><label>Editora</label><select th:field="*{publisherId}"><option value="">Não definida</option><option th:each="p:${publishers}" th:value="${p.id}" th:text="${p.name}"></option></select></div><div class="field"><label>Série</label><select th:field="*{seriesId}"><option value="">Não definida</option><option th:each="s:${seriesPage.content}" th:value="${s.id}" th:text="${s.name}"></option></select></div><div class="field"><label>Observações</label><textarea th:field="*{notes}"></textarea></div><button>Salvar</button></form></main></body></html>
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(${pageTitle})}">
+    <title>Edição | Minha Gibiteca</title>
+</head>
+<body>
+<main class="content form-content" aria-labelledby="page-title">
+    <a class="brand" th:href="@{/edicoes}">Minha Gibiteca</a>
+    <h1 id="page-title" th:text="${pageTitle}">Nova edição</h1>
+    <form class="stack" th:action="${formAction}" th:object="${editionForm}" method="post">
+        <div class="field">
+            <label for="title">Título <span aria-hidden="true">*</span></label>
+            <input id="title" th:field="*{title}" maxlength="240" required>
+            <p class="field-error" th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></p>
+        </div>
+        <div class="field">
+            <label for="editorialNumber">Número editorial</label>
+            <input id="editorialNumber" th:field="*{editorialNumber}" maxlength="60" placeholder="Ex.: 1A ou ½">
+            <p class="field-error" th:if="${#fields.hasErrors('editorialNumber')}" th:errors="*{editorialNumber}"></p>
+        </div>
+        <div class="field">
+            <label for="variant">Variação da edição</label>
+            <input id="variant" th:field="*{variant}" maxlength="120" placeholder="Ex.: Capa variante">
+            <p class="field-error" th:if="${#fields.hasErrors('variant')}" th:errors="*{variant}"></p>
+        </div>
+        <div class="year-grid">
+            <div class="field">
+                <label for="isbn">ISBN</label>
+                <input id="isbn" th:field="*{isbn}" maxlength="32">
+                <p class="field-error" th:if="${#fields.hasErrors('isbn')}" th:errors="*{isbn}"></p>
+            </div>
+            <div class="field">
+                <label for="publicationYear">Ano de publicação</label>
+                <input id="publicationYear" th:field="*{publicationYear}" type="number" min="1800" max="2100">
+                <p class="field-error" th:if="${#fields.hasErrors('publicationYear')}" th:errors="*{publicationYear}"></p>
+            </div>
+        </div>
+        <div class="field">
+            <label for="format">Formato</label>
+            <input id="format" th:field="*{format}" maxlength="60" placeholder="Ex.: Revista mensal ou encadernado">
+            <p class="field-error" th:if="${#fields.hasErrors('format')}" th:errors="*{format}"></p>
+        </div>
+        <div class="field">
+            <label for="publisherId">Editora</label>
+            <select id="publisherId" th:field="*{publisherId}">
+                <option value="">Não informada</option>
+                <option th:each="publisher : ${publishers}" th:value="${publisher.id}" th:text="${publisher.name}"></option>
+            </select>
+        </div>
+        <div class="field">
+            <label for="seriesId">Série</label>
+            <select id="seriesId" th:field="*{seriesId}">
+                <option value="">Não informada</option>
+                <option th:each="series : ${seriesPage.content}" th:value="${series.id}" th:text="${series.name}"></option>
+            </select>
+        </div>
+        <div class="field">
+            <label for="notes">Observações</label>
+            <textarea id="notes" th:field="*{notes}" maxlength="2000" rows="5"></textarea>
+            <p class="field-error" th:if="${#fields.hasErrors('notes')}" th:errors="*{notes}"></p>
+        </div>
+        <div class="form-actions">
+            <button type="submit">Salvar edição</button>
+            <a th:href="@{/edicoes}">Cancelar</a>
+        </div>
+    </form>
+</main>
+</body>
+</html>

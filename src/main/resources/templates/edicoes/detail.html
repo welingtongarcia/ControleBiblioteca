@@ -1,1 +1,31 @@
-<!DOCTYPE html><html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"><head th:replace="~{fragments/head :: head(${edition.title})}"><title>Edição</title></head><body><main class="content"><a class="brand" th:href="@{/edicoes}">Edições</a><h1 th:text="${edition.title}"></h1><dl><dt>Número</dt><dd th:text="${edition.editorialNumber ?: 'Não informado'}"></dd><dt>ISBN</dt><dd th:text="${edition.isbn ?: 'Não informado'}"></dd><dt>Ano</dt><dd th:text="${edition.publicationYear ?: 'Não informado'}"></dd></dl></main></body></html>
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(${edition.title})}">
+    <title>Edição | Minha Gibiteca</title>
+</head>
+<body>
+<main class="content" aria-labelledby="page-title">
+    <a class="brand" th:href="@{/edicoes}">Minha Gibiteca</a>
+    <div class="page-heading">
+        <div>
+            <p class="eyebrow">Edição</p>
+            <h1 id="page-title" th:text="${edition.title}">Título da edição</h1>
+        </div>
+        <a class="button-link" th:href="@{/edicoes/{id}/editar(id=${edition.id})}">Editar edição</a>
+    </div>
+    <p class="alert alert-success" th:if="${successMessage}" role="status" th:text="${successMessage}"></p>
+    <dl class="details-list">
+        <dt>Número editorial</dt><dd th:text="${edition.editorialNumber ?: 'Não informado'}"></dd>
+        <dt>Variação da edição</dt><dd th:text="${edition.variant ?: 'Não informada'}"></dd>
+        <dt>ISBN</dt><dd th:text="${edition.isbn ?: 'Não informado'}"></dd>
+        <dt>Ano de publicação</dt><dd th:text="${edition.publicationYear ?: 'Não informado'}"></dd>
+        <dt>Formato</dt><dd th:text="${edition.format ?: 'Não informado'}"></dd>
+        <dt>Observações</dt><dd th:text="${edition.notes ?: 'Nenhuma observação cadastrada'}"></dd>
+    </dl>
+    <form th:action="@{/edicoes/{id}/excluir(id=${edition.id})}" method="post">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+        <button class="link-button" type="submit">Excluir edição</button>
+    </form>
+</main>
+</body>
+</html>

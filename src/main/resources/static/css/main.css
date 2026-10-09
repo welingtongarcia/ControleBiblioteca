@@ -13,7 +13,7 @@
 * { box-sizing: border-box; }
 body { background: radial-gradient(circle at top, #242b38, var(--background) 45%); color: var(--text); margin: 0; min-height: 100vh; }
 a { color: var(--accent); }
-button, input { font: inherit; }
+button, input, select, textarea { font: inherit; }
 button { background: var(--accent); border: 0; border-radius: .5rem; color: #241a00; cursor: pointer; font-weight: 700; min-height: 2.75rem; padding: .65rem 1rem; }
 button:hover { filter: brightness(1.08); }
 button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
@@ -48,4 +48,7 @@ textarea { background: #11151d; border: 1px solid #657084; border-radius: .5rem;
 .year-grid { display: grid; gap: 1rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 select { background: #11151d; border: 1px solid #657084; border-radius: .5rem; color: var(--text); min-height: 2.75rem; padding: .65rem .75rem; }
 .form-content { max-width: 42rem; }
+.details-list { display: grid; gap: .4rem 1.25rem; grid-template-columns: minmax(10rem, 14rem) 1fr; margin: 2rem 0; }
+.details-list dt { color: var(--muted); font-weight: 700; }
+.details-list dd { margin: 0; overflow-wrap: anywhere; }
 @media (max-width: 38rem) { .page-heading, .resource-list li { align-items: start; flex-direction: column; } .year-grid { grid-template-columns: 1fr; } }
