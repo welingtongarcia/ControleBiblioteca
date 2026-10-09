@@ -1,117 +1,101 @@
 <!DOCTYPE html>
 <html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/head :: head(${pageTitle})}">
-    <title>Edição | Minha Gibiteca</title>
-</head>
+<head th:replace="~{fragments/head :: head(${pageTitle})}"><title>Edição | Minha Gibiteca</title></head>
 <body class="dashboard-page"><a class="skip-link" href="#main-content">Pular para o conteúdo</a><div class="dashboard-layout"><aside th:replace="~{fragments/navigation :: sidebar}"></aside>
-<main id="main-content" tabindex="-1" class="content form-content page-content" aria-labelledby="page-title">
-<div th:replace="~{fragments/navigation :: breadcrumbs(${pageTitle}, ${editionId != null ? 'Detalhe da edição' : null}, ${editionId != null ? '/edicoes/' + editionId : null})}"></div>
-
-
-    <h1 id="page-title" th:text="${pageTitle}">Nova edição</h1>
-    <p class="alert" th:classappend="${isbnMetadata != null ? 'alert-success' : 'alert-error'}" th:if="${isbnMessage}" role="status" th:text="${isbnMessage}"></p>
-    <section class="isbn-suggestions" th:if="${isbnMetadata}" aria-labelledby="isbn-result-title">
-        <h2 id="isbn-result-title" th:text="${'Sugestões — ' + isbnMetadata.sourceName()}">Sugestões da fonte</h2>
-        <dl class="details-list"><dt>Título encontrado</dt><dd th:text="${isbnMetadata.title}"></dd>
-            <dt>Editora(s)</dt><dd th:text="${isbnMetadata.publishers.empty ? 'Não informada' : #strings.listJoin(isbnMetadata.publishers, ', ')}"></dd>
-            <dt>Autor(es)</dt><dd th:text="${isbnMetadata.authors.empty ? 'Não informados' : #strings.listJoin(isbnMetadata.authors, ', ')}"></dd>
-        </dl>
-        <p>Editora e criadores são selecionados somente quando já existem nos seus cadastros e o nome corresponde de forma única. Confira as associações abaixo; nenhum cadastro auxiliar foi criado.</p>
-        <a th:href="${isbnMetadata.sourceUrl()}" th:text="${'Consultar registro no serviço ' + isbnMetadata.sourceName()}" target="_blank" rel="noopener noreferrer">Consultar registro na fonte</a>
-        <p th:if="${isbnMetadata.coverAvailable}">A fonte informa uma capa disponível. Consulte-a no link acima; o upload de capa continua disponível após salvar a edição.</p>
-    </section>
-    <form class="stack" th:action="${formAction}" th:object="${editionForm}" method="post"><input type="hidden" name="returnTo" th:value="${navigation.pageReturnUrl}">
-        <div class="field">
-            <label for="isbn">ISBN</label>
-            <input id="isbn" th:field="*{isbn}" maxlength="32" aria-describedby="isbn-help isbn-error">
-            <p id="isbn-error" class="field-error" th:if="${#fields.hasErrors('isbn')}" th:errors="*{isbn}"></p>
-            <button th:if="${editionId == null}" type="submit" th:formaction="@{/edicoes/isbn}" formnovalidate>Buscar pelo ISBN</button>
-            <p id="isbn-help" class="help-text">ISBN é opcional. A busca envia somente o ISBN à Open Library e, se não encontrar, ao Google Books quando configurado. Preenche campos vazios. Revise os dados; se não houver resultado, continue manualmente. Não altera valores, suporte ou leitura.</p>
-        </div>
-        <div class="field">
-            <label for="title">Título <span aria-hidden="true">*</span></label>
-            <input id="title" th:field="*{title}" maxlength="240" required>
-            <p class="field-error" th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></p>
-        </div>
-        <div class="field">
-            <label for="editorialNumber">Número editorial</label>
-            <input id="editorialNumber" th:field="*{editorialNumber}" maxlength="60" placeholder="Ex.: 1A ou ½">
-            <p class="field-error" th:if="${#fields.hasErrors('editorialNumber')}" th:errors="*{editorialNumber}"></p>
-        </div>
-        <div class="field">
-            <label for="variant">Variação da edição</label>
-            <input id="variant" th:field="*{variant}" maxlength="120" placeholder="Ex.: Capa variante">
-            <p class="field-error" th:if="${#fields.hasErrors('variant')}" th:errors="*{variant}"></p>
-        </div>
-        <div class="year-grid">
-            <div class="field">
-                <label for="publicationYear">Ano de publicação</label>
-                <input id="publicationYear" th:field="*{publicationYear}" type="number" min="1800" max="2100">
-                <p class="field-error" th:if="${#fields.hasErrors('publicationYear')}" th:errors="*{publicationYear}"></p>
+<main id="main-content" tabindex="-1" class="content form-content page-content edition-form-page" aria-labelledby="page-title">
+    <div th:replace="~{fragments/navigation :: breadcrumbs(${pageTitle}, ${editionId != null ? 'Detalhe da edição' : null}, ${editionId != null ? '/edicoes/' + editionId : null})}"></div>
+    <header class="edition-form-heading">
+        <p class="eyebrow">Catálogo</p>
+        <h1 id="page-title" th:text="${pageTitle}">Nova edição</h1>
+        <p class="muted">Registre os dados do quadrinho. Os exemplares físicos são cadastrados separadamente.</p>
+        <p class="help-text">Somente o título é obrigatório. Os demais campos podem ser preenchidos depois.</p>
+    </header>
+    <form class="edition-form" th:action="${formAction}" th:object="${editionForm}" method="post">
+        <input type="hidden" name="returnTo" th:value="${navigation.pageReturnUrl}">
+        <section class="alert alert-error edition-errors" th:if="${#fields.hasAnyErrors()}" role="alert" aria-labelledby="edition-errors-title">
+            <h2 id="edition-errors-title">Revise os campos indicados</h2>
+            <p>Seus dados foram mantidos. Corrija os erros antes de salvar ou buscar pelo ISBN.</p>
+            <ul><li th:each="error : ${#fields.detailedErrors()}">
+                <a th:unless="${error.global}" th:href="${'#' + error.fieldName}" th:text="${error.message}"></a>
+                <span th:if="${error.global}" th:text="${error.message}"></span>
+            </li></ul>
+        </section>
+        <fieldset class="edition-form-section edition-isbn-section">
+            <legend>ISBN <span class="edition-optional">opcional</span></legend>
+            <p class="help-text" th:if="${editionId == null}">Tem o ISBN? Você pode buscar sugestões antes de preencher. Não tem? Continue manualmente.</p>
+            <div class="edition-isbn-row">
+                <div class="field"><label for="isbn">ISBN</label><input id="isbn" th:field="*{isbn}" maxlength="32" placeholder="Ex.: 978-6559601325" th:attr="aria-invalid=${#fields.hasErrors('isbn') ? 'true' : null},aria-describedby=${'isbn-help' + (#fields.hasErrors('isbn') ? ' isbn-error' : '')}"><p id="isbn-error" class="field-error" th:if="${#fields.hasErrors('isbn')}" th:errors="*{isbn}"></p></div>
+                <button th:if="${editionId == null}" type="submit" th:formaction="@{/edicoes/isbn}" formnovalidate>Buscar pelo ISBN</button>
             </div>
-        </div>
-        <div class="field">
-            <label for="format">Formato</label>
-            <input id="format" th:field="*{format}" maxlength="60" placeholder="Ex.: Revista mensal ou encadernado">
-            <p class="field-error" th:if="${#fields.hasErrors('format')}" th:errors="*{format}"></p>
-        </div>
-        <div class="field">
-            <label for="mediaType">Suporte do quadrinho</label>
-            <select id="mediaType" th:field="*{mediaType}" aria-describedby="mediaType-error">
-                <option value="">Não informado</option>
-                <option th:each="media : ${mediaTypes}" th:value="${media}" th:text="${media.label}"></option>
-            </select>
-            <p id="mediaType-error" class="field-error" th:if="${#fields.hasErrors('mediaType')}" th:errors="*{mediaType}"></p>
-        </div>
-        <div class="year-grid">
-            <div class="field">
-                <label for="coverPrice">Preço de capa (R$)</label>
-                <input id="coverPrice" th:field="*{coverPrice}" type="text" inputmode="decimal" maxlength="13" placeholder="Ex.: 29,90" aria-describedby="prices-help coverPrice-error">
-                <p id="coverPrice-error" class="field-error" th:if="${#fields.hasErrors('coverPrice')}" th:errors="*{coverPrice}"></p>
+            <p id="isbn-help" class="help-text" th:text="${editionId == null ? 'A busca preenche apenas campos vazios e não salva a edição. Revise as sugestões antes de salvar.' : 'ISBN não é obrigatório e não identifica todas as edições.'}"></p>
+            <details th:if="${editionId == null}" class="edition-isbn-info">
+                <summary>Como funciona a busca?</summary>
+                <p class="help-text">Enviamos somente o ISBN à Open Library e, se não encontrar, ao Google Books quando configurado. Não alteramos valores, suporte ou leitura. Se não houver resultado, continue manualmente.</p>
+            </details>
+            <p class="alert" th:classappend="${isbnMetadata != null ? 'alert-success' : 'alert-error'}" th:if="${isbnMessage}" role="status" th:text="${isbnMessage}"></p>
+            <section class="isbn-suggestions" th:if="${isbnMetadata}" aria-labelledby="isbn-result-title">
+                <h2 id="isbn-result-title" th:text="${'Sugestões — ' + isbnMetadata.sourceName()}">Sugestões da fonte</h2>
+                <dl class="details-list"><dt>Título encontrado</dt><dd th:text="${isbnMetadata.title}"></dd>
+                    <dt>Editora(s)</dt><dd th:text="${isbnMetadata.publishers.empty ? 'Não informada' : #strings.listJoin(isbnMetadata.publishers, ', ')}"></dd>
+                    <dt>Autor(es)</dt><dd th:text="${isbnMetadata.authors.empty ? 'Não informados' : #strings.listJoin(isbnMetadata.authors, ', ')}"></dd>
+                </dl>
+                <p class="help-text">Editora e criadores são selecionados somente quando já existem nos seus cadastros e o nome corresponde de forma única. Confira as associações abaixo; nenhum cadastro auxiliar foi criado.</p>
+                <a th:href="${isbnMetadata.sourceUrl()}" th:text="${'Consultar registro no serviço ' + isbnMetadata.sourceName()}" target="_blank" rel="noopener noreferrer">Consultar registro na fonte</a>
+                <p class="help-text" th:if="${isbnMetadata.coverAvailable}">A fonte informa uma capa disponível. Consulte-a no link acima; o upload de capa continua disponível após salvar a edição.</p>
+            </section>
+        </fieldset>
+        <fieldset class="edition-form-section">
+            <legend>Identificação da edição</legend>
+            <div class="edition-form-grid">
+                <div class="edition-full-width"><div class="field"><label for="title">Título <span class="edition-required">obrigatório</span></label><input id="title" th:field="*{title}" maxlength="240" required placeholder="Ex.: Batman — Ano Um" th:attr="aria-invalid=${#fields.hasErrors('title') ? 'true' : null},aria-describedby=${#fields.hasErrors('title') ? 'title-error' : null}"><p id="title-error" class="field-error" th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></p></div></div>
+                <div class="field"><label for="editorialNumber">Número editorial</label><input id="editorialNumber" th:field="*{editorialNumber}" maxlength="60" placeholder="Ex.: 1A ou Especial" th:attr="aria-invalid=${#fields.hasErrors('editorialNumber') ? 'true' : null},aria-describedby=${'number-help' + (#fields.hasErrors('editorialNumber') ? ' editorialNumber-error' : '')}"><p id="editorialNumber-error" class="field-error" th:if="${#fields.hasErrors('editorialNumber')}" th:errors="*{editorialNumber}"></p><p id="number-help" class="help-text">Pode incluir letras e números; não precisa seguir uma sequência.</p></div>
+                <div class="field"><label for="variant">Variação da edição</label><input id="variant" th:field="*{variant}" maxlength="120" placeholder="Ex.: Capa variante" th:attr="aria-invalid=${#fields.hasErrors('variant') ? 'true' : null},aria-describedby=${#fields.hasErrors('variant') ? 'variant-error' : null}"><p id="variant-error" class="field-error" th:if="${#fields.hasErrors('variant')}" th:errors="*{variant}"></p></div>
+                <div class="field"><label for="publicationYear">Ano de publicação</label><input id="publicationYear" th:field="*{publicationYear}" type="number" min="1800" max="2100" placeholder="Ex.: 2026" th:attr="aria-invalid=${#fields.hasErrors('publicationYear') ? 'true' : null},aria-describedby=${#fields.hasErrors('publicationYear') ? 'publicationYear-error' : null}"><p id="publicationYear-error" class="field-error" th:if="${#fields.hasErrors('publicationYear')}" th:errors="*{publicationYear}"></p></div>
+                <div class="field"><label for="format">Formato</label><input id="format" th:field="*{format}" maxlength="60" placeholder="Ex.: Revista mensal ou encadernado" th:attr="aria-invalid=${#fields.hasErrors('format') ? 'true' : null},aria-describedby=${#fields.hasErrors('format') ? 'format-error' : null}"><p id="format-error" class="field-error" th:if="${#fields.hasErrors('format')}" th:errors="*{format}"></p></div>
             </div>
+        </fieldset>
+        <fieldset class="edition-form-section">
+            <legend>Suporte e valores</legend>
             <div class="field">
-                <label for="referencePaidPrice">Valor pago (R$)</label>
-                <input id="referencePaidPrice" th:field="*{referencePaidPrice}" type="text" inputmode="decimal" maxlength="13" placeholder="Ex.: 19,50" aria-describedby="prices-help referencePaidPrice-error">
-                <p id="referencePaidPrice-error" class="field-error" th:if="${#fields.hasErrors('referencePaidPrice')}" th:errors="*{referencePaidPrice}"></p>
+                <label for="mediaType">Suporte do quadrinho</label>
+                <select id="mediaType" th:field="*{mediaType}" th:attr="aria-invalid=${#fields.hasErrors('mediaType') ? 'true' : null},aria-describedby=${'media-help' + (#fields.hasErrors('mediaType') ? ' mediaType-error' : '')}">
+                    <option value="">Não informado</option>
+                    <option th:each="media : ${mediaTypes}" th:value="${media}" th:text="${media.label}"></option>
+                </select>
+                <p id="mediaType-error" class="field-error" th:if="${#fields.hasErrors('mediaType')}" th:errors="*{mediaType}"></p>
+                <p id="media-help" class="help-text">Escolha físico ou digital. Exemplares e suas localizações são registrados após salvar uma edição física.</p>
             </div>
-        </div>
-        <p id="prices-help" class="help-text">Valores opcionais em reais. Use até duas casas decimais, sem separador de milhares. Deixe em branco se não souber; informe 0 para gratuito. O valor pago é uma referência para esta edição.</p>
-        <div class="field">
-            <label for="publisherId">Editora</label>
-            <select id="publisherId" th:field="*{publisherId}">
-                <option value="">Não informada</option>
-                <option th:each="publisher : ${publishers}" th:value="${publisher.id}" th:text="${publisher.name}"></option>
-            </select>
-        </div>
-        <div class="field">
-            <label for="seriesId">Série</label>
-            <select id="seriesId" th:field="*{seriesId}">
-                <option value="">Não informada</option>
-                <option th:each="series : ${seriesPage.content}" th:value="${series.id}" th:text="${series.name}"></option>
-            </select>
-        </div>
-        <div class="field">
-            <label for="workIds">Obras desta edição</label>
-            <select id="workIds" th:field="*{workIds}" multiple size="5">
-                <option th:each="work : ${works}" th:value="${work.id}" th:text="${work.title}"></option>
-            </select>
-            <p class="help-text">Use Ctrl (Windows/Linux) ou ⌘ (macOS) para selecionar mais de uma obra.</p>
-        </div>
-        <div class="field">
-            <label for="creatorIds">Criadores desta edição</label>
-            <select id="creatorIds" th:field="*{creatorIds}" multiple size="5">
-                <option th:each="creator : ${creators}" th:value="${creator.id}" th:text="${creator.name}"></option>
-            </select>
-            <p class="help-text">Use Ctrl (Windows/Linux) ou ⌘ (macOS) para selecionar mais de um criador.</p>
-        </div>
-        <div class="field">
-            <label for="notes">Observações</label>
-            <textarea id="notes" th:field="*{notes}" maxlength="2000" rows="5"></textarea>
-            <p class="field-error" th:if="${#fields.hasErrors('notes')}" th:errors="*{notes}"></p>
-        </div>
-        <div class="form-actions">
-            <button type="submit">Salvar edição</button>
-            <a th:href="@{${editionId != null ? navigation.withReturn('/edicoes/' + editionId) : navigation.returnUrl}}">Cancelar</a>
+            <div class="edition-form-grid edition-values">
+                <div class="field"><label for="referencePaidPrice">Valor pago (R$)</label><input id="referencePaidPrice" th:field="*{referencePaidPrice}" type="text" inputmode="decimal" maxlength="13" placeholder="Ex.: 19,50" th:attr="aria-invalid=${#fields.hasErrors('referencePaidPrice') ? 'true' : null},aria-describedby=${'prices-help' + (#fields.hasErrors('referencePaidPrice') ? ' referencePaidPrice-error' : '')}"><p id="referencePaidPrice-error" class="field-error" th:if="${#fields.hasErrors('referencePaidPrice')}" th:errors="*{referencePaidPrice}"></p></div>
+                <div class="field"><label for="coverPrice">Preço de capa (R$)</label><input id="coverPrice" th:field="*{coverPrice}" type="text" inputmode="decimal" maxlength="13" placeholder="Ex.: 29,90" th:attr="aria-invalid=${#fields.hasErrors('coverPrice') ? 'true' : null},aria-describedby=${'prices-help' + (#fields.hasErrors('coverPrice') ? ' coverPrice-error' : '')}"><p id="coverPrice-error" class="field-error" th:if="${#fields.hasErrors('coverPrice')}" th:errors="*{coverPrice}"></p></div>
+            </div>
+            <p id="prices-help" class="help-text">Valores opcionais em reais. Use até duas casas decimais, sem separador de milhares. Deixe em branco se não souber; informe 0 para gratuito. O valor pago é uma referência para esta edição e entra no resumo da coleção; preço de capa não entra no total pago.</p>
+        </fieldset>
+        <fieldset class="edition-form-section">
+            <legend>Vínculos bibliográficos</legend>
+            <p class="help-text">Associe os registros que você já cadastrou. Todos os vínculos são opcionais.</p>
+            <div class="edition-form-grid">
+                <div class="field"><label for="publisherId">Editora</label><select id="publisherId" th:field="*{publisherId}" th:attr="aria-invalid=${#fields.hasErrors('publisherId') ? 'true' : null},aria-describedby=${#fields.hasErrors('publisherId') ? 'publisherId-error' : null}"><option value="">Não informada</option><option th:each="item : ${publishers}" th:value="${item.id}" th:text="${item.name}"></option></select><p id="publisherId-error" class="field-error" th:if="${#fields.hasErrors('publisherId')}" th:errors="*{publisherId}"></p></div>
+                <div class="field"><label for="seriesId">Série</label><select id="seriesId" th:field="*{seriesId}" th:attr="aria-invalid=${#fields.hasErrors('seriesId') ? 'true' : null},aria-describedby=${#fields.hasErrors('seriesId') ? 'seriesId-error' : null}"><option value="">Não informada</option><option th:each="item : ${seriesPage.content}" th:value="${item.id}" th:text="${item.name}"></option></select><p id="seriesId-error" class="field-error" th:if="${#fields.hasErrors('seriesId')}" th:errors="*{seriesId}"></p></div>
+                <fieldset id="workIds" tabindex="-1" class="edition-choice-group" th:attr="aria-invalid=${#fields.hasErrors('workIds') ? 'true' : null},aria-describedby=${'workIds-help' + (#fields.hasErrors('workIds') ? ' workIds-error' : '')}"><legend>Obras desta edição</legend><p id="workIds-help" class="help-text">Marque uma ou mais opções. Deixe todas desmarcadas se não quiser vincular.</p><div class="edition-choice-list" th:unless="${works.empty}"><label class="edition-choice" th:each="item : ${works}"><input type="checkbox" th:field="*{workIds}" th:value="${item.id}"><span th:text="${item.title}"></span></label></div><p class="edition-choice-empty" th:if="${works.empty}">Nenhuma obra cadastrada. Você pode salvar sem vincular obras.</p><p id="workIds-error" class="field-error" th:if="${#fields.hasErrors('workIds')}" th:errors="*{workIds}"></p></fieldset>
+                <fieldset id="creatorIds" tabindex="-1" class="edition-choice-group" th:attr="aria-invalid=${#fields.hasErrors('creatorIds') ? 'true' : null},aria-describedby=${'creatorIds-help' + (#fields.hasErrors('creatorIds') ? ' creatorIds-error' : '')}"><legend>Criadores desta edição</legend><p id="creatorIds-help" class="help-text">Marque uma ou mais opções. Deixe todas desmarcadas se não quiser vincular.</p><div class="edition-choice-list" th:unless="${creators.empty}"><label class="edition-choice" th:each="item : ${creators}"><input type="checkbox" th:field="*{creatorIds}" th:value="${item.id}"><span th:text="${item.name}"></span></label></div><p class="edition-choice-empty" th:if="${creators.empty}">Nenhum criador cadastrado. Você pode salvar sem vincular criadores.</p><p id="creatorIds-error" class="field-error" th:if="${#fields.hasErrors('creatorIds')}" th:errors="*{creatorIds}"></p></fieldset>
+            </div>
+        </fieldset>
+        <fieldset class="edition-form-section">
+            <legend>Observações</legend>
+            <div class="field">
+                <label for="notes">Anotações sobre a edição</label>
+                <textarea id="notes" th:field="*{notes}" maxlength="2000" rows="4" placeholder="Ex.: Particularidades desta edição ou informações que deseja guardar." th:attr="aria-invalid=${#fields.hasErrors('notes') ? 'true' : null},aria-describedby=${'notes-help' + (#fields.hasErrors('notes') ? ' notes-error' : '')}"></textarea>
+                <p id="notes-error" class="field-error" th:if="${#fields.hasErrors('notes')}" th:errors="*{notes}"></p>
+                <p id="notes-help" class="help-text">Até 2.000 caracteres.</p>
+            </div>
+        </fieldset>
+        <div class="edition-form-footer">
+            <p class="help-text">A capa pode ser enviada no detalhe da edição após salvar.</p>
+            <div class="form-actions">
+                <button type="submit">Salvar edição</button>
+                <a th:href="@{${editionId != null ? navigation.withReturn('/edicoes/' + editionId) : navigation.returnUrl}}">Cancelar</a>
+            </div>
         </div>
     </form>
 </main></div>

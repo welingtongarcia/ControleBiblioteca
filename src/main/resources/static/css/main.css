@@ -103,6 +103,42 @@ select { background: #11151d; border: 1px solid #657084; border-radius: .5rem; c
 .edition-delete p { color: var(--muted); font-size: .85rem; line-height: 1.5; margin: .25rem 0 .75rem; }
 .edition-delete-button { background: transparent; border: 1px solid var(--error); color: var(--error); }
 .edition-price-note { font-size: .85rem; }
+.page-content.form-content.edition-form-page { max-width: 64rem; }
+.edition-form-heading { margin-bottom: 1.5rem; }
+.edition-form-heading .muted { margin-bottom: .5rem; }
+.edition-form-heading .help-text { font-size: .9rem; margin-top: 0; }
+.edition-form { display: grid; gap: 1.5rem; }
+.edition-form-section { background: var(--surface); border: 1px solid #3a4251; border-radius: .85rem; padding: 1.25rem; min-width: 0; margin: 0; }
+.edition-form-section > legend { font-weight: 700; font-size: 1.1rem; padding: 0 .5rem; max-width: 100%; overflow-wrap: anywhere; }
+.edition-form .help-text { font-size: .85rem; margin: .5rem 0 1rem; }
+.edition-optional, .edition-required { color: var(--muted); font-weight: 400; font-size: .8rem; margin-left: .4rem; }
+.edition-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; }
+.edition-full-width { grid-column: 1 / -1; }
+.edition-form .field, .edition-form .field > * { min-width: 0; }
+.edition-form input:not([type=checkbox]), .edition-form select, .edition-form textarea { width: 100%; }
+.edition-form [aria-invalid=true] { border-color: var(--error); }
+.edition-isbn-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1rem; align-items: end; }
+.edition-isbn-info summary { cursor: pointer; min-height: 2.75rem; padding: .65rem 0; color: var(--accent); }
+.edition-isbn-info summary:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+.edition-values { margin-top: 1.25rem; }
+.edition-choice-group { min-width: 0; margin: 0; padding: 0; border: 0; }
+.edition-choice-group legend { font-weight: 650; padding: 0; }
+.edition-choice-group:focus { outline: 3px solid #fff; outline-offset: 3px; }
+.edition-choice-list { max-height: 16rem; overflow-y: auto; border: 1px solid #657084; border-radius: .5rem; padding: .35rem; }
+.edition-choice { display: flex; align-items: center; min-height: 2.75rem; gap: .75rem; padding: .5rem; cursor: pointer; font-weight: 400; overflow-wrap: anywhere; }
+.edition-choice:has(input:checked) { background: #2b3442; border-radius: .35rem; }
+.edition-choice:focus-within { outline: 2px solid #fff; outline-offset: -2px; }
+.edition-choice input[type=checkbox] { accent-color: var(--accent); width: 1.15rem; height: 1.15rem; min-height: 0; flex: 0 0 auto; margin: 0; }
+.edition-choice-empty { color: var(--muted); font-size: .85rem; border: 1px dashed #657084; border-radius: .5rem; padding: 1rem; line-height: 1.5; }
+.edition-form-footer { border-top: 1px solid #3a4251; padding-top: 1rem; }
+.edition-form-footer .form-actions { justify-content: flex-end; }
+.edition-form-footer a, .edition-errors a, .edition-form .isbn-suggestions > a { display: inline-flex; align-items: center; min-height: 2.75rem; overflow-wrap: anywhere; }
+.edition-errors { margin: 0; }
+.edition-errors h2 { font-size: 1.1rem; margin-top: 0; }
+.edition-errors ul { margin-bottom: 0; padding-left: 1.25rem; }
+.edition-errors a { color: var(--text); }
+.edition-form .isbn-suggestions .details-list { grid-template-columns: minmax(0, 10rem) minmax(0, 1fr); margin: 1rem 0; }
+@media (max-width: 38rem) { .edition-form-grid, .edition-isbn-row, .edition-form .isbn-suggestions .details-list { grid-template-columns: minmax(0, 1fr); } .edition-form-section { padding: 1rem; } .edition-form-footer .form-actions { justify-content: flex-start; } }
 .edition-catalog .pagination a, .edition-query-note a, .edition-catalog .form-actions a { display: inline-flex; min-height: 2.75rem; align-items: center; }
 @media (max-width: 45rem) { .edition-search-row { grid-template-columns: 1fr; } }
 @media (max-width: 25rem) { .edition-search-panel, .edition-card { padding: 1rem; } .edition-filter-details .catalog-filters { grid-template-columns: 1fr; } .edition-card-main { grid-template-columns: 64px minmax(0, 1fr); gap: .75rem; } .edition-card-cover { width: 64px; height: 90px; } .edition-card-prices { grid-template-columns: 1fr; } }

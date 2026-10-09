@@ -186,6 +186,89 @@ class MinhaGibitecaApplicationTest {
     }
 
     @Test
+    void rendersGroupedEditionFormAndExplainsEmptyOptionalAssociations() throws Exception {
+        var owner = userAccountRepository.save(UserAccount.create("form-empty@example.com", "hash", UserRole.USER));
+        var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
+        var result = mockMvc.perform(get("/edicoes/nova").with(auth).param("returnTo", "/edicoes?q=HQ&page=1"))
+                .andExpect(status().isOk()).andReturn();
+        var html = result.getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+        assertThat(html).contains("Identificação da edição", "Suporte e valores", "Vínculos bibliográficos",
+                "Somente o título é obrigatório", "Nenhuma obra cadastrada", "Nenhum criador cadastrado",
+                "formaction=\"/edicoes/isbn\"", "formnovalidate", "name=\"_csrf\"", "A capa pode ser enviada",
+                "href=\"/edicoes?q=HQ&amp;page=1\"").doesNotContain("aria-invalid=\"true\"");
+        saveEditionFormPreview("empty.html", html);
+    }
+
+    @Test
+    void savesAndClearsCheckboxAssociationsWithoutLosingEditionContext() throws Exception {
+        var owner = userAccountRepository.save(UserAccount.create("form-checks@example.com", "hash", UserRole.USER));
+        var other = userAccountRepository.save(UserAccount.create("form-checks-other@example.com", "hash", UserRole.USER));
+        var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
+        var pub = publisherRepository.save(Publisher.create(owner.getId(), "Editora do formulário", null, null));
+        var series = comicSeriesRepository.save(ComicSeries.create(owner.getId(), pub.getId(), "Série do formulário", null, null, null, null));
+        var workA = workService.create(owner.getId(), new WorkService.Command("Uma aventura em quadrinhos", null, null));
+        var workB = workService.create(owner.getId(), new WorkService.Command("Obra com nome extenso para testar seleção em telas pequenas", null, null));
+        var creatorA = creatorService.create(owner.getId(), new CreatorService.Command("Autora da história", null));
+        var creatorB = creatorService.create(owner.getId(), new CreatorService.Command("Artista dos desenhos", null));
+        workService.create(other.getId(), new WorkService.Command("Obra privada de outro usuário", null, null));
+        mockMvc.perform(post("/edicoes").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                .param("title", "A aventura do colecionador").param("editorialNumber", "1A").param("isbn", "9786559601325")
+                .param("publicationYear", "2026").param("format", "Encadernado").param("mediaType", "PHYSICAL")
+                .param("referencePaidPrice", "39,50").param("coverPrice", "59,90")
+                .param("publisherId", pub.getId().toString()).param("seriesId", series.getId().toString())
+                .param("workIds", workA.getId().toString(), workB.getId().toString()).param("creatorIds", creatorA.getId().toString(), creatorB.getId().toString())
+                .param("returnTo", "/edicoes?q=aventura&page=1"))
+                .andExpect(redirectedUrl("/edicoes?q=aventura&page=1"));
+        var edition = editionRepository.findAll().getFirst();
+        assertThat(editionAssociationService.workIds(edition.getId())).containsExactlyInAnyOrder(workA.getId(), workB.getId());
+        assertThat(editionAssociationService.creatorIds(edition.getId())).containsExactlyInAnyOrder(creatorA.getId(), creatorB.getId());
+        var rendered = mockMvc.perform(get("/edicoes/{id}/editar", edition.getId()).with(auth)
+                .param("returnTo", "/edicoes?q=aventura&page=1")).andExpect(status().isOk()).andReturn();
+        var html = rendered.getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+        assertThat(html.split("checked=\"checked\"", -1)).hasSize(5);
+        assertThat(html).contains("type=\"checkbox\"", "name=\"_workIds\"", "name=\"_creatorIds\"", "39,50", "59,90")
+                .doesNotContain("Buscar pelo ISBN", "Obra privada de outro usuário");
+        saveEditionFormPreview("edit.html", html);
+        var draft = rendered.getModelAndView().getModel().get("editionForm");
+        var newForm = mockMvc.perform(get("/edicoes/nova").with(auth).flashAttr("editionForm", draft)).andExpect(status().isOk()).andReturn();
+        saveEditionFormPreview("filled.html", newForm.getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8));
+        mockMvc.perform(post("/edicoes/{id}/editar", edition.getId()).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                .param("title", "A aventura do colecionador").param("_workIds", "on").param("_creatorIds", "on")
+                .param("mediaType", "PHYSICAL").param("referencePaidPrice", "39,50")
+                .param("returnTo", "/edicoes?q=aventura&page=1")).andExpect(status().is3xxRedirection());
+        assertThat(editionAssociationService.workIds(edition.getId())).isEmpty();
+        assertThat(editionAssociationService.creatorIds(edition.getId())).isEmpty();
+    }
+
+    @Test
+    void linksEditionErrorsToFieldsAndPreservesInvalidDraft() throws Exception {
+        var owner = userAccountRepository.save(UserAccount.create("form-errors@example.com", "hash", UserRole.USER));
+        var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
+        var result = mockMvc.perform(post("/edicoes").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                .param("title", "").param("publicationYear", "1700").param("referencePaidPrice", "-1")
+                .param("coverPrice", "inválido").param("publisherId", "inválido").param("workIds", "inválido")
+                .param("variant", "Meu rascunho").param("notes", "Anotação preservada <script>")
+                .param("returnTo", "/edicoes?q=HQ")).andExpect(status().isOk()).andReturn();
+        var html = result.getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+        assertThat(html).contains("Revise os campos indicados", "href=\"#title\"", "href=\"#publicationYear\"",
+                "href=\"#referencePaidPrice\"", "href=\"#coverPrice\"", "href=\"#publisherId\"", "href=\"#workIds\"",
+                "id=\"title-error\"", "aria-invalid=\"true\"", "Meu rascunho", "preservada &lt;script",
+                "value=\"1700\"", "href=\"/edicoes?q=HQ\"", "Selecione uma editora da lista", "Selecione apenas obras")
+                .doesNotContain("Failed to convert", "java.util.UUID", "java.util.List");
+        assertThat(editionRepository.count()).isZero();
+        saveEditionFormPreview("errors.html", html);
+    }
+
+    private void saveEditionFormPreview(String name, String html) throws java.io.IOException {
+        var preview = java.nio.file.Path.of("target/ui-edition-form");
+        java.nio.file.Files.createDirectories(preview.resolve("css"));
+        java.nio.file.Files.writeString(preview.resolve(name), html);
+        for (String css : List.of("main.css", "dashboard.css"))
+            java.nio.file.Files.copy(java.nio.file.Path.of("src/main/resources/static/css", css),
+                    preview.resolve("css").resolve(css), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+    }
+
+    @Test
     void rendersGoogleBooksSuggestionsAndSafeSourceWithoutSaving() throws Exception {
         var owner = userAccountRepository.save(UserAccount.create("google-isbn@example.com", "hash", UserRole.USER));
         var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
