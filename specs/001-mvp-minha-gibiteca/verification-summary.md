@@ -25,3 +25,11 @@ Prévia do HTML renderizado conferida no navegador em desktop padrão (1280 pixe
 ## Limites e pendências
 
 Não calcula valor de revenda, preço de capa ou gastos digitais; não infere valores faltantes. Cadastrar apenas edição não adiciona exemplar físico. Demais indicadores de T016 (séries, distribuições, recentes e duplicados) continuam pendentes, assim como T017–T020. Sem aferição de desempenho em massa nem auditoria WCAG completa nesta etapa. Reiniciar no IntelliJ para carregar a mudança.
+
+## Reforço — atualização após cadastro/edição (2026-10-09)
+
+Inspeção confirma consulta a cada acesso à inicial, sem cache de totais, e transação de exemplar concluída antes do redirect. Nenhuma mudança no código produtivo necessária. Spec, plano, análise e subtarefa explicitaram atualização automática na próxima leitura e limite de abas já abertas.
+
+Novo teste refreshesSummaryAfterEverySuccessfulCopyFormSubmission executa os POST reais dos controllers, com CSRF, em PostgreSQL isolado: primeiro cadastro → 1 exemplar/R$ 10,50; segundo → 2/R$ 21,00; edição → 2/R$ 36,25; tentativa de preço negativo → resumo inalterado; preço retirado → 2 exemplares, 1 sem preço, R$ 10,50. GET / e /dashboard renderizam valores atuais sem intervenção de recálculo. PRG à edição preservado. Sem push/polling: uma inicial já aberta precisa ser recarregada.
+
+`./mvnw clean verify -q`: código 0, JAR gerado; **76 testes, zero falhas/erros/ignorados** (33 integrados e 43 unitários). `git diff --check` sem erros. Arquivos alterados nesta rodada: spec.md, plan.md, analysis.md, tasks.md, verification-summary.md e MinhaGibitecaApplicationTest.java. Sem mudança visual, migrations, reinício da aplicação ou modificação de data/; conferência de navegador anterior não repetida por não haver alteração de interface.

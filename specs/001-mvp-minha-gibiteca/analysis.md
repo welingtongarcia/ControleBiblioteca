@@ -48,3 +48,6 @@ Marca volta sempre ao início; volta contextual é um controle distinto. Origem 
 # Análise T024 — resumo da coleção (2026-10-09)
 
 Constituição preservada: DTO, proprietário da sessão, agregação no banco, sem entidades na apresentação nem schema novo. Clarificação adotada: valor é gasto registrado nos exemplares físicos, não avaliação de mercado; referências bibliográficas e digitais não são aquisições e não entram na soma. Ausência de preço fica explícita, zero permanece conhecido. Consulta sem joins evita duplicação e tem quantidade fixa; agregação BigDecimal suporta total acima do limite individual. Testar isolamento, vazio, desconhecidos, gratuitos e atualização. T016 permanece aberta para demais indicadores; performance em massa e auditoria WCAG completa seguem pendentes.
+# Reforço T024 — atualização após formulários (2026-10-09)
+
+Inspeção confirma DashboardService sem cache e consulta SQL a cada GET; CopyService grava/flush em transação concluída antes do redirect. Não é necessário armazenar/recalcular totais na escrita, o que criaria risco de divergência. Verificação adicional cobre os controllers, não só chamadas diretas ao serviço. Limite explícito: abas já abertas não recebem push; novo acesso/recarregamento mostra dados atuais. Sem mudança de comportamento, schema ou dados privados.

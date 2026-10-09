@@ -68,6 +68,8 @@ Templates em `src/main/resources/templates`, com fragments de layout, cabeçalho
 
 ## Estratégia de teste
 
+Reforço T024 (2026-10-09): teste PostgreSQL/MockMvc exercita POST real com CSRF para cadastro e edição, seguido por GET da inicial; cobre preço alterado, preço removido e tentativa inválida. Agregação já é por leitura, sem cache/contador persistido para invalidar; não alterar PRG de retorno à edição nem introduzir polling.
+
 | Camada | Evidência |
 | --- | --- |
 | Domínio/aplicação | JUnit 5 e Mockito: proprietário, validações, duplicados, checklist e CSV. |

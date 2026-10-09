@@ -181,6 +181,45 @@ class MinhaGibitecaApplicationTest {
     }
 
     @Test
+    void refreshesSummaryAfterEverySuccessfulCopyFormSubmission() throws Exception {
+        var owner = userAccountRepository.save(UserAccount.create("summary-forms@example.com", "hash", UserRole.USER));
+        var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
+        var edition = editionRepository.save(Edition.create(owner.getId(), null, null, "Resumo automático", null, null, null, null, null, null));
+        for (int i = 1; i <= 2; i++) {
+            mockMvc.perform(post("/edicoes/{id}/exemplares", edition.getId()).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                            .param("condition", "GOOD").param("acquisitionPrice", "10,50"))
+                    .andExpect(redirectedUrl("/edicoes/" + edition.getId()));
+            var summary = (br.com.minhagibiteca.dashboard.application.CollectionSummary) mockMvc.perform(get("/dashboard").with(auth))
+                    .andExpect(status().isOk()).andReturn().getModelAndView().getModel().get("summary");
+            assertThat(summary.copies()).isEqualTo(i);
+            assertThat(summary.pricedCopies()).isEqualTo(i);
+            assertThat(summary.ownedEditions()).isEqualTo(1);
+            assertThat(summary.totalPaid()).isEqualByComparingTo(new java.math.BigDecimal("10.50").multiply(java.math.BigDecimal.valueOf(i)));
+        }
+        var id = copyService.list(edition.getId(), owner.getId(), 0).getContent().getFirst().id();
+        mockMvc.perform(post("/exemplares/{id}/editar", id).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                        .param("condition", "GOOD").param("acquisitionPrice", "25,75"))
+                .andExpect(redirectedUrl("/edicoes/" + edition.getId()));
+        var updated = (br.com.minhagibiteca.dashboard.application.CollectionSummary) mockMvc.perform(get("/").with(auth))
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("36,25")))
+                .andReturn().getModelAndView().getModel().get("summary");
+        assertThat(updated.copies()).isEqualTo(2); assertThat(updated.totalPaid()).isEqualByComparingTo("36.25");
+        mockMvc.perform(post("/exemplares/{id}/editar", id).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                        .param("condition", "GOOD").param("acquisitionPrice", "-1,00"))
+                .andExpect(status().isOk()).andExpect(view().name("exemplares/form"));
+        var unchanged = (br.com.minhagibiteca.dashboard.application.CollectionSummary) mockMvc.perform(get("/dashboard").with(auth))
+                .andExpect(status().isOk()).andReturn().getModelAndView().getModel().get("summary");
+        assertThat(unchanged).isEqualTo(updated);
+        mockMvc.perform(post("/exemplares/{id}/editar", id).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                        .param("condition", "GOOD").param("acquisitionPrice", ""))
+                .andExpect(redirectedUrl("/edicoes/" + edition.getId()));
+        var removedPrice = (br.com.minhagibiteca.dashboard.application.CollectionSummary) mockMvc.perform(get("/dashboard").with(auth))
+                .andExpect(status().isOk()).andReturn().getModelAndView().getModel().get("summary");
+        assertThat(removedPrice.copies()).isEqualTo(2); assertThat(removedPrice.pricedCopies()).isEqualTo(1);
+        assertThat(removedPrice.unpricedCopies()).isEqualTo(1); assertThat(removedPrice.totalPaid()).isEqualByComparingTo("10.50");
+    }
+
+    @Test
     void rendersImprovedHomeWithSearchModuleLinksAndSecureLogout() throws Exception {
         var owner = userAccountRepository.save(UserAccount.create("home-preview@example.com", "hash", UserRole.USER));
         var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
