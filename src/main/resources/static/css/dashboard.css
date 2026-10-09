@@ -6,6 +6,15 @@
 .brand-mark { align-items: center; background: #edc06a; border-radius: 12px 3px; color: #252015; display: flex; font-size: 20px; font-weight: 900; height: 48px; justify-content: center; letter-spacing: -2px; width: 48px; flex-shrink: 0; }
 .brand-caption { color: #aeb7bd; display: block; font-size: 10px; font-weight: 400; letter-spacing: 0; margin-top: 8px; }
 .dashboard-navigation { display: grid; gap: 6px; margin-top: 40px; }
+.nav-group { min-width: 0; }
+.nav-group-links { display: grid; gap: 6px; padding: 4px 0 10px; }
+.nav-group-toggle { align-items: center; border: 1px solid transparent; border-radius: 8px; color: #c2c9cd; cursor: pointer; display: flex; font-size: 11px; font-weight: 700; gap: 8px; justify-content: space-between; letter-spacing: .7px; list-style: none; min-height: 44px; padding: 10px 12px; }
+.nav-group-toggle::-webkit-details-marker { display: none; }
+.nav-group-toggle::after { content: ''; border-bottom: 2px solid #edc06a; border-right: 2px solid #edc06a; flex-shrink: 0; height: 8px; margin-right: 4px; transform: rotate(-45deg); width: 8px; }
+.nav-group[open] > .nav-group-toggle::after { transform: rotate(45deg); }
+.nav-group-toggle:hover { background: #242a2e; color: #fff; }
+.nav-group-toggle:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+@media (max-width: 800px) { .dashboard-sidebar .dashboard-navigation { display: grid; gap: 8px; }.nav-group { width: 100%; }.nav-group-toggle { border-color: #414954; }.nav-group-links { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 8px; } }
 .nav-group-label { color: #aeb7bd; font-size: 10px; font-weight: 700; letter-spacing: 1.6px; margin: 20px 12px 9px; text-transform: uppercase; }
 .dashboard-navigation a { align-items: center; border: 1px solid transparent; border-radius: 8px; color: #c2c9cd; display: flex; font-size: 13px; gap: 12px; min-height: 46px; padding: 11px 12px; }
 .dashboard-navigation a > span { font-size: 21px; text-align: center; width: 22px; }

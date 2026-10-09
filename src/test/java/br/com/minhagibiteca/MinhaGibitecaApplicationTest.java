@@ -463,7 +463,7 @@ class MinhaGibitecaApplicationTest {
                 .doesNotContain("Sua coleção começa com a primeira edição", "collection-hero");
         for (String id : List.of("summary-editions", "summary-physical", "summary-digital", "summary-copies", "summary-owned-editions", "summary-total", "summary-copy-total"))
             assertThat(overviewHtml).contains("id=\"" + id + "\"");
-        assertThat(overviewHtml.indexOf("pode estar incompleto")).isLessThan(overviewHtml.indexOf("<details"));
+        assertThat(overviewHtml.indexOf("pode estar incompleto")).isLessThan(overviewHtml.indexOf("id=\"home-calculation\""));
         assertThat(summary.editions()).isEqualTo(3); assertThat(summary.copies()).isEqualTo(4);
         assertThat(summary.registeredPaid()).isEqualByComparingTo("1499.00");
         assertThat(summary.physicalEditions()).isEqualTo(1); assertThat(summary.digitalEditions()).isEqualTo(1);
@@ -600,7 +600,7 @@ class MinhaGibitecaApplicationTest {
                 "/series", "/series/nova", "/series/" + series.getId() + "/editar", "/series/" + series.getId() + "/checklist", "/series/" + series.getId() + "/faltantes",
                 "/checklist/itens/" + item + "/editar", "/checklist/itens/" + item + "/excluir", "/editoras", "/editoras/nova", "/editoras/" + publisher.getId() + "/editar",
                 "/obras", "/obras/nova", "/obras/" + work.getId() + "/editar", "/criadores", "/criadores/novo", "/criadores/" + creator.getId() + "/editar",
-                "/localizacoes", "/localizacoes/nova", "/localizacoes/" + location + "/editar", "/localizacoes/" + location + "/excluir");
+                "/localizacoes", "/localizacoes/nova", "/localizacoes/" + location + "/editar", "/localizacoes/" + location + "/excluir", "/financeiro", "/personagens");
         var preview = java.nio.file.Path.of("target/ui-navigation");
         java.nio.file.Files.createDirectories(preview.resolve("css"));
         for (String css : List.of("main.css", "dashboard.css")) java.nio.file.Files.copy(java.nio.file.Path.of("src/main/resources/static/css", css), preview.resolve("css").resolve(css), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
@@ -608,6 +608,13 @@ class MinhaGibitecaApplicationTest {
             String html = mockMvc.perform(get(path).with(auth)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
             assertThat(html).contains("Navegação principal", "Pular para o conteúdo", "action=\"/logout\" method=\"post\"", "name=\"_csrf\"");
             assertThat(html.split("class=\"nav-current\"", -1)).hasSize(2);
+            var collectionGroup = java.util.regex.Pattern.compile("<details[^>]*id=\"nav-collection\"[^>]*>").matcher(html);
+            var catalogGroup = java.util.regex.Pattern.compile("<details[^>]*id=\"nav-catalog\"[^>]*>").matcher(html);
+            assertThat(collectionGroup.find()).isTrue(); assertThat(catalogGroup.find()).isTrue();
+            boolean inCatalog = List.of("/editoras", "/obras", "/criadores", "/personagens").stream().anyMatch(path::startsWith);
+            assertThat(collectionGroup.group().contains("open=\"open\"")).isEqualTo(!inCatalog);
+            assertThat(catalogGroup.group().contains("open=\"open\"")).isEqualTo(inCatalog);
+            assertThat(html).contains("<summary class=\"nav-group-toggle\">Sua coleção</summary>", "<summary class=\"nav-group-toggle\">Dados do catálogo</summary>");
             for (String module : List.of("dashboard", "edicoes", "series", "editoras", "obras", "criadores", "localizacoes")) assertThat(html).contains("href=\"/" + module + "\"");
             if (!path.equals("/dashboard")) assertThat(html).contains("Você está aqui", "navigation-back");
             var directory = preview.resolve(path.substring(1)); java.nio.file.Files.createDirectories(directory);
