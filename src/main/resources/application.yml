@@ -19,6 +19,9 @@ spring:
     enabled: true
   thymeleaf:
     encoding: UTF-8
+  web:
+    locale: pt_BR
+    locale-resolver: fixed
 
 server:
   forward-headers-strategy: framework
