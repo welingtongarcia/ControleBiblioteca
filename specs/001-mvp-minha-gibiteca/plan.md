@@ -8,6 +8,10 @@ Fluxo padrão: controller MVC → form DTO validado → serviço de aplicação 
 
 ## Modelo e persistência
 
+### T024 — resumo financeiro e quantitativo (2026-10-09)
+
+DashboardController resolve CurrentAuthenticatedUser e usa DashboardService read-only → DashboardQueries JDBC → DTO CollectionSummary. Uma consulta com subconsultas agregadas independentes por owner_user_id evita multiplicação: count de edições e count/count distinct edition_id/count acquisition_price/sum acquisition_price de physical_copies. Índices existentes iniciados por dono atendem o acesso, sem migration. BigDecimal e long; soma nula permanece desconhecida quando há exemplares sem qualquer preço; vazio tem zero. Formatação NumberFormat pt-BR no DTO sem instância mutável compartilhada. Cartões semânticos na inicial, antes do destaque, com explicação de cobertura e links aos cadastros. Testes unitários e PostgreSQL/MockMvc verificam isolamento, atualização e limites; prévia responsiva com dados de teste. É subconjunto de T016, não encerra a tarefa ampla.
+
 ### T015 — checklist explícito (2026-10-09)
 
 Módulo collection com entidade ChecklistItem, serviço e DTOs, repositório JPA para escrita e consultas JDBC paginadas para leitura. V12 cria series_checklist_items e FK composta série/proprietário, número editorial/normalizado (40), rótulo (180), owned boolean, notas (2000), auditoria; unicidade dono/série/número normalizado e índices dono/série/data/id e dono/série/owned/data/id. Normalização Locale.ROOT com trim, sem conversão numérica. Mutações e remoção de série usam lock do dono; série referenciada bloqueada com mensagem. GET/POST checklist cria um item por vez; GET/POST /checklist/itens/{id}/editar e /excluir; GET faltantes filtra owned=false, sem consultas a exemplares nem sincronização automática. Form DTO/Bean Validation/PRG/CSRF e confirmação. Views recebem somente DTOs; série autorizada expõe id/nome. Testes JUnit/Mockito e MockMvc/PostgreSQL cobrem AC-006 e integridade.

@@ -32,6 +32,8 @@ Cada tarefa só começa após suas dependências e os requisitos associados esta
 
 ## Fase 5 — Consulta
 
+- [x] T024 Resumo na inicial: exemplares físicos, edições cadastradas/com exemplares, total pago conhecido e cobertura de preços; decimal e isolamento testados. **Dep.:** T014/T022. **Aceite:** AC-007/T024; 75 testes e prévia desktop/celular em verification-summary.md. (FR-050; subconjunto de T016)
+
 - [x] T023 Padronizar menu, trilhas, retornos e cancelamento nas telas privadas; preservar contexto permitido e impedir redirecionamento externo. **Dep.:** T022/módulos entregues. **Aceite:** AC-013, segurança e layout verificados; 71 testes e conferência visual registrados em verification-navigation.md. (FR-052, NFR-001/004)
 
 - [x] T022 Melhorar visual/navegação da página inicial, com pesquisa, atalhos e logout seguro, sem métricas fictícias. **Dep.:** módulos já entregues. **Aceite:** HTML/rotas/CSRF e prévia visual verificados. (FR-051, AC-012, NFR-001/004; evidências em verification-home.md)

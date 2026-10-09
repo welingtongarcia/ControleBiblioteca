@@ -137,6 +137,50 @@ class MinhaGibitecaApplicationTest {
     }
 
     @Test
+    void summarizesCollectionWithoutDuplicatingPricesAndRefreshesAfterChanges() throws Exception {
+        var owner = userAccountRepository.save(UserAccount.create("summary@example.com", "hash", UserRole.USER));
+        var other = userAccountRepository.save(UserAccount.create("other-summary@example.com", "hash", UserRole.USER));
+        var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
+        var empty = (br.com.minhagibiteca.dashboard.application.CollectionSummary) mockMvc.perform(get("/dashboard").with(auth))
+                .andExpect(status().isOk()).andReturn().getModelAndView().getModel().get("summary");
+        assertThat(empty.copies()).isZero(); assertThat(empty.editions()).isZero();
+        assertThat(empty.totalPaidLabel()).contains("0,00");
+        var edition = Edition.create(owner.getId(), null, null, "Coleção resumo", "1", null, null, null, null, null);
+        edition.updatePricingAndMedia(br.com.minhagibiteca.catalog.domain.MediaType.PHYSICAL, new java.math.BigDecimal("100.00"), new java.math.BigDecimal("999.00"));
+        editionRepository.save(edition);
+        var digital = Edition.create(owner.getId(), null, null, "Digital resumo", "2", null, null, null, null, null);
+        digital.updatePricingAndMedia(br.com.minhagibiteca.catalog.domain.MediaType.DIGITAL, null, new java.math.BigDecimal("500.00"));
+        editionRepository.save(digital);
+        var foreign = editionRepository.save(Edition.create(other.getId(), null, null, "Privado", null, null, null, null, null, null));
+        copyService.create(foreign.getId(), other.getId(), new CopyService.Command(null, CopyCondition.GOOD, null, null, null, new java.math.BigDecimal("1000.00"), null));
+        var unknown = copyService.create(edition.getId(), owner.getId(), new CopyService.Command(null, CopyCondition.GOOD, null, null, null, null, null));
+        var allUnknown = (br.com.minhagibiteca.dashboard.application.CollectionSummary) mockMvc.perform(get("/").with(auth))
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("Não informado")))
+                .andReturn().getModelAndView().getModel().get("summary");
+        assertThat(allUnknown.totalPaid()).isNull(); assertThat(allUnknown.unpricedCopies()).isEqualTo(1);
+        var paid = copyService.create(edition.getId(), owner.getId(), new CopyService.Command(null, CopyCondition.GOOD, null, null, null, new java.math.BigDecimal("10.10"), null));
+        copyService.create(edition.getId(), owner.getId(), new CopyService.Command(null, CopyCondition.GOOD, null, null, null, new java.math.BigDecimal("20.20"), null));
+        copyService.create(edition.getId(), owner.getId(), new CopyService.Command(null, CopyCondition.GOOD, null, null, null, java.math.BigDecimal.ZERO, null));
+        var result = mockMvc.perform(get("/dashboard").with(auth)).andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("30,30")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("pode estar incompleto"))).andReturn();
+        var summary = (br.com.minhagibiteca.dashboard.application.CollectionSummary) result.getModelAndView().getModel().get("summary");
+        assertThat(summary.editions()).isEqualTo(2); assertThat(summary.copies()).isEqualTo(4);
+        assertThat(summary.ownedEditions()).isEqualTo(1); assertThat(summary.pricedCopies()).isEqualTo(3);
+        assertThat(summary.totalPaid()).isEqualByComparingTo("30.30");
+        var preview = java.nio.file.Path.of("target/ui-summary"); java.nio.file.Files.createDirectories(preview.resolve("css"));
+        java.nio.file.Files.writeString(preview.resolve("index.html"), result.getResponse().getContentAsString());
+        for (String css : List.of("main.css", "dashboard.css")) java.nio.file.Files.copy(java.nio.file.Path.of("src/main/resources/static/css", css), preview.resolve("css").resolve(css), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        copyService.update(paid, owner.getId(), new CopyService.Command(null, CopyCondition.GOOD, null, null, null, new java.math.BigDecimal("15.15"), null));
+        copyService.delete(unknown, owner.getId());
+        var refreshed = (br.com.minhagibiteca.dashboard.application.CollectionSummary) mockMvc.perform(get("/dashboard").with(auth))
+                .andExpect(status().isOk()).andReturn().getModelAndView().getModel().get("summary");
+        assertThat(refreshed.copies()).isEqualTo(3); assertThat(refreshed.unpricedCopies()).isZero();
+        assertThat(refreshed.totalPaid()).isEqualByComparingTo("35.35");
+        mockMvc.perform(get("/dashboard")).andExpect(status().is3xxRedirection());
+    }
+
+    @Test
     void rendersImprovedHomeWithSearchModuleLinksAndSecureLogout() throws Exception {
         var owner = userAccountRepository.save(UserAccount.create("home-preview@example.com", "hash", UserRole.USER));
         var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
