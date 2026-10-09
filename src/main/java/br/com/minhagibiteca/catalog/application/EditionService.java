@@ -4,5 +4,6 @@ import br.com.minhagibiteca.catalog.domain.Edition; import br.com.minhagibiteca.
  @Transactional(readOnly=true) public Page<Edition> list(UUID owner,String q,Pageable p){return repo.findByOwnerUserIdAndNormalizedTitleContaining(owner,q==null?"":q.trim().toLowerCase(),p);} @Transactional(readOnly=true) public Edition findOwned(UUID id,UUID owner){return repo.findByIdAndOwnerUserId(id,owner).orElseThrow(ResourceNotFoundException::new);}
  @Transactional public Edition create(UUID owner,Command c){validate(owner,c);return repo.save(Edition.create(owner,c.publisherId(),c.seriesId(),c.title(),c.editorialNumber(),c.variant(),c.isbn(),c.publicationYear(),c.format(),c.notes()));}
  @Transactional public void update(UUID id,UUID owner,Command c){validate(owner,c); Edition e=findOwned(id,owner);e.update(c.publisherId(),c.seriesId(),c.title(),c.editorialNumber(),c.variant(),c.isbn(),c.publicationYear(),c.format(),c.notes());}
+ @Transactional public void delete(UUID id,UUID owner){repo.delete(findOwned(id,owner));}
  private void validate(UUID o,Command c){if(c.publisherId()!=null)publishers.findOwned(c.publisherId(),o);if(c.seriesId()!=null)series.findOwned(c.seriesId(),o);} public record Command(UUID publisherId,UUID seriesId,String title,String editorialNumber,String variant,String isbn,Integer publicationYear,String format,String notes){}
 }
