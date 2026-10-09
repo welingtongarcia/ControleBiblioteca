@@ -32,6 +32,8 @@ Cada tarefa só começa após suas dependências e os requisitos associados esta
 
 ## Fase 5 — Consulta
 
+- [x] T022 Melhorar visual/navegação da página inicial, com pesquisa, atalhos e logout seguro, sem métricas fictícias. **Dep.:** módulos já entregues. **Aceite:** HTML/rotas/CSRF e prévia visual verificados. (FR-051, AC-012, NFR-001/004; evidências em verification-home.md)
+
 - [x] T015 Implementar CRUD de checklist explícito, estado manual e faltantes paginados; proteger referências de séries e isolamento por dono. **Dep.:** T009/T014. **Aceite:** nenhuma lacuna é inferida, AC-006/duplicados/limites/CSRF/paginação/referências validados. (FR-040/041/033, AC-006; evidências em verification-checklist.md)
 - [ ] T016 Implementar consultas e tela de dashboard. **Dep.:** T012/T014. **Aceite:** totais e agregações conferem com banco. (FR-050, AC-007)
 

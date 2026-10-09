@@ -1,15 +1,61 @@
 <!DOCTYPE html>
 <html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/head :: head('Painel')}">
-    <title>Painel | Minha Gibiteca</title>
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Início | Minha Gibiteca</title>
+    <link rel="stylesheet" th:href="@{/css/main.css}"><link rel="stylesheet" th:href="@{/css/dashboard.css}">
 </head>
-<body>
-<main class="content" aria-labelledby="page-title">
-    <p class="eyebrow">Minha Gibiteca</p>
-    <h1 id="page-title">Visão geral</h1>
-    <p><a class="button-link" th:href="@{/localizacoes}">Localizações da coleção</a></p>
-    <p>Organize o seu catálogo cadastrando editoras, séries e edições.</p>
-    <div class="form-actions"><a class="button-link" th:href="@{/editoras}">Editoras</a><a class="button-link" th:href="@{/series}">Séries</a><a class="button-link" th:href="@{/obras}">Obras</a><a class="button-link" th:href="@{/criadores}">Criadores</a><a class="button-link" th:href="@{/edicoes}">Edições</a></div>
-</main>
+<body class="dashboard-page">
+<a class="skip-link" href="#main-content">Pular para o conteúdo</a>
+<div class="dashboard-layout">
+    <aside class="dashboard-sidebar" aria-label="Menu principal">
+        <a class="dashboard-brand" th:href="@{/dashboard}" aria-label="Minha Gibiteca — início"><span class="brand-mark" aria-hidden="true">MG</span><span>Minha<br> Gibiteca<span class="brand-caption">Seu universo em quadrinhos</span></span></a>
+        <nav class="dashboard-navigation" aria-label="Navegação principal">
+            <p class="nav-group-label">Sua coleção</p>
+            <a class="nav-current" th:href="@{/dashboard}" aria-current="page"><span aria-hidden="true">⌂</span>Início</a>
+            <a th:href="@{/edicoes}"><span aria-hidden="true">▤</span>Catálogo de edições</a>
+            <a th:href="@{/series}"><span aria-hidden="true">✓</span>Séries e checklist</a>
+            <a th:href="@{/localizacoes}"><span aria-hidden="true">▦</span>Localizações</a>
+            <p class="nav-group-label">Dados do catálogo</p>
+            <a th:href="@{/editoras}"><span aria-hidden="true">◇</span>Editoras</a>
+            <a th:href="@{/obras}"><span aria-hidden="true">▧</span>Obras</a>
+            <a th:href="@{/criadores}"><span aria-hidden="true">✎</span>Criadores</a>
+        </nav>
+        <div class="sidebar-note"><strong>Cada quadrinho tem uma história.</strong><p>A sua coleção também.</p></div>
+    </aside>
+    <main id="main-content" class="dashboard-main" aria-labelledby="page-title" tabindex="-1">
+        <header class="dashboard-topbar">
+            <div><p class="dashboard-kicker">Minha Gibiteca</p><h1 id="page-title">Seu espaço de colecionador</h1></div>
+            <form class="dashboard-search" method="get" th:action="@{/edicoes}" role="search" aria-label="Pesquisar no catálogo">
+                <label class="visually-hidden" for="dashboard-query">Buscar por título, ISBN ou número editorial</label>
+                <input id="dashboard-query" name="q" type="search" maxlength="240" placeholder="Buscar na sua coleção…"><button type="submit">Buscar</button>
+            </form>
+            <form class="dashboard-logout" th:action="@{/logout}" method="post"><button type="submit">Sair</button></form>
+        </header>
+        <section class="collection-hero" aria-labelledby="hero-title">
+            <div class="hero-copy"><p class="hero-eyebrow">Organize. Encontre. Complete.</p><h2 id="hero-title">Sua coleção,<br>no lugar certo.</h2><p>Dos clássicos aos novos favoritos, guarde os detalhes de cada edição e encontre espaço para a próxima história.</p>
+                <div class="hero-actions"><a class="hero-primary" th:href="@{/edicoes/nova}"><span aria-hidden="true">＋</span>Cadastrar edição</a><a class="hero-secondary" th:href="@{/edicoes}">Explorar catálogo <span aria-hidden="true">↗</span></a></div>
+            </div>
+            <div class="hero-art" aria-hidden="true"><div class="art-orbit"></div><div class="comic-book comic-book-back"><span>HQ</span><div></div></div><div class="comic-book comic-book-front"><span class="comic-category">MINHA COLEÇÃO</span><strong>Uma nova<br>aventura.</strong><div class="comic-burst">HQ!</div><span class="comic-bottom">CADA EDIÇÃO, UMA HISTÓRIA.</span></div><span class="art-spark">✦</span></div>
+        </section>
+        <section class="dashboard-section" aria-labelledby="collection-title">
+            <div class="dashboard-section-heading"><h2 id="collection-title">Cuide da sua coleção</h2><span>Do catálogo à estante</span></div>
+            <div class="collection-shortcuts">
+                <a class="collection-card" th:href="@{/edicoes}"><span class="shortcut-icon icon-gold" aria-hidden="true">▤</span><div><h3>Catálogo de edições</h3><p>Consulte capas, valores e exemplares físicos ou identifique suas edições digitais.</p><span class="card-action">Ver minhas edições <span aria-hidden="true">→</span></span></div></a>
+                <a class="collection-card" th:href="@{/series}"><span class="shortcut-icon icon-green" aria-hidden="true">✓</span><div><h3>Séries e checklist</h3><p>Registre o que você possui e acompanhe os quadrinhos que faltam em cada série.</p><span class="card-action">Acompanhar minhas séries <span aria-hidden="true">→</span></span></div></a>
+            </div>
+        </section>
+        <section class="dashboard-section" aria-labelledby="organize-title">
+            <div class="dashboard-section-heading"><h2 id="organize-title">Tudo conectado</h2><span>Organize os detalhes</span></div>
+            <div class="organization-shortcuts">
+                <a class="organization-card" th:href="@{/localizacoes}"><span class="small-shortcut icon-blue" aria-hidden="true">▦</span><h3>Localizações</h3><p>Do cômodo à caixa, encontre o lugar de cada exemplar.</p><span class="organization-arrow" aria-hidden="true">↗</span></a>
+                <a class="organization-card" th:href="@{/editoras}"><span class="small-shortcut icon-gold" aria-hidden="true">◇</span><h3>Editoras</h3><p>Organize os selos e as editoras do seu catálogo.</p><span class="organization-arrow" aria-hidden="true">↗</span></a>
+                <a class="organization-card" th:href="@{/obras}"><span class="small-shortcut icon-purple" aria-hidden="true">▧</span><h3>Obras</h3><p>Conecte histórias às edições da sua coleção.</p><span class="organization-arrow" aria-hidden="true">↗</span></a>
+                <a class="organization-card" th:href="@{/criadores}"><span class="small-shortcut icon-green" aria-hidden="true">✎</span><h3>Criadores</h3><p>Registre quem dá vida às suas histórias favoritas.</p><span class="organization-arrow" aria-hidden="true">↗</span></a>
+            </div>
+        </section>
+        <footer class="dashboard-footer"><span>Minha Gibiteca · Sua coleção, do seu jeito.</span><a th:href="@{/edicoes/nova}">Adicionar uma nova história <span aria-hidden="true">→</span></a></footer>
+    </main>
+</div>
 </body>
 </html>

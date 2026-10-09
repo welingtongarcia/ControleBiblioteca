@@ -137,6 +137,33 @@ class MinhaGibitecaApplicationTest {
     }
 
     @Test
+    void rendersImprovedHomeWithSearchModuleLinksAndSecureLogout() throws Exception {
+        var owner = userAccountRepository.save(UserAccount.create("home-preview@example.com", "hash", UserRole.USER));
+        var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
+        String html = null;
+        for (String path : List.of("/", "/dashboard")) {
+            html = mockMvc.perform(get(path).with(auth)).andExpect(status().isOk()).andExpect(view().name("dashboard/index"))
+                    .andExpect(content().string(org.hamcrest.Matchers.containsString("/css/dashboard.css")))
+                    .andExpect(content().string(org.hamcrest.Matchers.containsString("Pular para o conteúdo")))
+                    .andExpect(content().string(org.hamcrest.Matchers.containsString("Seu espaço de colecionador")))
+                    .andExpect(content().string(org.hamcrest.Matchers.containsString("action=\"/logout\" method=\"post\"")))
+                    .andExpect(content().string(org.hamcrest.Matchers.containsString("name=\"_csrf\"")))
+                    .andExpect(content().string(org.hamcrest.Matchers.containsString("name=\"q\"")))
+                    .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+            for (String destination : List.of("edicoes", "edicoes/nova", "series", "localizacoes", "editoras", "obras", "criadores"))
+                assertThat(html).contains("href=\"/" + destination + "\"");
+        }
+        mockMvc.perform(get("/")).andExpect(status().is3xxRedirection()).andExpect(redirectedUrlPattern("**/login"));
+        mockMvc.perform(post("/logout").with(auth)).andExpect(status().isForbidden());
+        mockMvc.perform(post("/logout").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())).andExpect(redirectedUrl("/login?logout"));
+        // Prévia local do HTML realmente renderizado; só contém conteúdo estático e sessão de teste.
+        var preview = java.nio.file.Path.of("target/ui-preview");
+        java.nio.file.Files.createDirectories(preview.resolve("css"));
+        java.nio.file.Files.writeString(preview.resolve("dashboard.html"), html, java.nio.charset.StandardCharsets.UTF_8);
+        for (String css : List.of("main.css", "dashboard.css")) java.nio.file.Files.copy(java.nio.file.Path.of("src/main/resources/static/css", css), preview.resolve("css").resolve(css), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+    }
+
+    @Test
     void rendersLoginPageWithTheProjectStylesheet() throws Exception {
         mockMvc.perform(get("/login"))
                 .andExpect(status().isOk())

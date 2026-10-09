@@ -37,3 +37,7 @@ Riscos restantes: opções de localização carregam todas as localizações pr�
 ## Análise incremental — T015 (2026-10-09)
 
 Checklist não é inventário: estado manual autoritativo, sem criar/atualizar itens por exemplares. Número editorial é texto (0, 1A, Especial), comparação normalizada sem ordenar numericamente. Ownership validado em serviço e FK composta; DTO de série evita novas entidades JPA na apresentação. Exclusão de série bloqueia checklist sem cascata. Lock comum serializa criação de item e exclusão de série; constraint única protege duplicados. Paginação e filtro SQL de faltantes evitam N+1. Evidência visual de exemplares é opcional em FR-041 e não será implementada nesta etapa. Não há bloqueio de planejamento.
+
+## Análise incremental — página inicial T022 (2026-10-09)
+
+Melhoria de interface não antecipa totais da T016 nem cria dados de demonstração. Pesquisa reutiliza o catálogo e atalhos apontam apenas para funcionalidades existentes. Logout mantém POST/CSRF. Template usa HTML semântico; CSS próprio separado evita regressões nas telas de cadastro. Ilustração de capas é decorativa, aria-hidden, sem imagens externas. Sem mudança de modelo, migration ou consulta privada nesta etapa.

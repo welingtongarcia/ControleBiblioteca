@@ -48,6 +48,8 @@ Não há API REST de negócio no MVP. O contrato OpenAPI permanece explícito e 
 
 ## Interface
 
+T022 — melhoria da página inicial (2026-10-09): template dashboard/index com menu lateral em desktop e compacto em celular, cabeçalho com pesquisa do catálogo e logout, destaque editorial com chamada para cadastrar edição e ilustração decorativa em HTML/CSS, cartões de acesso aos módulos e orientação breve para organizar coleção. CSS isolado em dashboard.css, sem bibliotecas/fontes externas/JavaScript obrigatório, sem tocar estilos das demais telas. Página continua sem consultas adicionais nem métricas fictícias; T016 entrega agregações reais posteriormente. Teste MockMvc de rotas/HTML/CSRF, build completo e inspeção visual do HTML renderizado em prévia local, documentando limites de acessibilidade.
+
 Templates em `src/main/resources/templates`, com fragments de layout, cabeçalho, navegação, feedback e formulários. CSS autoral em `static/css`; JavaScript vanilla só para pré-visualização de capa/confirmação progressiva, com comportamento básico disponível sem JavaScript. Tema escuro, biblioteca digital, cards de capas, menu lateral em desktop e navegação compacta em celular.
 
 ## Segurança e operações
