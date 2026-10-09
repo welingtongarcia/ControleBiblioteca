@@ -20,7 +20,7 @@ Cada tarefa só começa após suas dependências e os requisitos associados esta
 - [x] T008 Implementar migrations/modelo e CRUD de editoras. **Dep.:** T007. **Aceite:** validação, PRG, busca e exclusão segura testadas. (FR-010/012)
 - [x] T009 Implementar migrations/modelo e CRUD de séries. **Dep.:** T008. **Aceite:** relação opcional com editora e dados alheios isolados. (FR-011/012)
 - [x] T010 Implementar modelo de edição, obra/criador e formulário DTO. **Dep.:** T008–T009. **Aceite:** ISBN vazio e numeração textual persistem. (FR-020–022, AC-002)
-- [ ] T011 Implementar upload/serviço autorizado de capa. **Dep.:** T010. **Aceite:** imagem válida renderiza; arquivo inválido é rejeitado. (FR-023, AC-004, NFR-004)
+- [x] T011 Implementar upload/serviço autorizado de capa. **Dep.:** T010. **Aceite:** imagem válida renderiza; arquivo inválido é rejeitado. (FR-023, AC-004, NFR-004)
 - [ ] T012 Implementar catálogo paginado, busca, filtro, ordenação e detalhe. **Dep.:** T010. **Aceite:** MockMvc/integrado cobre parâmetros e volume. (FR-024/025, AC-005)
 
 ## Fase 4 — Inventário

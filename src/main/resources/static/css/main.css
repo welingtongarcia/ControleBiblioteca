@@ -53,4 +53,7 @@ select { background: #11151d; border: 1px solid #657084; border-radius: .5rem; c
 .details-list dd { margin: 0; overflow-wrap: anywhere; }
 .details-section { border-top: 1px solid #3a4251; margin-top: 1.5rem; padding-top: 1rem; }
 .details-section h2 { font-size: 1.2rem; }
+.cover-section { margin: 1.5rem 0; max-width: 24rem; }
+.cover-section h2 { font-size: 1.2rem; }
+.edition-cover { border: 1px solid #3a4251; border-radius: .5rem; display: block; margin: .75rem 0; max-height: 32rem; max-width: 100%; }
 @media (max-width: 38rem) { .page-heading, .resource-list li { align-items: start; flex-direction: column; } .year-grid { grid-template-columns: 1fr; } }

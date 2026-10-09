@@ -14,6 +14,16 @@
         <a class="button-link" th:href="@{/edicoes/{id}/editar(id=${edition.id})}">Editar edição</a>
     </div>
     <p class="alert alert-success" th:if="${successMessage}" role="status" th:text="${successMessage}"></p>
+    <p class="alert alert-error" th:if="${errorMessage}" role="alert" th:text="${errorMessage}"></p>
+    <section class="cover-section" aria-labelledby="cover-title">
+        <h2 id="cover-title">Capa</h2>
+        <img class="edition-cover" th:if="${edition.coverFileName}" th:src="@{/edicoes/{id}/capa(id=${edition.id})}" alt="Capa da edição"/>
+        <p th:unless="${edition.coverFileName}">Nenhuma capa cadastrada.</p>
+        <form class="stack" th:action="@{/edicoes/{id}/capa(id=${edition.id})}" method="post" enctype="multipart/form-data">
+            <div class="field"><label for="cover">Imagem da capa</label><input id="cover" name="cover" type="file" accept="image/png,image/jpeg" required><p class="help-text">Envie um arquivo PNG ou JPEG de até 5 MB.</p></div>
+            <button type="submit">Enviar capa</button>
+        </form>
+    </section>
     <dl class="details-list">
         <dt>Número editorial</dt><dd th:text="${edition.editorialNumber ?: 'Não informado'}"></dd>
         <dt>Variação da edição</dt><dd th:text="${edition.variant ?: 'Não informada'}"></dd>

@@ -19,6 +19,10 @@ spring:
     enabled: true
   thymeleaf:
     encoding: UTF-8
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
   web:
     locale: pt_BR
     locale-resolver: fixed
@@ -48,6 +52,7 @@ springdoc:
     enabled: false
 
 app:
+  cover-storage-path: ${COVER_STORAGE_PATH:./data/capas}
   bootstrap-admin:
     email: ${BOOTSTRAP_ADMIN_EMAIL:}
     password: ${BOOTSTRAP_ADMIN_PASSWORD:}

@@ -24,11 +24,13 @@ import br.com.minhagibiteca.catalog.infrastructure.WorkRepository;
 import br.com.minhagibiteca.catalog.infrastructure.CreatorRepository;
 import br.com.minhagibiteca.catalog.application.CreatorService;
 import br.com.minhagibiteca.catalog.application.EditionAssociationService;
+import br.com.minhagibiteca.catalog.application.EditionCoverService;
 import br.com.minhagibiteca.catalog.application.EditionService;
 import br.com.minhagibiteca.catalog.application.WorkService;
 import br.com.minhagibiteca.catalog.domain.Edition;
 import java.sql.Connection;
 import java.util.List;
+import java.util.Base64;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,6 +42,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
+import org.springframework.mock.web.MockMultipartFile;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -87,6 +90,9 @@ class MinhaGibitecaApplicationTest {
 
     @Autowired
     private EditionAssociationService editionAssociationService;
+
+    @Autowired
+    private EditionCoverService editionCoverService;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -257,5 +263,21 @@ class MinhaGibitecaApplicationTest {
         assertThat(editionAssociationService.creators(edition.getId(), owner.getId())).extracting("id").containsExactly(creator.getId());
         assertThatThrownBy(() -> editionAssociationService.replace(edition.getId(), owner.getId(), List.of(otherWork.getId()), List.of()))
                 .isInstanceOf(br.com.minhagibiteca.shared.application.ResourceNotFoundException.class);
+    }
+
+    @Test
+    void storesAValidEditionCoverAndRejectsAnInvalidImage() {
+        UserAccount owner = userAccountRepository.save(UserAccount.create(
+                "dono@example.com", passwordEncoder.encode("senha-segura-123"), UserRole.USER));
+        Edition edition = editionService.create(owner.getId(), new EditionService.Command(
+                null, null, "Capa de teste", null, null, null, null, null, null));
+        byte[] png = Base64.getDecoder().decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=");
+
+        editionCoverService.replace(edition.getId(), owner.getId(), new MockMultipartFile("cover", "capa.png", "image/png", png));
+
+        assertThat(editionCoverService.load(edition.getId(), owner.getId()).resource().exists()).isTrue();
+        assertThatThrownBy(() -> editionCoverService.replace(edition.getId(), owner.getId(),
+                new MockMultipartFile("cover", "texto.png", "image/png", "não é imagem".getBytes())))
+                .isInstanceOf(EditionCoverService.InvalidCoverException.class);
     }
 }
