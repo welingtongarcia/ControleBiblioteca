@@ -24,16 +24,19 @@ public class ComicSeriesController {
     private final ComicSeriesService seriesService;
     private final CurrentAuthenticatedUser currentUser;
     private final br.com.minhagibiteca.catalog.application.PublisherService publisherService;
+    private final br.com.minhagibiteca.collection.application.ReadingService reading;
 
     public ComicSeriesController(ComicSeriesService seriesService, CurrentAuthenticatedUser currentUser,
-                                 br.com.minhagibiteca.catalog.application.PublisherService publisherService) {
-        this.seriesService = seriesService; this.currentUser = currentUser; this.publisherService = publisherService;
+                                 br.com.minhagibiteca.catalog.application.PublisherService publisherService,
+                                 br.com.minhagibiteca.collection.application.ReadingService reading) {
+        this.seriesService = seriesService; this.currentUser = currentUser; this.publisherService = publisherService; this.reading = reading;
     }
 
     @GetMapping("/series")
     String list(@RequestParam(defaultValue = "") String q, @RequestParam(defaultValue = "0") int page, Model model) {
-        model.addAttribute("seriesPage", seriesService.list(currentUser.id(), q,
-                PageRequest.of(Math.max(0, page), 20, Sort.by("normalizedName"))));
+        var result = seriesService.list(currentUser.id(), q, PageRequest.of(Math.max(0, page), 20, Sort.by("normalizedName")));
+        model.addAttribute("seriesPage", result);
+        model.addAttribute("readingBySeries", reading.seriesPage(currentUser.id(), result.getContent().stream().map(ComicSeries::getId).toList()));
         model.addAttribute("query", q);
         return "series/list";
     }

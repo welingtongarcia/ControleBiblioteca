@@ -86,6 +86,7 @@ class MinhaGibitecaApplicationTest {
     private EditionService editionService;
 
     @Autowired private CopyService copyService;
+    @Autowired private br.com.minhagibiteca.collection.application.ReadingService readingService;
     @Autowired private PhysicalCopyRepository physicalCopyRepository;
     @Autowired private br.com.minhagibiteca.collection.application.ChecklistService checklistService;
     @Autowired private br.com.minhagibiteca.collection.infrastructure.ChecklistRepository checklistRepository;
@@ -134,6 +135,77 @@ class MinhaGibitecaApplicationTest {
         comicSeriesRepository.deleteAll();
         publisherRepository.deleteAll();
         userAccountRepository.deleteAll();
+    }
+
+    @Test
+    void tracksReadingPerEditionSeriesAndOverallWithSecureForms() throws Exception {
+        var owner = userAccountRepository.save(UserAccount.create("reading@example.com", "hash", UserRole.USER));
+        var other = userAccountRepository.save(UserAccount.create("foreign-reading@example.com", "hash", UserRole.USER));
+        var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
+        var foreignAuth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(other));
+        var series = comicSeriesRepository.save(ComicSeries.create(owner.getId(), null, "Coleção de leitura", null, null, null, null));
+        var empty = comicSeriesRepository.save(ComicSeries.create(owner.getId(), null, "Coleção vazia", null, null, null, null));
+        assertThat(readingService.overall(owner.getId()).percentageLabel()).isEqualTo("0,0%");
+        var e = editionRepository.save(Edition.create(owner.getId(), null, series.getId(), "Leitura 1", null, null, null, null, null, null));
+        for (int i = 2; i <= 3; i++) editionRepository.save(Edition.create(owner.getId(), null, series.getId(), "Leitura " + i, null, null, null, null, null, null));
+        var digital = Edition.create(owner.getId(), null, null, "Digital sem série", null, null, null, null, null, null);
+        digital.updatePricingAndMedia(br.com.minhagibiteca.catalog.domain.MediaType.DIGITAL, null, null);
+        digital = editionRepository.save(digital);
+        copyService.create(e.getId(), owner.getId(), new CopyService.Command(null, CopyCondition.GOOD, null, null, null, null, null));
+        copyService.create(e.getId(), owner.getId(), new CopyService.Command(null, CopyCondition.GOOD, null, null, null, null, null));
+        checklistService.create(series.getId(), owner.getId(), new br.com.minhagibiteca.collection.application.ChecklistService.Command("Especial", null, false, null));
+        assertThat(editionService.viewOwned(e.getId(), owner.getId()).read()).isFalse();
+        mockMvc.perform(post("/edicoes/{id}/leitura", e.getId()).with(auth).param("read", "true")).andExpect(status().isForbidden());
+        mockMvc.perform(post("/edicoes/{id}/leitura", e.getId()).with(foreignAuth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("read", "true"))
+                .andExpect(status().isNotFound());
+        mockMvc.perform(post("/edicoes/{id}/leitura", e.getId()).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isBadRequest());
+        for (int i = 0; i < 2; i++) mockMvc.perform(post("/edicoes/{id}/leitura", e.getId()).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                        .param("read", "true").param("fromCatalog", "true").param("returnTo", "/edicoes?q=Leitura&page=0"))
+                .andExpect(redirectedUrl("/edicoes?q=Leitura&page=0"));
+        assertThat(readingService.series(series.getId(), owner.getId()).label()).isEqualTo("33,3% — 1 de 3 edições lidas");
+        assertThat(readingService.series(empty.getId(), owner.getId()).percentageLabel()).isEqualTo("0,0%");
+        assertThat(readingService.overall(owner.getId()).label()).isEqualTo("25,0% — 1 de 4 edições lidas");
+        assertThatThrownBy(() -> readingService.series(series.getId(), other.getId())).isInstanceOf(br.com.minhagibiteca.shared.application.ResourceNotFoundException.class);
+        var preview = java.nio.file.Path.of("target/ui-reading"); java.nio.file.Files.createDirectories(preview.resolve("css"));
+        for (String css : List.of("main.css", "dashboard.css")) java.nio.file.Files.copy(java.nio.file.Path.of("src/main/resources/static/css", css), preview.resolve("css").resolve(css), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        for (String path : List.of("/dashboard", "/series", "/series/" + series.getId() + "/checklist", "/edicoes", "/edicoes/" + e.getId())) {
+            var result = mockMvc.perform(get(path).with(auth)).andExpect(status().isOk()).andReturn();
+            var dir = preview.resolve(path.substring(1)); java.nio.file.Files.createDirectories(dir);
+            java.nio.file.Files.writeString(dir.resolve("index.html"), result.getResponse().getContentAsString());
+        }
+        mockMvc.perform(get("/series/{id}/faltantes", series.getId()).with(auth)).andExpect(content().string(org.hamcrest.Matchers.containsString("33,3%")));
+        mockMvc.perform(post("/edicoes/{id}/editar", e.getId()).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                        .param("title", "Leitura editada").param("seriesId", empty.getId().toString()))
+                .andExpect(redirectedUrl("/edicoes/" + e.getId()));
+        assertThat(editionService.viewOwned(e.getId(), owner.getId()).read()).isTrue();
+        assertThat(readingService.series(series.getId(), owner.getId()).label()).isEqualTo("0,0% — 0 de 2 edições lidas");
+        assertThat(readingService.series(empty.getId(), owner.getId()).percentageLabel()).isEqualTo("100,0%");
+        mockMvc.perform(post("/edicoes/{id}/leitura", e.getId()).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                        .param("read", "false").param("returnTo", "https://example.com"))
+                .andExpect(redirectedUrl("/edicoes/" + e.getId()));
+        readingService.mark(digital.getId(), owner.getId(), true);
+        assertThat(readingService.overall(owner.getId()).percentageLabel()).isEqualTo("25,0%");
+        editionService.delete(digital.getId(), owner.getId());
+        assertThat(readingService.overall(owner.getId()).label()).isEqualTo("0,0% — 0 de 3 edições lidas");
+    }
+
+    @Test
+    void aggregatesReadingBeyondCatalogAndSeriesPagination() throws Exception {
+        var owner = userAccountRepository.save(UserAccount.create("reading-pages@example.com", "hash", UserRole.USER));
+        var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
+        var series = comicSeriesRepository.save(ComicSeries.create(owner.getId(), null, "A série", null, null, null, null));
+        for (int i = 0; i < 21; i++) {
+            var e = Edition.create(owner.getId(), null, series.getId(), "HQ " + i, null, null, null, null, null, null);
+            e.markRead(i < 7); editionRepository.save(e);
+            if (i < 20) comicSeriesRepository.save(ComicSeries.create(owner.getId(), null, "Z série " + i, null, null, null, null));
+        }
+        var foreign = userAccountRepository.save(UserAccount.create("reading-pages-foreign@example.com", "hash", UserRole.USER));
+        var e = Edition.create(foreign.getId(), null, null, "Privada", null, null, null, null, null, null); e.markRead(true); editionRepository.save(e);
+        assertThat(readingService.overall(owner.getId()).label()).isEqualTo("33,3% — 7 de 21 edições lidas");
+        mockMvc.perform(get("/series").with(auth)).andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("7 de 21 edições lidas")));
+        mockMvc.perform(get("/series?page=1").with(auth)).andExpect(status().isOk());
+        mockMvc.perform(get("/edicoes?page=1").with(auth)).andExpect(status().isOk());
     }
 
     @Test
@@ -610,13 +682,14 @@ class MinhaGibitecaApplicationTest {
                 .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
                 .schemas(schema).defaultSchema(schema).load().migrate();
         try (Connection connection = dataSource.getConnection(); var sql = connection.createStatement();
-                var row = sql.executeQuery("select title, editorial_number, media_type, cover_price, reference_paid_price from pricing_upgrade_test.editions")) {
+                var row = sql.executeQuery("select title, editorial_number, media_type, cover_price, reference_paid_price, is_read from pricing_upgrade_test.editions")) {
             assertThat(row.next()).isTrue();
             assertThat(row.getString("title")).isEqualTo("Anterior");
             assertThat(row.getString("editorial_number")).isEqualTo("1A");
             assertThat(row.getString("media_type")).isNull();
             assertThat(row.getBigDecimal("cover_price")).isNull();
             assertThat(row.getBigDecimal("reference_paid_price")).isNull();
+            assertThat(row.getBoolean("is_read")).isFalse();
         }
     }
 

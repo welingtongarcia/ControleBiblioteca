@@ -10,13 +10,15 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class DashboardController {
     private final DashboardService dashboard;
     private final CurrentAuthenticatedUser user;
-    public DashboardController(DashboardService dashboard, CurrentAuthenticatedUser user) {
-        this.dashboard = dashboard; this.user = user;
+    private final br.com.minhagibiteca.collection.application.ReadingService reading;
+    public DashboardController(DashboardService dashboard, CurrentAuthenticatedUser user, br.com.minhagibiteca.collection.application.ReadingService reading) {
+        this.dashboard = dashboard; this.user = user; this.reading = reading;
     }
 
     @GetMapping({"/", "/dashboard"})
     String dashboard(Model model) {
         model.addAttribute("summary", dashboard.summary(user.id()));
+        model.addAttribute("readingProgress", reading.overall(user.id()));
         return "dashboard/index";
     }
 }

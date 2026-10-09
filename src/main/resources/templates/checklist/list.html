@@ -5,6 +5,12 @@
 
 
     <h1 id="page-title" th:text="${pageTitle}"></h1><h2 th:text="${series.name}"></h2>
+    <section aria-label="Leitura da série">
+        <h3>Leitura desta série</h3>
+        <div th:replace="~{fragments/reading :: progress(${readingProgress})}"></div>
+        <p>Considera somente as edições cadastradas nesta série, não os itens do checklist.</p>
+        <a th:href="@{/edicoes(seriesId=${series.id})}">Consultar edições e marcar leituras →</a>
+    </section>
     <nav class="form-actions section-tabs" aria-label="Consulta da série"><a th:href="@{/series/{id}/checklist(id=${series.id},returnTo=${navigation.pageReturnUrl})}" th:attr="aria-current=${!missingOnly ? 'page' : null}">Checklist completo</a><a th:href="@{/series/{id}/faltantes(id=${series.id},returnTo=${navigation.pageReturnUrl})}" th:attr="aria-current=${missingOnly ? 'page' : null}">Quadrinhos faltantes</a></nav>
     <p class="alert alert-success" th:if="${successMessage}" role="status" th:text="${successMessage}"></p>
     <p class="help-text">Somente números cadastrados por você são listados. Exemplares não alteram este checklist automaticamente.</p>

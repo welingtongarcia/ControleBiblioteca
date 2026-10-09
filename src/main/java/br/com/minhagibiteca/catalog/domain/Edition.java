@@ -17,6 +17,7 @@ public class Edition {
  @Enumerated(EnumType.STRING) @Column(name="media_type",length=20) private MediaType mediaType;
  @Column(name="cover_price",precision=12,scale=2) private BigDecimal coverPrice;
  @Column(name="reference_paid_price",precision=12,scale=2) private BigDecimal referencePaidPrice;
+ @Column(name="is_read",nullable=false) private boolean read;
  @Column(name="cover_file_name",length=255) private String coverFileName; @Column(name="cover_content_type",length=100) private String coverContentType; @Column(name="cover_updated_at") private Instant coverUpdatedAt;
  @Column(name="created_at",nullable=false,updatable=false) private Instant createdAt; @Column(name="updated_at",nullable=false) private Instant updatedAt;
  protected Edition() { }
@@ -34,6 +35,8 @@ public class Edition {
      }
  }
  public MediaType getMediaType() { return mediaType; }
+ public boolean isRead() { return read; }
+ public void markRead(boolean read) { this.read = read; this.updatedAt = Instant.now(); }
  public BigDecimal getCoverPrice() { return coverPrice; }
  public BigDecimal getReferencePaidPrice() { return referencePaidPrice; }
  private static String blank(String s){return s==null||s.isBlank()?null:s.trim();}

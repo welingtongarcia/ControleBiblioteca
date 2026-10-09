@@ -32,6 +32,8 @@ Cada tarefa só começa após suas dependências e os requisitos associados esta
 
 ## Fase 5 — Consulta
 
+- [x] T026 Marcar/desmarcar edição lida, progresso por série e geral, migration conservadora e testes de percentuais/isolamento/PRG. **Dep.:** T025/T015. **Aceite:** AC-014, FR-042–044; 83 testes e QA visual em verification-reading.md.
+
 - [x] T025 Corrigir total principal para valores pagos das edições, contar físicas/digitais e manter inventário/aquisições separados. **Dep.:** T024. **Aceite:** AC-007/T025; sem duplicação, isolamento e atualização verificados; 77 testes e prévia visual em verification-summary-correction.md. (FR-050)
 
 - [x] T024 Resumo na inicial: exemplares físicos, edições cadastradas/com exemplares, total pago conhecido e cobertura de preços; decimal e isolamento testados. **Dep.:** T014/T022. **Aceite:** AC-007/T024; 75 testes e prévia desktop/celular em verification-summary.md. (FR-050; subconjunto de T016)

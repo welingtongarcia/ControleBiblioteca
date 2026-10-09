@@ -16,8 +16,9 @@ public class ChecklistController {
     private final ChecklistService checklist;
     private final ComicSeriesService series;
     private final CurrentAuthenticatedUser user;
-    public ChecklistController(ChecklistService checklist, ComicSeriesService series, CurrentAuthenticatedUser user) {
-        this.checklist = checklist; this.series = series; this.user = user;
+    private final br.com.minhagibiteca.collection.application.ReadingService reading;
+    public ChecklistController(ChecklistService checklist, ComicSeriesService series, CurrentAuthenticatedUser user, br.com.minhagibiteca.collection.application.ReadingService reading) {
+        this.checklist = checklist; this.series = series; this.user = user; this.reading = reading;
     }
     @InitBinder("checklistForm") void bind(WebDataBinder binder) { binder.setAllowedFields("editorialNumber", "label", "owned", "notes"); }
     @GetMapping("/series/{id}/checklist") String list(@PathVariable UUID id, @RequestParam(defaultValue = "0") int page, Model model) {
@@ -55,6 +56,7 @@ public class ChecklistController {
     }
     private String list(Model model, UUID id, boolean missing, int page) {
         model.addAttribute("series", series.viewOwned(id, user.id())); model.addAttribute("items", checklist.list(id, user.id(), missing, page));
+        model.addAttribute("readingProgress", reading.series(id, user.id()));
         model.addAttribute("missingOnly", missing); model.addAttribute("pageTitle", missing ? "Quadrinhos faltantes" : "Checklist da série");
         model.addAttribute("listPath", "/series/" + id + (missing ? "/faltantes" : "/checklist"));
         model.addAttribute("formAction", "/series/" + id + "/checklist"); return "checklist/list";

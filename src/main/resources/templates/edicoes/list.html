@@ -72,6 +72,7 @@
                 <div>
                     <img class="catalog-cover" th:if="${edition.coverFileName}" th:src="@{/edicoes/{id}/capa(id=${edition.id})}" alt="" loading="lazy" width="64" height="90">
                     <a th:href="@{/edicoes/{id}(id=${edition.id},returnTo=${navigation.pageReturnUrl})}" th:text="${edition.title}">Título da edição</a>
+                    <div th:replace="~{fragments/reading :: status(${edition}, true)}"></div>
                     <span th:if="${edition.editorialNumber}" th:text="|Nº ${edition.editorialNumber}|"></span>
                     <span th:text="${edition.mediaLabel}"></span>
                 </div>

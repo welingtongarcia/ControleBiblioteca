@@ -17,6 +17,11 @@
     </div>
     <p class="alert alert-success" th:if="${successMessage}" role="status" th:text="${successMessage}"></p>
     <p class="alert alert-error" th:if="${errorMessage}" role="alert" th:text="${errorMessage}"></p>
+    <section class="details-section" aria-labelledby="edition-reading-title">
+        <h2 id="edition-reading-title">Minha leitura</h2>
+        <div th:replace="~{fragments/reading :: status(${edition}, false)}"></div>
+        <p>Marcação por edição, independente das suas cópias físicas ou digitais.</p>
+    </section>
     <section class="cover-section" aria-labelledby="cover-title">
         <h2 id="cover-title">Capa</h2>
         <img class="edition-cover" th:if="${edition.coverFileName}" th:src="@{/edicoes/{id}/capa(id=${edition.id})}" alt="Capa da edição"/>

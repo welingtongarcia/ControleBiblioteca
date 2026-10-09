@@ -55,6 +55,10 @@ Uma edição contém zero ou mais obras e uma obra pode estar em várias ediçõ
 
 ### Checklist, visão geral e dados portáveis
 
+- **FR-042:** usuário pode marcar/desmarcar uma edição própria como Já li, por POST/CSRF e PRG no catálogo/detalhe. Estado pertence à edição privada, não a cada cópia; físico/digital/desconhecido independentes. Novas e antigas começam Não li; não inferir leitura de posse/checklist. Salvar metadados não apaga leitura. Repetir estado é idempotente, referência alheia retorna 404.
+- **FR-043:** mostrar progresso por série na lista de séries e checklist/faltantes: edições lidas / edições cadastradas nessa série pelo dono × 100. Mostrar também contagem e link ao catálogo filtrado. Coleção específica significa série editorial nesta fase; checklist sem edição não participa. Série vazia exibe 0% com Sem edições cadastradas, não 100%. Uma edição conta uma vez mesmo com várias cópias.
+- **FR-044:** inicial mostra percentual geral e contagem de leitura de todas as edições próprias cadastradas, incluindo digitais e sem série. Cálculo decimal arredondado HALF_UP em uma casa, pt-BR; zero registros → 0,0%. Explicar denominador; marcação/desmarcação, inclusão/exclusão e mudança de série são refletidas na próxima leitura, sem cache. Sem push a abas abertas.
+
 - **FR-040:** usuário pode manter checklist manual por série, registrando somente números editoriais explicitamente conhecidos/configurados e se os possui. Não há inferência a partir de sequência numérica.
   - T015: cadastrar, editar e excluir itens próprios. Número editorial textual obrigatório, até 40 caracteres, preservando zeros, letras e especiais; único por série/proprietário após trim e comparação sem distinguir maiúsculas. Rótulo opcional até 180 e observações até 2000. Padrão Não possuo; estado Possuo é alterado manualmente no formulário, independente de exemplares ou suporte. Edição não troca a série do item. Remoção exige confirmação e CSRF. Lista de vinte por página em ordem de cadastro com UUID de desempate; página negativa vira zero. Série com checklist não é apagável até remoção explícita dos itens.
 - **FR-041:** tela de faltantes apresenta somente entradas de checklist explicitamente marcadas como não possuídas; edições com exemplares podem ser usadas como evidência visual, mas não criam itens automaticamente.
@@ -67,6 +71,8 @@ Uma edição contém zero ou mais obras e uma obra pode estar em várias ediçõ
 - **FR-060:** usuário autenticado exporta CSV UTF-8 de suas edições e exemplares, com cabeçalho estável, sem dados de outros usuários. O download é auditado em log sem conteúdo sensível.
 
 ## Cenários de aceitação prioritários
+
+- **AC-014 / FR-042–044:** cadastro antigo/novo não lido; marcar/desmarcar em catálogo/detalhe preserva retorno permitido e estado após edição bibliográfica; CSRF/owner no servidor. Uma série com 1 lida em 3 mostra 33,3%, outra vazia 0,0%; geral inclui edição sem série e digital, ignora cópias e checklist. Usuários isolados, percentual usa total além da página, alterações atualizam denominador e numerador; unitários de percentuais/serviço, integrado PostgreSQL/MockMvc e migration upgrade preservam cadastros.
 
 - **AC-001 / FR-003:** dado o usuário A autenticado, quando acessa a URL de uma edição de B, então recebe 404 e nenhum título/metadado de B é renderizado.
 - **AC-002 / FR-020/021:** dado um formulário de edição com ISBN vazio e número `1A`, quando válido, então a edição é persistida e mostrada após redirect.

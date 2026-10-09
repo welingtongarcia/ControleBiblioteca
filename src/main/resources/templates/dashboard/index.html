@@ -34,6 +34,12 @@
             <p class="summary-explanation" th:if="${summary.copies > 0}">Aquisições dos exemplares físicos (separadas): <strong id="summary-copy-total" th:text="${summary.totalPaidLabel()}">Não informado</strong>. Valores informados em <strong th:text="${summary.pricedCopies}">0</strong> de <strong th:text="${summary.copies}">0</strong> exemplares; <strong th:text="${summary.unpricedCopies()}">0</strong> sem preço.</p>
             <p class="summary-explanation">O total principal soma o campo “Valor pago” dos cadastros físicos, digitais e de suporte não informado. Não soma preços de capa nem valores dos exemplares, e não é avaliação de mercado. Exemplares físicos representam cópias cadastradas separadamente. <a th:href="@{/edicoes}">Consultar edições e exemplares →</a></p>
         </section>
+        <section class="dashboard-section" aria-labelledby="reading-title">
+            <div class="dashboard-section-heading"><h2 id="reading-title">Leitura da coleção geral</h2><a th:href="@{/series}">Ver leitura por série →</a></div>
+            <div th:replace="~{fragments/reading :: progress(${readingProgress})}"></div>
+            <p class="summary-explanation">Percentual das suas edições cadastradas marcadas como “Já li”, incluindo digitais e sem série. Cada edição conta uma vez, independentemente dos exemplares.</p>
+            <a th:href="@{/edicoes}">Marcar minhas leituras no catálogo →</a>
+        </section>
         <section class="collection-hero" aria-labelledby="hero-title">
             <div class="hero-copy"><p class="hero-eyebrow">Organize. Encontre. Complete.</p><h2 id="hero-title">Sua coleção,<br>no lugar certo.</h2><p>Dos clássicos aos novos favoritos, guarde os detalhes de cada edição e encontre espaço para a próxima história.</p>
                 <div class="hero-actions"><a class="hero-primary" th:href="@{/edicoes/nova}"><span aria-hidden="true">＋</span>Cadastrar edição</a><a class="hero-secondary" th:href="@{/edicoes}">Explorar catálogo <span aria-hidden="true">↗</span></a></div>

@@ -8,6 +8,10 @@ Fluxo padrão: controller MVC → form DTO validado → serviço de aplicação 
 
 ## Modelo e persistência
 
+### T026 — leitura e progresso (2026-10-09)
+
+V13 adiciona editions.is_read boolean not null default false; sem inferência histórica. Edition/EditionView expõem estado, serviço de leitura no módulo collection grava edição por id+dono em transação usando lock do proprietário como edições/exemplares. POST /edicoes/{id}/leitura exige boolean explícito e mantém PRG/detail ou catálogo conforme allowlist NavigationContext. Não usar toggle na gravação (idempotência). ReadingProgress DTO calcula percentuais BigDecimal/HALF_UP; ReadingQueries JDBC agrega geral, série autorizada e lote das até vinte séries da página por ids/dono via NamedParameterJdbcTemplate, sem N+1. Controllers recebem DTOs. Inicial recebe progresso geral separado das finanças; séries/checklist mostram contagem/percentual e link ao catálogo filtrado; catálogo/detalhe têm estado e ação inversa. Metadados não alteram leitura. Sem filtros novos, SPA ou polling. Testar unidade, migration antiga→nova, ownership/CSRF/PRG/página, físico/digital/cópias/checklist e porcentagem além da paginação; QA visual desktop/celular.
+
 ### T025 — correção do resumo segundo o cadastro (2026-10-09)
 
 Estender DTO/consulta agregada de dashboard com count filtrado por media_type, count reference_paid_price e sum reference_paid_price. Agregados independentes de edições e exemplares evitam multiplicação; SQL parametrizado por dono, uma consulta, índices existentes. Indicador principal usa referências das edições; aquisição física fica em linha secundária e seu valor não é somado às referências. Cartões físicos/digitais explicitam que são edições, não unidades. Suporte desconhecido e cobertura informados. Sem migration/backfill/cache. Testes de PostgreSQL/MockMvc com cadastro sem exemplares, físico/digital/desconhecido, zero/nulo, edição por POST e isolamento; unitários de formatação e prévia desktop/celular.

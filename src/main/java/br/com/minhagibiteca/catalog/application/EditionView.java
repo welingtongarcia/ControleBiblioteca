@@ -10,12 +10,12 @@ import java.util.UUID;
 public record EditionView(UUID id, UUID publisherId, UUID seriesId, String title,
         String editorialNumber, String variant, String isbn, Integer publicationYear,
         String format, String notes, String coverFileName, MediaType mediaType,
-        BigDecimal coverPrice, BigDecimal referencePaidPrice) {
+        BigDecimal coverPrice, BigDecimal referencePaidPrice, boolean read) {
     static EditionView from(Edition edition) {
         return new EditionView(edition.getId(), edition.getPublisherId(), edition.getSeriesId(),
                 edition.getTitle(), edition.getEditorialNumber(), edition.getVariant(), edition.getIsbn(),
                 edition.getPublicationYear(), edition.getFormat(), edition.getNotes(), edition.getCoverFileName(),
-                edition.getMediaType(), edition.getCoverPrice(), edition.getReferencePaidPrice());
+                edition.getMediaType(), edition.getCoverPrice(), edition.getReferencePaidPrice(), edition.isRead());
     }
     public String getMediaLabel() { return mediaType == null ? "Não informado" : mediaType.getLabel(); }
     public String getFormattedCoverPrice() { return money(coverPrice); }
