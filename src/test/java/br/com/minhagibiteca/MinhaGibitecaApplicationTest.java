@@ -369,4 +369,110 @@ class MinhaGibitecaApplicationTest {
             assertThat(row.getBigDecimal("reference_paid_price")).isNull();
         }
     }
+
+    @Test
+    void filtersCatalogInDatabaseAndPreservesParametersAcrossPages() throws Exception {
+        UserAccount owner = userAccountRepository.save(UserAccount.create(
+                "catalogo@example.com", passwordEncoder.encode("senha-segura-123"), UserRole.USER));
+        UserAccount other = userAccountRepository.save(UserAccount.create(
+                "alheio@example.com", passwordEncoder.encode("senha-segura-123"), UserRole.USER));
+        var publisher = publisherRepository.save(Publisher.create(owner.getId(), "Editora do catálogo", "BR", null));
+        var series = comicSeriesRepository.save(ComicSeries.create(owner.getId(), publisher.getId(), "Série do catálogo", null, null, null, null));
+        for (int i = 0; i < 25; i++) {
+            editionService.create(owner.getId(), new EditionService.Command(publisher.getId(), series.getId(),
+                    "HQ " + String.format("%02d", i), "1A", null, "978TESTE", 2026, "Encadernado", null,
+                    br.com.minhagibiteca.catalog.domain.MediaType.DIGITAL, null, null));
+        }
+        editionService.create(owner.getId(), new EditionService.Command(publisher.getId(), series.getId(),
+                "HQ físico", null, null, null, null, "Encadernado", null,
+                br.com.minhagibiteca.catalog.domain.MediaType.PHYSICAL, null, null));
+        editionService.create(other.getId(), new EditionService.Command(null, null, "HQ alheia", null, null, null, null, "Formato privado", null));
+        var filter = new br.com.minhagibiteca.catalog.application.CatalogFilter("hq", publisher.getId(), series.getId(), "encadernado",
+                br.com.minhagibiteca.catalog.domain.MediaType.DIGITAL);
+        var first = editionService.search(owner.getId(), filter, br.com.minhagibiteca.catalog.application.CatalogOrder.TITLE_DESC, 0);
+        var second = editionService.search(owner.getId(), filter, br.com.minhagibiteca.catalog.application.CatalogOrder.TITLE_DESC, 1);
+        assertThat(first.getTotalElements()).isEqualTo(25);
+        assertThat(first.getContent()).hasSize(20);
+        assertThat(first.getContent().getFirst().title()).isEqualTo("HQ 24");
+        assertThat(second.getContent()).hasSize(5);
+        assertThat(second.getContent().getFirst().title()).isEqualTo("HQ 04");
+        assertThat(editionService.search(owner.getId(), filter, br.com.minhagibiteca.catalog.application.CatalogOrder.TITLE_ASC, -1).getNumber()).isZero();
+        var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
+        mockMvc.perform(get("/edicoes").with(auth).param("q", "hq").param("publisherId", publisher.getId().toString())
+                        .param("seriesId", series.getId().toString()).param("format", "Encadernado")
+                        .param("mediaType", "DIGITAL").param("order", "TITLE_DESC"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("publisherId=" + publisher.getId())))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("seriesId=" + series.getId())))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("mediaType=DIGITAL")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("format=Encadernado")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("order=TITLE_DESC")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("page=1")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Formato privado"))));
+        mockMvc.perform(get("/edicoes").with(auth).param("order", "qualquer-coluna"))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.model().attribute("selectedOrder",
+                        br.com.minhagibiteca.catalog.application.CatalogOrder.TITLE_ASC));
+        mockMvc.perform(get("/edicoes").with(auth).param("mediaType", "INVALIDO")).andExpect(status().isBadRequest())
+                .andExpect(view().name("errors/400"));
+        mockMvc.perform(get("/edicoes").with(auth).param("publisherId", "inválido")).andExpect(status().isBadRequest());
+        mockMvc.perform(get("/edicoes").with(auth).param("page", "inválido")).andExpect(status().isBadRequest());
+        mockMvc.perform(get("/edicoes").with(SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(other)))
+                        .param("publisherId", publisher.getId().toString())).andExpect(status().isNotFound());
+        mockMvc.perform(get("/edicoes").with(SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(other)))
+                        .param("seriesId", series.getId().toString())).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void searchesLiteralWildcardsIsbnAndEditorialNumberAndRendersBibliographicDetail() throws Exception {
+        UserAccount owner = userAccountRepository.save(UserAccount.create(
+                "busca@example.com", passwordEncoder.encode("senha-segura-123"), UserRole.USER));
+        var publisher = publisherRepository.save(Publisher.create(owner.getId(), "Editora brasileira", "BR", null));
+        var series = comicSeriesRepository.save(ComicSeries.create(owner.getId(), publisher.getId(), "Série especial", null, null, null, null));
+        var edition = editionService.create(owner.getId(), new EditionService.Command(publisher.getId(), series.getId(),
+                "HQ 100%_especial", "1A", null, "978-123", null, null, null));
+        editionService.create(owner.getId(), new EditionService.Command(null, null, "HQ 100XXespecial", null, null, null, null, null, null));
+        for (String term : List.of("%_", "978-123", "1a")) {
+            var result = editionService.search(owner.getId(), new br.com.minhagibiteca.catalog.application.CatalogFilter(term, null, null, null, null),
+                    br.com.minhagibiteca.catalog.application.CatalogOrder.TITLE_ASC, 0);
+            assertThat(result.getTotalElements()).isEqualTo(1);
+            assertThat(result.getContent().getFirst().id()).isEqualTo(edition.getId());
+        }
+        var work = workService.create(owner.getId(), new WorkService.Command("História associada", null, null));
+        var creator = creatorService.create(owner.getId(), new CreatorService.Command("Criador associado", null));
+        editionAssociationService.replace(edition.getId(), owner.getId(), List.of(work.getId()), List.of(creator.getId()));
+        mockMvc.perform(get("/edicoes/{id}", edition.getId())
+                        .with(SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner))))
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("Editora brasileira")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Série especial")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("História associada")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Criador associado")));
+    }
+
+    @Test
+    void keepsDuplicateTitlesStableAcrossPagesAndOrdersByRegistrationDate() throws Exception {
+        UserAccount owner = userAccountRepository.save(UserAccount.create(
+                "ordem@example.com", passwordEncoder.encode("senha-segura-123"), UserRole.USER));
+        var ids = new java.util.ArrayList<java.util.UUID>();
+        for (int i = 0; i < 25; i++) {
+            ids.add(editionService.create(owner.getId(), new EditionService.Command(null, null,
+                    "Mesmo título", null, null, null, null, null, null)).getId());
+        }
+        var filter = new br.com.minhagibiteca.catalog.application.CatalogFilter("", null, null, null, null);
+        var first = editionService.search(owner.getId(), filter, br.com.minhagibiteca.catalog.application.CatalogOrder.TITLE_ASC, 0);
+        var second = editionService.search(owner.getId(), filter, br.com.minhagibiteca.catalog.application.CatalogOrder.TITLE_ASC, 1);
+        var actual = new java.util.ArrayList<java.util.UUID>();
+        first.forEach(e -> actual.add(e.id())); second.forEach(e -> actual.add(e.id()));
+        ids.sort(java.util.Comparator.comparing(java.util.UUID::toString));
+        assertThat(actual).containsExactlyElementsOf(ids);
+        try (Connection connection = dataSource.getConnection(); var sql = connection.prepareStatement(
+                "update editions set created_at = ? where id = ?")) {
+            sql.setObject(1, java.time.OffsetDateTime.parse("2000-01-01T00:00:00Z")); sql.setObject(2, ids.getFirst()); sql.executeUpdate();
+            sql.setObject(1, java.time.OffsetDateTime.parse("2100-01-01T00:00:00Z")); sql.setObject(2, ids.getLast()); sql.executeUpdate();
+        }
+        assertThat(editionService.search(owner.getId(), filter, br.com.minhagibiteca.catalog.application.CatalogOrder.OLDEST, 0)
+                .getContent().getFirst().id()).isEqualTo(ids.getFirst());
+        assertThat(editionService.search(owner.getId(), filter, br.com.minhagibiteca.catalog.application.CatalogOrder.NEWEST, 0)
+                .getContent().getFirst().id()).isEqualTo(ids.getLast());
+    }
 }

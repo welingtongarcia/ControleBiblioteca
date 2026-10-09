@@ -20,3 +20,5 @@ Este é o contrato de modelagem para migrations da Fase 1 em diante; os nomes f�
 Todos os timestamps usam instante UTC; valores monetários usam `numeric`, nunca `float`. Comprimentos, enums e regras exatas serão consolidados nos forms e na migration correspondente antes de implementação.
 
 Extensão FR-026 (V8): `editions.media_type` nullable PHYSICAL/DIGITAL; `cover_price` e `reference_paid_price` nullable `numeric(12,2)`, não negativos, em BRL. Null representa desconhecido e zero representa gratuito. Valor pago de referência não agrega preços de exemplares. Registros antigos preservam campos novos nulos.
+
+Catálogo T012 (V9): índices de edição por `(owner_user_id, lower(format))`, `(owner_user_id, media_type, normalized_title, id)` e `(owner_user_id, created_at, id)` atendem filtros de formato/suporte e ordenação por cadastro. Busca textual literal usa LIKE com escape e proprietário obrigatório; índices B-tree não garantem acelerar buscas com `%termo%`. Plano de execução e desempenho em 10.000 exemplares serão medidos em T018.

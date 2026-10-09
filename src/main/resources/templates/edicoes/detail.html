@@ -25,6 +25,8 @@
         </form>
     </section>
     <dl class="details-list">
+        <dt>Editora</dt><dd th:text="${publisherName}"></dd>
+        <dt>Série</dt><dd th:text="${seriesName}"></dd>
         <dt>Número editorial</dt><dd th:text="${edition.editorialNumber ?: 'Não informado'}"></dd>
         <dt>Variação da edição</dt><dd th:text="${edition.variant ?: 'Não informada'}"></dd>
         <dt>ISBN</dt><dd th:text="${edition.isbn ?: 'Não informado'}"></dd>

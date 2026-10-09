@@ -1,0 +1,8 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Pesquisa inválida')}"><title>Pesquisa inválida</title></head>
+<body><main class="content" aria-labelledby="page-title">
+    <h1 id="page-title">Não foi possível abrir esta página</h1>
+    <p>Um dos parâmetros do endereço é inválido. Volte ao catálogo e selecione os filtros novamente.</p>
+    <a class="button-link" th:href="@{/edicoes}">Voltar ao catálogo</a>
+</main></body></html>

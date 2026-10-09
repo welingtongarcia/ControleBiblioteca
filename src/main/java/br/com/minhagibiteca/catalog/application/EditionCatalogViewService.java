@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -16,11 +17,13 @@ public class EditionCatalogViewService {
     private final WorkService works;
     private final CreatorService creators;
     private final EditionAssociationService associations;
+    private final JdbcTemplate jdbc;
 
     public EditionCatalogViewService(PublisherService publishers, ComicSeriesService series,
-            WorkService works, CreatorService creators, EditionAssociationService associations) {
+            WorkService works, CreatorService creators, EditionAssociationService associations, JdbcTemplate jdbc) {
         this.publishers = publishers; this.series = series; this.works = works;
         this.creators = creators; this.associations = associations;
+        this.jdbc = jdbc;
     }
 
     public List<NamedOption> publishers(UUID owner) {
@@ -37,11 +40,29 @@ public class EditionCatalogViewService {
         return creators.options(owner).stream().map(c -> new NamedOption(c.getId(), c.getName())).toList();
     }
     public List<WorkOption> editionWorks(UUID id, UUID owner) {
-        return associations.works(id, owner).stream().map(w -> new WorkOption(w.getId(), w.getTitle())).toList();
+        return jdbc.query("""
+                select w.id, w.title from edition_works ew
+                join editions e on e.id = ew.edition_id
+                join works w on w.id = ew.work_id
+                where e.id = ? and e.owner_user_id = ? and w.owner_user_id = ?
+                order by ew.sequence nulls last, w.id
+                """, (row, index) -> new WorkOption(row.getObject("id", UUID.class), row.getString("title")), id, owner, owner);
     }
     public List<NamedOption> editionCreators(UUID id, UUID owner) {
-        return associations.creators(id, owner).stream().map(c -> new NamedOption(c.getId(), c.getName())).toList();
+        return jdbc.query("""
+                select distinct c.id, c.name from edition_creators ec
+                join editions e on e.id = ec.edition_id
+                join creators c on c.id = ec.creator_id
+                where e.id = ? and e.owner_user_id = ? and c.owner_user_id = ?
+                order by c.name, c.id
+                """, (row, index) -> new NamedOption(row.getObject("id", UUID.class), row.getString("name")), id, owner, owner);
     }
+    public List<NamedOption> seriesOptions(UUID owner) {
+        return jdbc.query("select id, name from series where owner_user_id = ? order by normalized_name, id",
+                (row, index) -> new NamedOption(row.getObject("id", UUID.class), row.getString("name")), owner);
+    }
+    public String publisherName(UUID id, UUID owner) { return id == null ? "Não informada" : publishers.findOwned(id, owner).getName(); }
+    public String seriesName(UUID id, UUID owner) { return id == null ? "Não informada" : series.findOwned(id, owner).getName(); }
     public record NamedOption(UUID id, String name) { }
     public record WorkOption(UUID id, String title) { }
 }

@@ -16,10 +16,24 @@ import br.com.minhagibiteca.auth.application.CurrentAuthenticatedUser; import br
          }
      });
  }
- @GetMapping("/edicoes") String list(@RequestParam(defaultValue="")String q,@RequestParam(defaultValue="0")int page,Model m){m.addAttribute("editions",editions.listViews(user.id(),q,PageRequest.of(Math.max(0,page),20,Sort.by("normalizedTitle"))));m.addAttribute("query",q);return "edicoes/list";}
+ @GetMapping("/edicoes")
+ String list(@RequestParam(defaultValue="") String q,@RequestParam(defaultValue="0") int page,
+         @RequestParam(required=false) UUID publisherId,@RequestParam(required=false) UUID seriesId,
+         @RequestParam(defaultValue="") String format,@RequestParam(required=false) MediaType mediaType,
+         @RequestParam(defaultValue="TITLE_ASC") String order,Model model) {
+     CatalogFilter filter = new CatalogFilter(q,publisherId,seriesId,format,mediaType);
+     CatalogOrder selectedOrder = CatalogOrder.parse(order);
+     model.addAttribute("editions",editions.search(user.id(),filter,selectedOrder,page));
+     model.addAttribute("query",filter.query()); model.addAttribute("filter",filter);
+     model.addAttribute("selectedOrder",selectedOrder); model.addAttribute("orders",CatalogOrder.values());
+     model.addAttribute("mediaTypes",MediaType.values()); model.addAttribute("formats",editions.formats(user.id()));
+     model.addAttribute("publishers",catalogViews.publishers(user.id()));
+     model.addAttribute("seriesOptions",catalogViews.seriesOptions(user.id()));
+     return "edicoes/list";
+ }
  @GetMapping("/edicoes/nova") String n(Model m){m.addAttribute("editionForm",new EditionForm());return form(m,"Nova edição","/edicoes");}
  @PostMapping("/edicoes") String c(@Valid @ModelAttribute("editionForm")EditionForm f,BindingResult r,Model m,RedirectAttributes a){if(r.hasErrors())return form(m,"Nova edição","/edicoes");UUID editionId=editions.createId(user.id(),cmd(f));associations.replace(editionId,user.id(),f.getWorkIds(),f.getCreatorIds());a.addFlashAttribute("successMessage","Edição cadastrada com sucesso.");return "redirect:/edicoes";}
- @GetMapping("/edicoes/{id}") String detail(@PathVariable UUID id,Model m){m.addAttribute("edition",editions.viewOwned(id,user.id()));m.addAttribute("works",catalogViews.editionWorks(id,user.id()));m.addAttribute("creators",catalogViews.editionCreators(id,user.id()));return "edicoes/detail";}
+ @GetMapping("/edicoes/{id}") String detail(@PathVariable UUID id,Model m){EditionView edition=editions.viewOwned(id,user.id());m.addAttribute("edition",edition);m.addAttribute("publisherName",catalogViews.publisherName(edition.publisherId(),user.id()));m.addAttribute("seriesName",catalogViews.seriesName(edition.seriesId(),user.id()));m.addAttribute("works",catalogViews.editionWorks(id,user.id()));m.addAttribute("creators",catalogViews.editionCreators(id,user.id()));return "edicoes/detail";}
  @PostMapping("/edicoes/{id}/capa") String cover(@PathVariable UUID id,@RequestParam("cover") MultipartFile file,RedirectAttributes a){try{covers.replace(id,user.id(),file);a.addFlashAttribute("successMessage","Capa atualizada com sucesso.");}catch(EditionCoverService.InvalidCoverException e){a.addFlashAttribute("errorMessage",e.getMessage());}return "redirect:/edicoes/"+id;}
  @GetMapping("/edicoes/{id}/capa") ResponseEntity<Resource> cover(@PathVariable UUID id){EditionCoverService.Cover cover=covers.load(id,user.id());return ResponseEntity.ok().contentType(org.springframework.http.MediaType.parseMediaType(cover.contentType())).cacheControl(CacheControl.noStore()).body(cover.resource());}
  @GetMapping("/edicoes/{id}/editar") String e(@PathVariable UUID id,Model m){EditionView x=editions.viewOwned(id,user.id()); EditionForm f=new EditionForm();f.setPublisherId(x.publisherId());f.setSeriesId(x.seriesId());f.setTitle(x.title());f.setEditorialNumber(x.editorialNumber());f.setVariant(x.variant());f.setIsbn(x.isbn());f.setPublicationYear(x.publicationYear());f.setFormat(x.format());f.setNotes(x.notes());f.setMediaType(x.mediaType());f.setCoverPrice(x.coverPrice());f.setReferencePaidPrice(x.referencePaidPrice());f.setWorkIds(associations.workIds(id));f.setCreatorIds(associations.creatorIds(id));m.addAttribute("editionForm",f);return form(m,"Editar edição","/edicoes/"+id+"/editar");}

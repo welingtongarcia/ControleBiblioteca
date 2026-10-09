@@ -18,6 +18,8 @@ Consultas de catálogo usam `Pageable`, projeções/fetch planejado e especifica
 
 ## Rotas MVC propostas
 
+T012 (2026-10-09): GET `/edicoes` aceita `q`, `publisherId`, `seriesId`, `format`, `mediaType`, `order`, `page`. Specification JPA compõe predicados com proprietário obrigatório; paginação e ordenação executam no PostgreSQL. Busca escapa caracteres LIKE; ordenação vem de enum allowlist e termina com id. Opções de formato usam DISTINCT por proprietário; detalhe usa joins/projeções DTO para obras/criadores, evitando consultas por associação. V9 adiciona índices dono/formato, dono/suporte/título/id e dono/data/id para os novos caminhos. Parâmetros malformados renderizam erro 400 pt-BR. Cobrir MockMvc, PostgreSQL/Testcontainers e regras de consulta; inventário/dados de exemplares continuam em T014.
+
 | Área | Rotas | Observações |
 | --- | --- | --- |
 | Autenticação | `GET/POST /login`, `POST /logout` | POST é conduzido por Spring Security; login customizado Thymeleaf. |

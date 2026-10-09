@@ -14,19 +14,60 @@
         <a class="button-link" th:href="@{/edicoes/nova}">Nova edição</a>
     </div>
     <p class="alert alert-success" th:if="${successMessage}" role="status" th:text="${successMessage}"></p>
-    <form class="search-form" method="get" th:action="@{/edicoes}">
-        <label for="q">Buscar edição</label>
-        <input id="q" name="q" th:value="${query}" type="search" maxlength="240" placeholder="Digite o título da edição">
-        <button type="submit">Buscar</button>
+    <form class="catalog-filters" method="get" th:action="@{/edicoes}" aria-label="Pesquisa e filtros do catálogo">
+        <div class="field catalog-search">
+            <label for="q">Buscar edição</label>
+            <input id="q" name="q" th:value="${query}" type="search" maxlength="240" placeholder="Título, ISBN ou número editorial">
+        </div>
+        <div class="field">
+            <label for="publisherId">Editora</label>
+            <select id="publisherId" name="publisherId">
+                <option value="">Todas as editoras</option>
+                <option th:each="publisher : ${publishers}" th:value="${publisher.id}" th:text="${publisher.name}" th:selected="${publisher.id == filter.publisherId}"></option>
+            </select>
+        </div>
+        <div class="field">
+            <label for="seriesId">Série</label>
+            <select id="seriesId" name="seriesId">
+                <option value="">Todas as séries</option>
+                <option th:each="series : ${seriesOptions}" th:value="${series.id}" th:text="${series.name}" th:selected="${series.id == filter.seriesId}"></option>
+            </select>
+        </div>
+        <div class="field">
+            <label for="format">Formato</label>
+            <select id="format" name="format">
+                <option value="">Todos os formatos</option>
+                <option th:each="item : ${formats}" th:value="${item}" th:text="${item}" th:selected="${item.equalsIgnoreCase(filter.format)}"></option>
+            </select>
+        </div>
+        <div class="field">
+            <label for="mediaType">Suporte</label>
+            <select id="mediaType" name="mediaType">
+                <option value="">Todos os suportes</option>
+                <option th:each="media : ${mediaTypes}" th:value="${media}" th:text="${media.label}" th:selected="${media == filter.mediaType}"></option>
+            </select>
+        </div>
+        <div class="field">
+            <label for="order">Ordenar por</label>
+            <select id="order" name="order">
+                <option th:each="item : ${orders}" th:value="${item}" th:text="${item.label}" th:selected="${item == selectedOrder}"></option>
+            </select>
+        </div>
+        <div class="form-actions catalog-search">
+            <button type="submit">Aplicar filtros</button>
+            <a th:href="@{/edicoes}">Limpar filtros</a>
+        </div>
     </form>
+    <p role="status" th:text="${editions.totalElements == 1 ? '1 edição encontrada' : editions.totalElements + ' edições encontradas'}"></p>
     <section th:if="${editions.empty}" class="empty-state">
         <h2>Nenhuma edição encontrada</h2>
-        <p>Cadastre uma edição para começar a organizar a sua coleção.</p>
+        <p>Revise os filtros ou cadastre uma nova edição.</p>
     </section>
     <section th:unless="${editions.empty}">
         <ul class="resource-list">
             <li th:each="edition : ${editions.content}">
                 <div>
+                    <img class="catalog-cover" th:if="${edition.coverFileName}" th:src="@{/edicoes/{id}/capa(id=${edition.id})}" alt="" loading="lazy" width="64" height="90">
                     <a th:href="@{/edicoes/{id}(id=${edition.id})}" th:text="${edition.title}">Título da edição</a>
                     <span th:if="${edition.editorialNumber}" th:text="|Nº ${edition.editorialNumber}|"></span>
                     <span th:text="${edition.mediaLabel}"></span>
@@ -41,9 +82,9 @@
             </li>
         </ul>
         <nav class="pagination" th:if="${editions.totalPages > 1}" aria-label="Paginação">
-            <a th:if="${editions.hasPrevious()}" th:href="@{/edicoes(q=${query},page=${editions.number - 1})}">Anterior</a>
+            <a th:if="${editions.hasPrevious()}" th:href="@{/edicoes(q=${query},publisherId=${filter.publisherId},seriesId=${filter.seriesId},format=${filter.format},mediaType=${filter.mediaType},order=${selectedOrder},page=${editions.number - 1})}">Anterior</a>
             <span th:text="|Página ${editions.number + 1} de ${editions.totalPages}|">Página 1 de 1</span>
-            <a th:if="${editions.hasNext()}" th:href="@{/edicoes(q=${query},page=${editions.number + 1})}">Próxima</a>
+            <a th:if="${editions.hasNext()}" th:href="@{/edicoes(q=${query},publisherId=${filter.publisherId},seriesId=${filter.seriesId},format=${filter.format},mediaType=${filter.mediaType},order=${selectedOrder},page=${editions.number + 1})}">Próxima</a>
         </nav>
     </section>
 </main>
