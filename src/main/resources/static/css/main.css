@@ -45,5 +45,7 @@ input:invalid:not(:placeholder-shown) { border-color: var(--error); }
 .link-button { background: transparent; color: var(--accent); min-height: auto; padding: 0; text-decoration: underline; }
 .field-error { color: var(--error); margin: 0; }
 textarea { background: #11151d; border: 1px solid #657084; border-radius: .5rem; color: var(--text); padding: .65rem .75rem; resize: vertical; }
+.year-grid { display: grid; gap: 1rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+select { background: #11151d; border: 1px solid #657084; border-radius: .5rem; color: var(--text); min-height: 2.75rem; padding: .65rem .75rem; }
 .form-content { max-width: 42rem; }
-@media (max-width: 38rem) { .page-heading, .resource-list li { align-items: start; flex-direction: column; } }
+@media (max-width: 38rem) { .page-heading, .resource-list li { align-items: start; flex-direction: column; } .year-grid { grid-template-columns: 1fr; } }

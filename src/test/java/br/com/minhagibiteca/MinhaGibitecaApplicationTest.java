@@ -15,7 +15,9 @@ import br.com.minhagibiteca.auth.application.BootstrapAdministratorService;
 import br.com.minhagibiteca.auth.application.UserPrincipal;
 import br.com.minhagibiteca.auth.infrastructure.UserAccountRepository;
 import br.com.minhagibiteca.catalog.domain.Publisher;
+import br.com.minhagibiteca.catalog.domain.ComicSeries;
 import br.com.minhagibiteca.catalog.infrastructure.PublisherRepository;
+import br.com.minhagibiteca.catalog.infrastructure.ComicSeriesRepository;
 import java.sql.Connection;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.Test;
@@ -53,6 +55,9 @@ class MinhaGibitecaApplicationTest {
     private PublisherRepository publisherRepository;
 
     @Autowired
+    private ComicSeriesRepository comicSeriesRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Autowired
@@ -67,6 +72,7 @@ class MinhaGibitecaApplicationTest {
 
     @BeforeEach
     void clearUsers() {
+        comicSeriesRepository.deleteAll();
         publisherRepository.deleteAll();
         userAccountRepository.deleteAll();
     }
@@ -163,5 +169,37 @@ class MinhaGibitecaApplicationTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("editoras/form"))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("Informe o nome da editora.")));
+    }
+
+    @Test
+    void managesSeriesOnlyWithPublishersFromTheSameOwner() throws Exception {
+        UserAccount owner = userAccountRepository.save(UserAccount.create(
+                "dono@example.com", passwordEncoder.encode("senha-segura-123"), UserRole.USER));
+        UserAccount otherUser = userAccountRepository.save(UserAccount.create(
+                "outro@example.com", passwordEncoder.encode("senha-segura-456"), UserRole.USER));
+        Publisher publisher = publisherRepository.save(Publisher.create(owner.getId(), "DC Comics", "US", null));
+
+        mockMvc.perform(post("/series")
+                        .with(SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner)))
+                        .with(SecurityMockMvcRequestPostProcessors.csrf())
+                        .param("name", "Batman")
+                        .param("publisherId", publisher.getId().toString())
+                        .param("startYear", "1940")
+                        .param("status", "ONGOING"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/series"));
+
+        ComicSeries series = comicSeriesRepository.findByOwnerUserIdAndNormalizedNameContaining(
+                owner.getId(), "batman", org.springframework.data.domain.Pageable.unpaged()).getContent().getFirst();
+        mockMvc.perform(get("/series/{id}/editar", series.getId())
+                        .with(SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(otherUser))))
+                .andExpect(status().isNotFound());
+
+        mockMvc.perform(post("/series")
+                        .with(SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(otherUser)))
+                        .with(SecurityMockMvcRequestPostProcessors.csrf())
+                        .param("name", "Série inválida")
+                        .param("publisherId", publisher.getId().toString()))
+                .andExpect(status().isNotFound());
     }
 }

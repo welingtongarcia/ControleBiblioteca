@@ -4,6 +4,7 @@ import br.com.minhagibiteca.catalog.domain.Publisher;
 import br.com.minhagibiteca.catalog.infrastructure.PublisherRepository;
 import br.com.minhagibiteca.shared.application.ResourceNotFoundException;
 import java.util.UUID;
+import java.util.List;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -23,6 +24,11 @@ public class PublisherService {
     public Page<Publisher> list(UUID ownerUserId, String query, Pageable pageable) {
         String normalizedQuery = query == null ? "" : query.trim().toLowerCase();
         return publisherRepository.findByOwnerUserIdAndNormalizedNameContaining(ownerUserId, normalizedQuery, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Publisher> options(UUID ownerUserId) {
+        return publisherRepository.findByOwnerUserIdOrderByNormalizedNameAsc(ownerUserId);
     }
 
     @Transactional(readOnly = true)

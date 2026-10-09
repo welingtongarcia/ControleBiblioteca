@@ -2,6 +2,7 @@ package br.com.minhagibiteca.catalog.infrastructure;
 
 import br.com.minhagibiteca.catalog.domain.Publisher;
 import java.util.Optional;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -14,4 +15,6 @@ public interface PublisherRepository extends JpaRepository<Publisher, UUID> {
     Optional<Publisher> findByIdAndOwnerUserId(UUID id, UUID ownerUserId);
 
     boolean existsByOwnerUserIdAndNormalizedName(UUID ownerUserId, String normalizedName);
+
+    List<Publisher> findByOwnerUserIdOrderByNormalizedNameAsc(UUID ownerUserId);
 }
