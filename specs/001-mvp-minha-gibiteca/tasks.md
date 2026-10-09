@@ -13,11 +13,11 @@ Cada tarefa só começa após suas dependências e os requisitos associados esta
 
 - [x] T005 Modelar usuário e bootstrap documentado; criar migration e repositório. **Dep.:** T003. **Aceite:** usuário inicial criado sem segredo no Git. (FR-004)
 - [x] T006 Configurar login/logout, sessão, CSRF e política de acesso. **Dep.:** T005. **Aceite:** testes de acesso anônimo, login e logout. (FR-001/002)
-- [ ] T007 Criar mecanismo reutilizável de resolução/autorização por dono. **Dep.:** T006. **Aceite:** teste de recurso alheio retorna 404. (FR-003, AC-001)
+- [x] T007 Criar mecanismo reutilizável de resolução/autorização por dono. **Dep.:** T006. **Aceite:** teste de recurso alheio retorna 404. (FR-003, AC-001)
 
 ## Fase 3 — Catálogo
 
-- [ ] T008 Implementar migrations/modelo e CRUD de editoras. **Dep.:** T007. **Aceite:** validação, PRG, busca e exclusão segura testadas. (FR-010/012)
+- [x] T008 Implementar migrations/modelo e CRUD de editoras. **Dep.:** T007. **Aceite:** validação, PRG, busca e exclusão segura testadas. (FR-010/012)
 - [ ] T009 Implementar migrations/modelo e CRUD de séries. **Dep.:** T008. **Aceite:** relação opcional com editora e dados alheios isolados. (FR-011/012)
 - [ ] T010 Implementar modelo de edição, obra/criador e formulário DTO. **Dep.:** T008–T009. **Aceite:** ISBN vazio e numeração textual persistem. (FR-020–022, AC-002)
 - [ ] T011 Implementar upload/serviço autorizado de capa. **Dep.:** T010. **Aceite:** imagem válida renderiza; arquivo inválido é rejeitado. (FR-023, AC-004, NFR-004)

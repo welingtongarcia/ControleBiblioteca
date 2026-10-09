@@ -12,7 +12,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import br.com.minhagibiteca.auth.domain.UserAccount;
 import br.com.minhagibiteca.auth.domain.UserRole;
 import br.com.minhagibiteca.auth.application.BootstrapAdministratorService;
+import br.com.minhagibiteca.auth.application.UserPrincipal;
 import br.com.minhagibiteca.auth.infrastructure.UserAccountRepository;
+import br.com.minhagibiteca.catalog.domain.Publisher;
+import br.com.minhagibiteca.catalog.infrastructure.PublisherRepository;
 import java.sql.Connection;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.Test;
@@ -47,6 +50,9 @@ class MinhaGibitecaApplicationTest {
     private UserAccountRepository userAccountRepository;
 
     @Autowired
+    private PublisherRepository publisherRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Autowired
@@ -61,6 +67,7 @@ class MinhaGibitecaApplicationTest {
 
     @BeforeEach
     void clearUsers() {
+        publisherRepository.deleteAll();
         userAccountRepository.deleteAll();
     }
 
@@ -121,5 +128,40 @@ class MinhaGibitecaApplicationTest {
         assertThat(userAccountRepository.findByEmail("admin@example.com")).isPresent();
         assertThat(bootstrapAdministratorService.createFirstAdministrator(
                 "outro@example.com", "senha-segura-456")).isFalse();
+    }
+
+    @Test
+    void managesPublishersWithValidationAndOwnerIsolation() throws Exception {
+        UserAccount owner = userAccountRepository.save(UserAccount.create(
+                "dono@example.com", passwordEncoder.encode("senha-segura-123"), UserRole.USER));
+        UserAccount otherUser = userAccountRepository.save(UserAccount.create(
+                "outro@example.com", passwordEncoder.encode("senha-segura-456"), UserRole.USER));
+
+        mockMvc.perform(post("/editoras")
+                        .with(SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner)))
+                        .with(SecurityMockMvcRequestPostProcessors.csrf())
+                        .param("name", "Marvel Comics")
+                        .param("countryCode", "us")
+                        .param("notes", "Editora americana"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/editoras"));
+
+        Publisher publisher = publisherRepository.findByOwnerUserIdAndNormalizedNameContaining(
+                        owner.getId(), "marvel", org.springframework.data.domain.Pageable.unpaged())
+                .getContent().getFirst();
+        assertThat(publisher.getCountryCode()).isEqualTo("US");
+
+        mockMvc.perform(get("/editoras/{id}/editar", publisher.getId())
+                        .with(SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(otherUser))))
+                .andExpect(status().isNotFound())
+                .andExpect(view().name("errors/404"));
+
+        mockMvc.perform(post("/editoras")
+                        .with(SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner)))
+                        .with(SecurityMockMvcRequestPostProcessors.csrf())
+                        .param("name", ""))
+                .andExpect(status().isOk())
+                .andExpect(view().name("editoras/form"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Informe o nome da editora.")));
     }
 }
