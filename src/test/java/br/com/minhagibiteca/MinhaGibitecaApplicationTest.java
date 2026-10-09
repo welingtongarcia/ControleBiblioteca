@@ -95,6 +95,12 @@ class MinhaGibitecaApplicationTest {
     private EditionCoverService editionCoverService;
 
     @Autowired
+    private br.com.minhagibiteca.inventory.application.LocationService locationService;
+
+    @Autowired
+    private br.com.minhagibiteca.inventory.infrastructure.StorageLocationRepository storageLocationRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Autowired
@@ -113,6 +119,7 @@ class MinhaGibitecaApplicationTest {
         editionRepository.deleteAll();
         workRepository.deleteAll();
         creatorRepository.deleteAll();
+        storageLocationRepository.deleteAllInBatch();
         comicSeriesRepository.deleteAll();
         publisherRepository.deleteAll();
         userAccountRepository.deleteAll();
@@ -474,5 +481,94 @@ class MinhaGibitecaApplicationTest {
                 .getContent().getFirst().id()).isEqualTo(ids.getFirst());
         assertThat(editionService.search(owner.getId(), filter, br.com.minhagibiteca.catalog.application.CatalogOrder.NEWEST, 0)
                 .getContent().getFirst().id()).isEqualTo(ids.getLast());
+    }
+
+    @Test
+    void managesLocationHierarchyAndRejectsCyclesDuplicatesAndInvalidLevels() {
+        UserAccount owner = userAccountRepository.save(UserAccount.create(
+                "local@example.com", passwordEncoder.encode("senha-segura-123"), UserRole.USER));
+        var room = locationService.create(owner.getId(), new br.com.minhagibiteca.inventory.application.LocationService.Command(
+                null, br.com.minhagibiteca.inventory.domain.LocationLevel.ROOM, "Escritório", null));
+        var unit = locationService.create(owner.getId(), new br.com.minhagibiteca.inventory.application.LocationService.Command(
+                room, br.com.minhagibiteca.inventory.domain.LocationLevel.SHELF_UNIT, "Estante A", null));
+        var shelf = locationService.create(owner.getId(), new br.com.minhagibiteca.inventory.application.LocationService.Command(
+                unit, br.com.minhagibiteca.inventory.domain.LocationLevel.SHELF, "Prateleira 1", null));
+        var box = locationService.create(owner.getId(), new br.com.minhagibiteca.inventory.application.LocationService.Command(
+                shelf, br.com.minhagibiteca.inventory.domain.LocationLevel.BOX, "Caixa 1", null));
+        assertThat(locationService.find(box, owner.getId()).path()).isEqualTo("Escritório › Estante A › Prateleira 1 › Caixa 1");
+        locationService.update(box, owner.getId(), new br.com.minhagibiteca.inventory.application.LocationService.Command(
+                room, br.com.minhagibiteca.inventory.domain.LocationLevel.BOX, "Caixa movida", "HQs"));
+        assertThat(locationService.find(box, owner.getId()).path()).isEqualTo("Escritório › Caixa movida");
+        assertThatThrownBy(() -> locationService.update(room, owner.getId(), new br.com.minhagibiteca.inventory.application.LocationService.Command(
+                room, br.com.minhagibiteca.inventory.domain.LocationLevel.ROOM, "Escritório", null))).hasMessageContaining("si mesma");
+        assertThatThrownBy(() -> locationService.update(room, owner.getId(), new br.com.minhagibiteca.inventory.application.LocationService.Command(
+                shelf, br.com.minhagibiteca.inventory.domain.LocationLevel.ROOM, "Escritório", null))).hasMessageContaining("si mesma");
+        assertThatThrownBy(() -> locationService.create(owner.getId(), new br.com.minhagibiteca.inventory.application.LocationService.Command(
+                box, br.com.minhagibiteca.inventory.domain.LocationLevel.SHELF, "Inválida", null))).hasMessageContaining("vir antes");
+        assertThatThrownBy(() -> locationService.update(unit, owner.getId(), new br.com.minhagibiteca.inventory.application.LocationService.Command(
+                room, br.com.minhagibiteca.inventory.domain.LocationLevel.BOX, "Estante A", null))).hasMessageContaining("internas existentes");
+        assertThatThrownBy(() -> locationService.create(owner.getId(), new br.com.minhagibiteca.inventory.application.LocationService.Command(
+                null, br.com.minhagibiteca.inventory.domain.LocationLevel.ROOM, " ESCRITÓRIO ", null))).hasMessageContaining("Já existe");
+        assertThatThrownBy(() -> locationService.delete(room, owner.getId())).hasMessageContaining("contém outras");
+        locationService.delete(box, owner.getId());
+        assertThat(storageLocationRepository.findById(box)).isEmpty();
+    }
+
+    @Test
+    void rendersLocationFormsChecksOwnerAndRequiresConfirmedCsrfDeletion() throws Exception {
+        UserAccount owner = userAccountRepository.save(UserAccount.create(
+                "mvc-local@example.com", passwordEncoder.encode("senha-segura-123"), UserRole.USER));
+        UserAccount other = userAccountRepository.save(UserAccount.create(
+                "outro-local@example.com", passwordEncoder.encode("senha-segura-123"), UserRole.USER));
+        var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
+        var root = locationService.create(owner.getId(), new br.com.minhagibiteca.inventory.application.LocationService.Command(
+                null, br.com.minhagibiteca.inventory.domain.LocationLevel.ROOM, "Sala privada", null));
+        mockMvc.perform(get("/localizacoes/nova").with(auth)).andExpect(status().isOk()).andExpect(view().name("localizacoes/form"));
+        mockMvc.perform(post("/localizacoes").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                        .param("name", "Caixa azul").param("level", "BOX").param("parentId", root.toString()))
+                .andExpect(redirectedUrl("/localizacoes"));
+        var box = locationService.list(owner.getId(), "azul", 0).getContent().getFirst();
+        mockMvc.perform(get("/localizacoes").with(auth)).andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Sala privada › Caixa azul")));
+        mockMvc.perform(get("/localizacoes/{id}/editar", box.id()).with(auth)).andExpect(status().isOk());
+        mockMvc.perform(post("/localizacoes").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("name", ""))
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("Informe o nome da localização.")));
+        mockMvc.perform(post("/localizacoes").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                        .param("name", "Caixa azul").param("level", "BOX").param("parentId", root.toString()))
+                .andExpect(status().isOk()).andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.model()
+                        .attributeHasFieldErrors("locationForm", "name"));
+        var foreign = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(other));
+        mockMvc.perform(get("/localizacoes/{id}/editar", box.id()).with(foreign)).andExpect(status().isNotFound());
+        mockMvc.perform(post("/localizacoes").with(foreign).with(SecurityMockMvcRequestPostProcessors.csrf())
+                        .param("name", "Intrusão").param("level", "BOX").param("parentId", root.toString())).andExpect(status().isNotFound());
+        mockMvc.perform(get("/localizacoes/nova").with(foreign)).andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Sala privada"))));
+        mockMvc.perform(post("/localizacoes/{id}/excluir", box.id()).with(auth).param("confirmed", "true")).andExpect(status().isForbidden());
+        mockMvc.perform(post("/localizacoes/{id}/excluir", box.id()).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(redirectedUrl("/localizacoes/" + box.id() + "/excluir"));
+        mockMvc.perform(get("/localizacoes/{id}/excluir", box.id()).with(auth)).andExpect(status().isOk()).andExpect(view().name("localizacoes/delete"));
+        mockMvc.perform(post("/localizacoes/{id}/excluir", root).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("confirmed", "true"))
+                .andExpect(redirectedUrl("/localizacoes")).andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash().attributeExists("errorMessage"));
+        mockMvc.perform(post("/localizacoes/{id}/excluir", box.id()).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("confirmed", "true"))
+                .andExpect(redirectedUrl("/localizacoes"));
+        assertThat(storageLocationRepository.findById(box.id())).isEmpty();
+    }
+
+    @Test
+    void paginatesLocationsAndEnforcesParentOwnershipInDatabase() throws Exception {
+        UserAccount owner = userAccountRepository.save(UserAccount.create("pag-local@example.com", "hash", UserRole.USER));
+        UserAccount other = userAccountRepository.save(UserAccount.create("foreign-local@example.com", "hash", UserRole.USER));
+        for (int i = 0; i < 25; i++) locationService.create(owner.getId(), new br.com.minhagibiteca.inventory.application.LocationService.Command(
+                null, br.com.minhagibiteca.inventory.domain.LocationLevel.BOX, "Caixa " + i, null));
+        assertThat(locationService.list(owner.getId(), "caixa", 0).getContent()).hasSize(20);
+        assertThat(locationService.list(owner.getId(), "caixa", 1).getContent()).hasSize(5);
+        assertThat(locationService.list(other.getId(), "caixa", 0).getTotalElements()).isZero();
+        var parent = locationService.create(owner.getId(), new br.com.minhagibiteca.inventory.application.LocationService.Command(
+                null, br.com.minhagibiteca.inventory.domain.LocationLevel.ROOM, "Pai privado", null));
+        try (Connection connection = dataSource.getConnection(); var sql = connection.prepareStatement(
+                "insert into storage_locations (id, owner_user_id, parent_id, level, name, normalized_name) values (?, ?, ?, 'BOX', 'Alheia', 'alheia')")) {
+            sql.setObject(1, java.util.UUID.randomUUID()); sql.setObject(2, other.getId()); sql.setObject(3, parent);
+            assertThatThrownBy(sql::executeUpdate).isInstanceOf(java.sql.SQLException.class);
+        }
     }
 }

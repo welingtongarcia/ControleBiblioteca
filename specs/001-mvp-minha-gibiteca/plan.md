@@ -8,6 +8,10 @@ Fluxo padrão: controller MVC → form DTO validado → serviço de aplicação 
 
 ## Modelo e persistência
 
+### T013 — localizações (2026-10-09)
+
+Módulo inventory com domain/application/infrastructure/presentation; nenhum objeto JPA nas telas. V10 cria storage_locations, FK composta de pai/proprietário, check de tipo e auto-referência, nomes únicos entre irmãos com NULLS NOT DISTINCT (PostgreSQL 16). Enum estabelece quatro posições; cada ligação deve aumentar a posição, permitindo omitir níveis. Serviço verifica pai/ancestrais e filhos antes de editar, usa lock transacional da linha do proprietário para serializar alterações da árvore e evita ciclos concorrentes. Listagem e seleção de pai usam consulta com três joins ancestrais e DTO de caminho, sem consultas por nó. Seleção de pai apresenta caminhos e tipos do proprietário e exclui o próprio registro; servidor valida compatibilidade e ciclos ao salvar, sem JavaScript obrigatório. Exclusão usa tela de confirmação e POST/CSRF; bloqueio por filhos no serviço e FK. T014 acrescentará bloqueio por exemplares. Testes de domínio/serviço e MockMvc/PostgreSQL cobrem regras e isolamento.
+
 ### Extensão solicitada em 2026-10-09 — valores e suporte (FR-026)
 
 Migration V8 adiciona `media_type` opcional (PHYSICAL/DIGITAL), `cover_price` e `reference_paid_price` como `numeric(12,2)` com constraints não negativas. Valores monetários em Java usam BigDecimal, validados antes da persistência. Formulário aceita vírgula ou ponto decimal e apresenta erros em pt-BR. DTO de leitura de edição impede exposição de entidades JPA pelo controller alterado. Sem backfill de preços ou suporte; novo formulário oferece físico como padrão. O valor pago é uma referência privada da edição até a implementação de aquisições por exemplar; não agrega nem substitui esse modelo. Verificar migration limpa e compatibilidade de dados anteriores, cadastro, edição, validação, formatação e isolamento com MockMvc/PostgreSQL.

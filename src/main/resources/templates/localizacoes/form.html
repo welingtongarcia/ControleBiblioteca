@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(${pageTitle})}"><title>Localização</title></head>
+<body><main class="content form-content" aria-labelledby="page-title">
+    <a class="brand" th:href="@{/localizacoes}">Minha Gibiteca</a>
+    <h1 id="page-title" th:text="${pageTitle}">Nova localização</h1>
+    <form class="stack" th:action="${formAction}" th:object="${locationForm}" method="post">
+        <div class="field">
+            <label for="name">Nome <span aria-hidden="true">*</span></label>
+            <input id="name" th:field="*{name}" maxlength="120" required aria-describedby="name-error">
+            <p id="name-error" class="field-error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></p>
+        </div>
+        <div class="field">
+            <label for="level">Tipo <span aria-hidden="true">*</span></label>
+            <select id="level" th:field="*{level}" required aria-describedby="level-error">
+                <option th:each="level : ${levels}" th:value="${level}" th:text="${level.label}"></option>
+            </select>
+            <p id="level-error" class="field-error" th:if="${#fields.hasErrors('level')}" th:errors="*{level}"></p>
+        </div>
+        <div class="field">
+            <label for="parentId">Dentro de</label>
+            <select id="parentId" th:field="*{parentId}" aria-describedby="parent-help parent-error">
+                <option value="">Sem localização superior</option>
+                <option th:each="parent : ${parents}" th:value="${parent.id}" th:text="|${parent.path} (${parent.level.label})|"></option>
+            </select>
+            <p id="parent-help" class="help-text">Ordem: cômodo → estante → prateleira → caixa. Você pode pular níveis ou cadastrar uma localização independente.</p>
+            <p id="parent-error" class="field-error" th:if="${#fields.hasErrors('parentId')}" th:errors="*{parentId}"></p>
+        </div>
+        <div class="field">
+            <label for="notes">Observações</label>
+            <textarea id="notes" th:field="*{notes}" maxlength="2000" rows="4" aria-describedby="notes-error"></textarea>
+            <p id="notes-error" class="field-error" th:if="${#fields.hasErrors('notes')}" th:errors="*{notes}"></p>
+        </div>
+        <div class="form-actions"><button type="submit">Salvar localização</button><a th:href="@{/localizacoes}">Cancelar</a></div>
+    </form>
+</main></body></html>

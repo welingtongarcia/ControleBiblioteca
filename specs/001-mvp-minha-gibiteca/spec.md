@@ -47,6 +47,7 @@ Uma edição contém zero ou mais obras e uma obra pode estar em várias ediçõ
 - **FR-030:** usuário pode adicionar, editar e retirar um exemplar de edição autorizada, informando conservação, observações, localização e origem/aquisição quando conhecidos.
 - **FR-031:** múltiplos exemplares da mesma edição são permitidos. O sistema sinaliza possível duplicação, mas não bloqueia o cadastro.
 - **FR-032:** usuário pode gerenciar localizações hierárquicas de até quatro níveis: cômodo, estante, prateleira e caixa; níveis intermediários são opcionais. Um exemplar referencia uma localização final válida do mesmo proprietário.
+  - T013: cadastrar, buscar, listar em páginas de vinte, editar e excluir localizações próprias. Nome obrigatório (até 120 caracteres), tipo obrigatório, pai opcional, observações até 2000 caracteres. Ordem permitida: cômodo → estante → prateleira → caixa, com saltos e raízes de qualquer tipo. Pai deve ter tipo anterior ao filho; mudanças também respeitam tipos dos filhos existentes. Impedir auto-referência e ciclos; nomes sem distinção de maiúsculas são únicos entre irmãos (inclusive raízes). Listagem mostra caminho completo e tipo em pt-BR. Exclusão exige confirmação e bloqueia localizações com filhos, orientando realocação explícita. Proteção de referências de exemplares será integrada em T014, quando essa tabela existir.
 - **FR-033:** tentativa de retirar entidade com referências deve ser bloqueada ou exigir desassociação/realocação explícita, conforme regra de cada fluxo.
 
 ### Checklist, visão geral e dados portáveis
@@ -68,6 +69,7 @@ Uma edição contém zero ou mais obras e uma obra pode estar em várias ediçõ
 - **AC-007 / FR-050:** dadas alterações no banco, quando o dashboard é aberto, então seus totais correspondem às consultas persistidas, sem valores de demonstração.
 - **AC-008 / FR-060:** dado o usuário A, quando exporta CSV, então o arquivo contém somente registros A, possui cabeçalho e codificação UTF-8.
 - **AC-009 / FR-026:** cadastrar edição digital com preço de capa `29,90` e valor pago `19,50`, verificar persistência decimal e detalhe em reais; editar para físico com valores vazios preserva ausência, zero continua zero. Entradas inválidas retornam erros nos campos e dados alheios continuam retornando 404. Migration preserva dados anteriores com suporte e preços não informados.
+- **AC-010 / FR-032/033:** criar cômodo → estante → prateleira → caixa e caminho com salto de nível; editar nome/pai preservando hierarquia. Rejeitar pai alheio, auto-referência, ciclos, ordem invertida, mudança de tipo incompatível com filhos e nome repetido entre irmãos. Bloquear exclusão com filhos; excluir folha somente após confirmação. Listagem paginada e opções de pai não expõem localizações alheias.
 
 ## Requisitos não funcionais
 

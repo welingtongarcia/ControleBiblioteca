@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Localizações')}"><title>Localizações</title></head>
+<body><main class="content" aria-labelledby="page-title">
+    <a class="brand" th:href="@{/dashboard}">Minha Gibiteca</a>
+    <div class="page-heading"><div><p class="eyebrow">Organização da coleção</p><h1 id="page-title">Localizações</h1></div><a class="button-link" th:href="@{/localizacoes/nova}">Nova localização</a></div>
+    <p class="alert alert-success" th:if="${successMessage}" role="status" th:text="${successMessage}"></p>
+    <p class="alert alert-error" th:if="${errorMessage}" role="alert" th:text="${errorMessage}"></p>
+    <form class="search-form" method="get" th:action="@{/localizacoes}"><label for="q">Buscar pelo nome da localização</label><input id="q" name="q" th:value="${query}" type="search" maxlength="120"><button type="submit">Buscar</button><a th:href="@{/localizacoes}">Limpar busca</a></form>
+    <section class="empty-state" th:if="${locations.empty}"><h2>Nenhuma localização encontrada</h2><p>Cadastre cômodos, estantes, prateleiras ou caixas para organizar seus quadrinhos.</p></section>
+    <section th:unless="${locations.empty}" aria-label="Localizações cadastradas">
+        <ul class="resource-list"><li th:each="location : ${locations.content}">
+            <div><strong th:text="${location.path}">Caminho</strong><span th:text="${location.level.label}">Tipo</span></div>
+            <div class="resource-actions"><a th:href="@{/localizacoes/{id}/editar(id=${location.id})}">Editar</a><a th:href="@{/localizacoes/{id}/excluir(id=${location.id})}">Excluir</a></div>
+        </li></ul>
+        <nav class="pagination" th:if="${locations.totalPages > 1}" aria-label="Paginação">
+            <a th:if="${locations.hasPrevious()}" th:href="@{/localizacoes(q=${query},page=${locations.number - 1})}">Anterior</a>
+            <span th:text="|Página ${locations.number + 1} de ${locations.totalPages}|"></span>
+            <a th:if="${locations.hasNext()}" th:href="@{/localizacoes(q=${query},page=${locations.number + 1})}">Próxima</a>
+        </nav>
+    </section>
+</main></body></html>

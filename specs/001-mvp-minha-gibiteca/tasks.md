@@ -27,7 +27,7 @@ Cada tarefa só começa após suas dependências e os requisitos associados esta
 
 ## Fase 4 — Inventário
 
-- [ ] T013 Implementar localizações hierárquicas e regras de exclusão. **Dep.:** T007. **Aceite:** níveis válidos e bloqueio de localização referenciada. (FR-032/033)
+- [x] T013 Implementar localizações hierárquicas e regras de exclusão. **Dep.:** T007. **Aceite:** níveis/saltos válidos, ciclos e duplicados rejeitados, bloqueio por filhos e confirmação; bloqueio por exemplares integrado em T014. (FR-032/033, AC-010)
 - [ ] T014 Implementar exemplares, conservação/aquisição simplificada e alerta de duplicado. **Dep.:** T010/T013. **Aceite:** duas cópias persistem e alerta não bloqueia. (FR-030/031, AC-003)
 
 ## Fase 5 — Consulta
