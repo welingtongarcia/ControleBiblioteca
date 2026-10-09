@@ -11,6 +11,10 @@ Edition tem reference_paid_price e cover_price, mas não data de compra. Physica
 - Filtros AND entre dimensões; rankings com vínculos múltiplos são compartilhados e não aditivos.
 - Gráficos acessíveis no servidor; nenhuma API financeira/Google Books necessária.
 
-## Decisão pendente
+## Decisão confirmada — 2026-10-09
 
-Fonte: valor por edição ou compras individuais. Perguntar ao usuário antes de fechar modelo/migrations e implementar. Esta escolha altera o significado de quanto gastei e os fluxos de cadastro.
+Usuário respondeu 2: compras individuais. Um lançamento representa a compra de uma cópia/edição (física ou digital), com valor obrigatório não negativo e data real opcional. Repetir edição em vários lançamentos é permitido; não cria exemplar automaticamente. Vendedor/origem e observações opcionais. Sem importação automática: valores anteriores continuam separados e podem ser registrados manualmente pelo usuário.
+
+Data futura não é gasto realizado; rejeitar. Sem data continua no total geral, fora dos períodos. Personagens associados manualmente no formulário da edição; criador continua genérico, sem inferir função. Resumo inicial permanece referência por edição, Financeiro é total dos lançamentos; diferença explicitada na tela.
+
+Filtros de datas aceitam início e fim juntos ou nenhum, inclusivos, intervalo máximo 3660 dias. Comparação anterior tem mesma duração. Sem datas, gráfico mensal mostra últimos 12 meses até hoje, claramente rotulado, e demais indicadores/rankings analisam todos os lançamentos. Com intervalo, mensal usa todos os meses do intervalo incluindo meses zerados. Rankings top 10 com acesso por filtro; não somar grupos de criadores/personagens.

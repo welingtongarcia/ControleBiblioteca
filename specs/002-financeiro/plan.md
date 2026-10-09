@@ -1,8 +1,10 @@
 # Plano preliminar — Financeiro
 
-Não fechado enquanto a fonte financeira aguarda confirmação.
+Modelo aprovado: compras individuais em financial_purchases; SQL/JDBC parametrizado em repository separado, DTOs/serviços por domínio, sem entidades nos controllers.
 
-1. Fechar fonte/semântica e ajustes de escopo; conferir constituição e rastreabilidade.
+Gate fechado: migration V14 cria ledger e personagens/vínculos com FKs compostas por proprietário; dinheiro numeric(12,2), uma cópia por lançamento. Lock de usuário sincroniza compra/exclusão de edição; exclusão de personagem referenciado bloqueada. Autorização antecede renderização de formulários de edição/remoção.
+
+1. Fonte/semântica confirmadas em clarify.md; constituição compatível e rastreabilidade FIN-T002.
 2. Modelar datas e personagens/vínculos por proprietário com Flyway; se lançamentos individuais escolhidos, especificar fluxo e reaproveitamento conservador antes da migração.
 3. Módulo financeiro com presentation/application/domain/infrastructure, DTO de filtros e agregações PostgreSQL parametrizadas. Filtrar vínculo via EXISTS para evitar multiplicação de joins; validar dono de cada opção. Agregações fixas e rankings limitados, registros paginados.
 4. Serviço de comparações/médias/cobertura em decimal e datas reais; cálculos descritivos determinísticos, sem IA ou chamadas externas.

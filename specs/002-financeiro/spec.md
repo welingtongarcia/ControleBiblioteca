@@ -1,6 +1,6 @@
 # Financeiro — especificação proposta
 
-2026-10-09. Status: especificação inicial; base financeira aguardando decisão do usuário. Não implementar cálculos/migrações antes de fechar clarificação, plano, tarefas e análise.
+2026-10-09. Status: base confirmada pelo usuário (opção 2); clarificação/plano/análise fechados para implementação.
 
 ## Objetivo e escopo solicitado
 
@@ -21,14 +21,16 @@ Aba Financeiro privada para acompanhar gastos registrados, aplicar filtros combi
 - FIN-011: análises descritivas adicionais: mês com maior gasto, concentração por editora, físicos versus digitais, valor médio por registro e valor registrado em edições ainda não lidas. Não alegar avaliação de mercado, rentabilidade, economia real ou recomendações de investimento; sempre indicar base e cobertura.
 - FIN-012: nenhuma migração automática de gastos ou datas existentes sem regra aprovada e verificada; dado alheio não aparece em opções, listagem, gráficos ou agregados.
 
-## Clarificação bloqueante
+## Modelo aprovado
 
 Escolher um modelo:
 
 1. **Valores cadastrados nas edições (recomendação de continuidade):** cada edição contribui uma vez com reference_paid_price, igual ao resumo inicial, incluindo digitais. Adicionar data de compra opcional ao registro da edição. Cópias extras não aumentam esse total; valores de aquisição de exemplares ficam separados. Rótulo valor pago registrado, não livro-caixa de transações.
 2. **Compras individuais:** cada aquisição é um lançamento próprio vinculado a uma edição; admite cópias extras e compras digitais, datas/valores por lançamento. Referências de edição nunca somadas automaticamente. Exige fluxo de lançamentos e decisão de reaproveitamento dos dados existentes, com revisão explícita para não duplicar.
 
-Nenhuma destas fontes será escolhida silenciosamente.
+A opção 2 foi escolhida pelo usuário: somente lançamentos de compra entram no Financeiro; cada lançamento é uma compra de uma cópia, valor obrigatório, data real opcional, vendedor e observações opcionais. Registros gratuitos permitidos, datas futuras rejeitadas; não importar referências/aquisições antigas automaticamente nem criar exemplares. Proteger exclusão da edição enquanto há lançamentos. Lançamentos editáveis e exclusão com confirmação explícita. Dados prévios permanecem preservados e separados do resumo inicial.
+
+Regras operacionais adicionais: filtros temporais precisam de ambas as datas, início <= fim, máximo 3660 dias; gráfico sem filtro temporal mostra últimos 12 meses com aviso, enquanto totais gerais incluem registros sem data. Ranking limitado a 10 maiores por gasto, informando que é parcial; não inventar Outros para grupos sobrepostos. Links refinam o mesmo filtro, tabelas equivalentes mantêm valores exatos.
 
 ## Aceitação prevista
 
