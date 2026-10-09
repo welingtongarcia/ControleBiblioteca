@@ -55,6 +55,20 @@
             </select>
         </div>
         <div class="field">
+            <label for="workIds">Obras desta edição</label>
+            <select id="workIds" th:field="*{workIds}" multiple size="5">
+                <option th:each="work : ${works}" th:value="${work.id}" th:text="${work.title}"></option>
+            </select>
+            <p class="help-text">Use Ctrl (Windows/Linux) ou ⌘ (macOS) para selecionar mais de uma obra.</p>
+        </div>
+        <div class="field">
+            <label for="creatorIds">Criadores desta edição</label>
+            <select id="creatorIds" th:field="*{creatorIds}" multiple size="5">
+                <option th:each="creator : ${creators}" th:value="${creator.id}" th:text="${creator.name}"></option>
+            </select>
+            <p class="help-text">Use Ctrl (Windows/Linux) ou ⌘ (macOS) para selecionar mais de um criador.</p>
+        </div>
+        <div class="field">
             <label for="notes">Observações</label>
             <textarea id="notes" th:field="*{notes}" maxlength="2000" rows="5"></textarea>
             <p class="field-error" th:if="${#fields.hasErrors('notes')}" th:errors="*{notes}"></p>

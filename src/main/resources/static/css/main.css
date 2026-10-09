@@ -51,4 +51,6 @@ select { background: #11151d; border: 1px solid #657084; border-radius: .5rem; c
 .details-list { display: grid; gap: .4rem 1.25rem; grid-template-columns: minmax(10rem, 14rem) 1fr; margin: 2rem 0; }
 .details-list dt { color: var(--muted); font-weight: 700; }
 .details-list dd { margin: 0; overflow-wrap: anywhere; }
+.details-section { border-top: 1px solid #3a4251; margin-top: 1.5rem; padding-top: 1rem; }
+.details-section h2 { font-size: 1.2rem; }
 @media (max-width: 38rem) { .page-heading, .resource-list li { align-items: start; flex-direction: column; } .year-grid { grid-template-columns: 1fr; } }

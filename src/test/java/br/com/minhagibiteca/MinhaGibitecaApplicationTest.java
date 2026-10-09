@@ -1,6 +1,7 @@
 package br.com.minhagibiteca;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -18,7 +19,16 @@ import br.com.minhagibiteca.catalog.domain.Publisher;
 import br.com.minhagibiteca.catalog.domain.ComicSeries;
 import br.com.minhagibiteca.catalog.infrastructure.PublisherRepository;
 import br.com.minhagibiteca.catalog.infrastructure.ComicSeriesRepository;
+import br.com.minhagibiteca.catalog.infrastructure.EditionRepository;
+import br.com.minhagibiteca.catalog.infrastructure.WorkRepository;
+import br.com.minhagibiteca.catalog.infrastructure.CreatorRepository;
+import br.com.minhagibiteca.catalog.application.CreatorService;
+import br.com.minhagibiteca.catalog.application.EditionAssociationService;
+import br.com.minhagibiteca.catalog.application.EditionService;
+import br.com.minhagibiteca.catalog.application.WorkService;
+import br.com.minhagibiteca.catalog.domain.Edition;
 import java.sql.Connection;
+import java.util.List;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
@@ -58,6 +68,27 @@ class MinhaGibitecaApplicationTest {
     private ComicSeriesRepository comicSeriesRepository;
 
     @Autowired
+    private EditionRepository editionRepository;
+
+    @Autowired
+    private WorkRepository workRepository;
+
+    @Autowired
+    private CreatorRepository creatorRepository;
+
+    @Autowired
+    private EditionService editionService;
+
+    @Autowired
+    private WorkService workService;
+
+    @Autowired
+    private CreatorService creatorService;
+
+    @Autowired
+    private EditionAssociationService editionAssociationService;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Autowired
@@ -72,6 +103,9 @@ class MinhaGibitecaApplicationTest {
 
     @BeforeEach
     void clearUsers() {
+        editionRepository.deleteAll();
+        workRepository.deleteAll();
+        creatorRepository.deleteAll();
         comicSeriesRepository.deleteAll();
         publisherRepository.deleteAll();
         userAccountRepository.deleteAll();
@@ -201,5 +235,27 @@ class MinhaGibitecaApplicationTest {
                         .param("name", "Série inválida")
                         .param("publisherId", publisher.getId().toString()))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void persistsTextualEditionNumberAndAssociatesOnlyOwnedWorksAndCreators() {
+        UserAccount owner = userAccountRepository.save(UserAccount.create(
+                "dono@example.com", passwordEncoder.encode("senha-segura-123"), UserRole.USER));
+        UserAccount otherUser = userAccountRepository.save(UserAccount.create(
+                "outro@example.com", passwordEncoder.encode("senha-segura-456"), UserRole.USER));
+        var work = workService.create(owner.getId(), new WorkService.Command("A Queda do Morcego", 1993, null));
+        var creator = creatorService.create(owner.getId(), new CreatorService.Command("Doug Moench", null));
+        var otherWork = workService.create(otherUser.getId(), new WorkService.Command("Obra alheia", null, null));
+        Edition edition = editionService.create(owner.getId(), new EditionService.Command(
+                null, null, "Batman", "1A", null, "", null, null, null));
+
+        editionAssociationService.replace(edition.getId(), owner.getId(), List.of(work.getId()), List.of(creator.getId()));
+
+        assertThat(edition.getEditorialNumber()).isEqualTo("1A");
+        assertThat(edition.getIsbn()).isNull();
+        assertThat(editionAssociationService.works(edition.getId(), owner.getId())).extracting("id").containsExactly(work.getId());
+        assertThat(editionAssociationService.creators(edition.getId(), owner.getId())).extracting("id").containsExactly(creator.getId());
+        assertThatThrownBy(() -> editionAssociationService.replace(edition.getId(), owner.getId(), List.of(otherWork.getId()), List.of()))
+                .isInstanceOf(br.com.minhagibiteca.shared.application.ResourceNotFoundException.class);
     }
 }
