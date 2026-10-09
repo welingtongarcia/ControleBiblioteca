@@ -1,0 +1,1 @@
+package br.com.minhagibiteca.catalog.infrastructure; import br.com.minhagibiteca.catalog.domain.Work; import java.util.*; import org.springframework.data.jpa.repository.JpaRepository; public interface WorkRepository extends JpaRepository<Work,UUID>{Optional<Work> findByIdAndOwnerUserId(UUID id,UUID owner);}

@@ -1,0 +1,1 @@
+package br.com.minhagibiteca.catalog.infrastructure; import br.com.minhagibiteca.catalog.domain.Creator; import java.util.*; import org.springframework.data.jpa.repository.JpaRepository; public interface CreatorRepository extends JpaRepository<Creator,UUID>{Optional<Creator> findByIdAndOwnerUserId(UUID id,UUID owner);}
