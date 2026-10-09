@@ -8,21 +8,7 @@
 <body class="dashboard-page">
 <a class="skip-link" href="#main-content">Pular para o conteúdo</a>
 <div class="dashboard-layout">
-    <aside class="dashboard-sidebar" aria-label="Menu principal">
-        <a class="dashboard-brand" th:href="@{/dashboard}" aria-label="Minha Gibiteca — início"><span class="brand-mark" aria-hidden="true">MG</span><span>Minha<br> Gibiteca<span class="brand-caption">Seu universo em quadrinhos</span></span></a>
-        <nav class="dashboard-navigation" aria-label="Navegação principal">
-            <p class="nav-group-label">Sua coleção</p>
-            <a class="nav-current" th:href="@{/dashboard}" aria-current="page"><span aria-hidden="true">⌂</span>Início</a>
-            <a th:href="@{/edicoes}"><span aria-hidden="true">▤</span>Catálogo de edições</a>
-            <a th:href="@{/series}"><span aria-hidden="true">✓</span>Séries e checklist</a>
-            <a th:href="@{/localizacoes}"><span aria-hidden="true">▦</span>Localizações</a>
-            <p class="nav-group-label">Dados do catálogo</p>
-            <a th:href="@{/editoras}"><span aria-hidden="true">◇</span>Editoras</a>
-            <a th:href="@{/obras}"><span aria-hidden="true">▧</span>Obras</a>
-            <a th:href="@{/criadores}"><span aria-hidden="true">✎</span>Criadores</a>
-        </nav>
-        <div class="sidebar-note"><strong>Cada quadrinho tem uma história.</strong><p>A sua coleção também.</p></div>
-    </aside>
+    <aside th:replace="~{fragments/navigation :: sidebar}"></aside>
     <main id="main-content" class="dashboard-main" aria-labelledby="page-title" tabindex="-1">
         <header class="dashboard-topbar">
             <div><p class="dashboard-kicker">Minha Gibiteca</p><h1 id="page-title">Seu espaço de colecionador</h1></div>
@@ -30,7 +16,6 @@
                 <label class="visually-hidden" for="dashboard-query">Buscar por título, ISBN ou número editorial</label>
                 <input id="dashboard-query" name="q" type="search" maxlength="240" placeholder="Buscar na sua coleção…"><button type="submit">Buscar</button>
             </form>
-            <form class="dashboard-logout" th:action="@{/logout}" method="post"><button type="submit">Sair</button></form>
         </header>
         <section class="collection-hero" aria-labelledby="hero-title">
             <div class="hero-copy"><p class="hero-eyebrow">Organize. Encontre. Complete.</p><h2 id="hero-title">Sua coleção,<br>no lugar certo.</h2><p>Dos clássicos aos novos favoritos, guarde os detalhes de cada edição e encontre espaço para a próxima história.</p>

@@ -1,5 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/head :: head(${pageTitle})}"><title>Página não encontrada</title></head>
-<body><main class="content empty-state"><h1>Página não encontrada</h1><p>O recurso não existe ou não está disponível para sua conta.</p><a th:href="@{/dashboard}">Voltar ao painel</a></main></body>
+<body class="dashboard-page"><a class="skip-link" href="#main-content">Pular para o conteúdo</a><div class="dashboard-layout"><aside th:replace="~{fragments/navigation :: sidebar}"></aside><main id="main-content" tabindex="-1" class="content page-content" aria-labelledby="page-title">
+<div th:replace="~{fragments/navigation :: breadcrumbs('Página não encontrada', null, null)}"></div>
+<h1 id="page-title">Página não encontrada</h1><p>O recurso não existe ou não está disponível para sua conta.</p><a th:href="@{/dashboard}">Voltar ao painel</a></main></div></body>
 </html>

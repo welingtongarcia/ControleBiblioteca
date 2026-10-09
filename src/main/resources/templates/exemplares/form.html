@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/head :: head(${pageTitle})}"><title>Exemplar</title></head>
-<body><main class="content form-content" aria-labelledby="page-title">
-    <a class="brand" th:href="@{/edicoes/{id}(id=${edition.id})}">Minha Gibiteca</a>
+<body class="dashboard-page"><a class="skip-link" href="#main-content">Pular para o conteúdo</a><div class="dashboard-layout"><aside th:replace="~{fragments/navigation :: sidebar}"></aside><main id="main-content" tabindex="-1" class="content form-content page-content" aria-labelledby="page-title">
+<div th:replace="~{fragments/navigation :: breadcrumbs(${pageTitle}, ${edition.title}, ${'/edicoes/' + edition.id})}"></div>
+
+
     <h1 id="page-title" th:text="${pageTitle}">Novo exemplar</h1>
     <p>Edição: <span th:text="${edition.title}"></span></p>
     <p class="help-text">Cadastre cada cópia física separadamente. Os dados bibliográficos continuam na edição.</p>
-    <form class="stack copy-form" th:action="${formAction}" th:object="${copyForm}" method="post">
+    <form class="stack copy-form" th:action="${formAction}" th:object="${copyForm}" method="post"><input type="hidden" name="returnTo" th:value="${navigation.pageReturnUrl}">
         <div class="field">
             <label for="condition">Conservação <span aria-hidden="true">*</span></label>
             <select id="condition" th:field="*{condition}" required aria-describedby="condition-error">
@@ -48,6 +50,6 @@
             <textarea id="notes" th:field="*{notes}" maxlength="2000" rows="4" aria-describedby="notes-error"></textarea>
             <p id="notes-error" class="field-error" th:if="${#fields.hasErrors('notes')}" th:errors="*{notes}"></p>
         </div>
-        <div class="form-actions"><button type="submit">Salvar exemplar</button><a th:href="@{/edicoes/{id}(id=${edition.id})}">Cancelar</a></div>
+        <div class="form-actions"><button type="submit">Salvar exemplar</button><a th:href="@{${navigation.parentUrl('/edicoes/' + edition.id)}}">Cancelar</a></div>
     </form>
-</main></body></html>
+</main></div></body></html>

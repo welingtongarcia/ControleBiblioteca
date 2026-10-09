@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/head :: head(${pageTitle})}"><title>Editoras</title></head>
-<body>
-<main class="content form-content" aria-labelledby="page-title">
-    <a class="brand" th:href="@{/editoras}">Minha Gibiteca</a>
+<body class="dashboard-page"><a class="skip-link" href="#main-content">Pular para o conteúdo</a><div class="dashboard-layout"><aside th:replace="~{fragments/navigation :: sidebar}"></aside>
+<main id="main-content" tabindex="-1" class="content form-content page-content" aria-labelledby="page-title">
+<div th:replace="~{fragments/navigation :: breadcrumbs(${pageTitle}, null, null)}"></div>
+
+
     <h1 id="page-title" th:text="${pageTitle}">Nova editora</h1>
-    <form class="stack" th:action="${formAction}" th:object="${publisherForm}" method="post">
+    <form class="stack" th:action="${formAction}" th:object="${publisherForm}" method="post"><input type="hidden" name="returnTo" th:value="${navigation.pageReturnUrl}">
         <div class="field">
             <label for="name">Nome <span aria-hidden="true">*</span></label>
             <input id="name" th:field="*{name}" maxlength="160" required aria-describedby="name-error">
@@ -21,8 +23,8 @@
             <textarea id="notes" th:field="*{notes}" maxlength="2000" rows="5" aria-describedby="notes-error"></textarea>
             <p id="notes-error" class="field-error" th:if="${#fields.hasErrors('notes')}" th:errors="*{notes}"></p>
         </div>
-        <div class="form-actions"><button type="submit">Salvar</button><a th:href="@{/editoras}">Cancelar</a></div>
+        <div class="form-actions"><button type="submit">Salvar</button><a th:href="@{${navigation.returnUrl}}">Cancelar</a></div>
     </form>
-</main>
+</main></div>
 </body>
 </html>

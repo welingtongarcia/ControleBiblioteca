@@ -164,6 +164,89 @@ class MinhaGibitecaApplicationTest {
     }
 
     @Test
+    void sharesNavigationAcrossPrivatePagesAndLinksChildrenToTheirOwnedParents() throws Exception {
+        var owner = userAccountRepository.save(UserAccount.create("navigation@example.com", "hash", UserRole.USER));
+        var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
+        var publisher = publisherRepository.save(Publisher.create(owner.getId(), "Editora de navegação", null, null));
+        var series = comicSeriesRepository.save(ComicSeries.create(owner.getId(), publisher.getId(), "Série de navegação", null, null, null, null));
+        var work = workService.create(owner.getId(), new WorkService.Command("Obra de navegação", null, null));
+        var creator = creatorService.create(owner.getId(), new CreatorService.Command("Criador de navegação", null));
+        var edition = editionService.create(owner.getId(), new EditionService.Command(publisher.getId(), series.getId(), "HQ de navegação", "1A", null, null, null, null, null));
+        var location = locationService.create(owner.getId(), new br.com.minhagibiteca.inventory.application.LocationService.Command(null, br.com.minhagibiteca.inventory.domain.LocationLevel.BOX, "Caixa de navegação", null));
+        var copy = copyService.create(edition.getId(), owner.getId(), new CopyService.Command(location, CopyCondition.GOOD, null, null, null, null, null));
+        var item = checklistService.create(series.getId(), owner.getId(), new br.com.minhagibiteca.collection.application.ChecklistService.Command("1A", null, false, null));
+        var paths = List.of("/dashboard", "/edicoes", "/edicoes/nova", "/edicoes/" + edition.getId(), "/edicoes/" + edition.getId() + "/editar",
+                "/edicoes/" + edition.getId() + "/exemplares/novo", "/exemplares/" + copy + "/editar", "/exemplares/" + copy + "/excluir",
+                "/series", "/series/nova", "/series/" + series.getId() + "/editar", "/series/" + series.getId() + "/checklist", "/series/" + series.getId() + "/faltantes",
+                "/checklist/itens/" + item + "/editar", "/checklist/itens/" + item + "/excluir", "/editoras", "/editoras/nova", "/editoras/" + publisher.getId() + "/editar",
+                "/obras", "/obras/nova", "/obras/" + work.getId() + "/editar", "/criadores", "/criadores/novo", "/criadores/" + creator.getId() + "/editar",
+                "/localizacoes", "/localizacoes/nova", "/localizacoes/" + location + "/editar", "/localizacoes/" + location + "/excluir");
+        var preview = java.nio.file.Path.of("target/ui-navigation");
+        java.nio.file.Files.createDirectories(preview.resolve("css"));
+        for (String css : List.of("main.css", "dashboard.css")) java.nio.file.Files.copy(java.nio.file.Path.of("src/main/resources/static/css", css), preview.resolve("css").resolve(css), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        for (String path : paths) {
+            String html = mockMvc.perform(get(path).with(auth)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+            assertThat(html).contains("Navegação principal", "Pular para o conteúdo", "action=\"/logout\" method=\"post\"", "name=\"_csrf\"");
+            assertThat(html.split("class=\"nav-current\"", -1)).hasSize(2);
+            for (String module : List.of("dashboard", "edicoes", "series", "editoras", "obras", "criadores", "localizacoes")) assertThat(html).contains("href=\"/" + module + "\"");
+            if (!path.equals("/dashboard")) assertThat(html).contains("Você está aqui", "navigation-back");
+            var directory = preview.resolve(path.substring(1)); java.nio.file.Files.createDirectories(directory);
+            java.nio.file.Files.writeString(directory.resolve("index.html"), html, java.nio.charset.StandardCharsets.UTF_8);
+        }
+        mockMvc.perform(get("/edicoes/{id}/editar", edition.getId()).with(auth)).andExpect(content().string(org.hamcrest.Matchers.containsString("href=\"/edicoes/" + edition.getId() + "\">Cancelar")));
+        mockMvc.perform(get("/exemplares/{id}/editar", copy).with(auth)).andExpect(content().string(org.hamcrest.Matchers.containsString("href=\"/edicoes/" + edition.getId() + "\">Cancelar")));
+        mockMvc.perform(get("/login")).andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Navegação principal"))));
+    }
+
+    @Test
+    void preservesCatalogFiltersThroughValidationEditingAndListRedirects() throws Exception {
+        var owner = userAccountRepository.save(UserAccount.create("context@example.com", "hash", UserRole.USER));
+        var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
+        var edition = editionService.create(owner.getId(), new EditionService.Command(null, null, "HQ de contexto", null, null, null, null, null, null,
+                br.com.minhagibiteca.catalog.domain.MediaType.PHYSICAL, null, null));
+        String origin = "/edicoes?q=HQ&mediaType=PHYSICAL&order=TITLE_DESC&page=1";
+        var listResult = mockMvc.perform(get("/edicoes").with(auth).param("q", "HQ").param("mediaType", "PHYSICAL").param("order", "TITLE_DESC").param("page", "1"))
+                .andExpect(status().isOk()).andReturn();
+        var nav = (br.com.minhagibiteca.shared.presentation.NavigationContext) listResult.getModelAndView().getModel().get("navigation");
+        assertThat(nav.pageReturnUrl()).isEqualTo(origin);
+        assertThat(listResult.getResponse().getContentAsString()).contains("returnTo=");
+        mockMvc.perform(get("/edicoes/{id}", edition.getId()).with(auth).param("returnTo", origin)).andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("href=\"/edicoes?q=HQ&amp;mediaType=PHYSICAL&amp;order=TITLE_DESC&amp;page=1\"")));
+        var invalid = mockMvc.perform(post("/edicoes/{id}/editar", edition.getId()).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("title", "").param("returnTo", origin))
+                .andExpect(status().isOk()).andExpect(view().name("edicoes/form")).andReturn();
+        assertThat(((br.com.minhagibiteca.shared.presentation.NavigationContext) invalid.getModelAndView().getModel().get("navigation")).returnUrl()).isEqualTo(origin);
+        var saved = mockMvc.perform(post("/edicoes/{id}/editar", edition.getId()).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("title", "HQ atualizada").param("mediaType", "PHYSICAL").param("returnTo", origin))
+                .andExpect(status().is3xxRedirection()).andReturn();
+        String redirect = saved.getResponse().getRedirectedUrl();
+        assertThat(redirect).startsWith("/edicoes/" + edition.getId() + "?returnTo=");
+        assertThat(java.net.URLDecoder.decode(redirect.split("returnTo=")[1], java.nio.charset.StandardCharsets.UTF_8)).isEqualTo(origin);
+        mockMvc.perform(post("/edicoes").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("title", "Nova HQ").param("returnTo", origin)).andExpect(redirectedUrl(origin));
+        String publisherOrigin = "/editoras?q=Editora&page=2";
+        mockMvc.perform(post("/editoras").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("name", "Editora contextual").param("returnTo", publisherOrigin)).andExpect(redirectedUrl(publisherOrigin));
+    }
+
+    @Test
+    void keepsChecklistMissingContextAndRejectsUnsafeReturnsWithoutBypassingOwnership() throws Exception {
+        var owner = userAccountRepository.save(UserAccount.create("missing-context@example.com", "hash", UserRole.USER));
+        var other = userAccountRepository.save(UserAccount.create("foreign-context@example.com", "hash", UserRole.USER));
+        var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
+        var series = comicSeriesRepository.save(ComicSeries.create(owner.getId(), null, "Série contextual", null, null, null, null));
+        var item = checklistService.create(series.getId(), owner.getId(), new br.com.minhagibiteca.collection.application.ChecklistService.Command("Especial", null, false, null));
+        String origin = "/series/" + series.getId() + "/faltantes?page=1";
+        mockMvc.perform(get("/checklist/itens/{id}/editar", item).with(auth).param("returnTo", origin)).andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("href=\"" + origin + "\">Cancelar")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Faltantes de Série contextual")));
+        mockMvc.perform(post("/checklist/itens/{id}/editar", item).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                        .param("editorialNumber", "Especial").param("owned", "true").param("returnTo", origin)).andExpect(redirectedUrl(origin));
+        for (String unsafe : List.of("https://example.com", "//example.com", "/series", "/edicoes/nova")) {
+            mockMvc.perform(post("/edicoes").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("title", "Retorno seguro").param("returnTo", unsafe)).andExpect(redirectedUrl("/edicoes"));
+        }
+        mockMvc.perform(get("/checklist/itens/{id}/editar", item).with(SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(other))).param("returnTo", origin))
+                .andExpect(status().isNotFound()).andExpect(view().name("errors/404"))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Série contextual"))));
+    }
+
+    @Test
     void rendersLoginPageWithTheProjectStylesheet() throws Exception {
         mockMvc.perform(get("/login"))
                 .andExpect(status().isOk())

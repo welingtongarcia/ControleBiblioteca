@@ -1,0 +1,27 @@
+<!DOCTYPE html><html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"><body>
+<aside th:fragment="sidebar" class="dashboard-sidebar" aria-label="Menu principal">
+    <a class="dashboard-brand" th:href="@{/dashboard}" aria-label="Minha Gibiteca — início"><span class="brand-mark" aria-hidden="true">MG</span><span>Minha<br> Gibiteca<span class="brand-caption">Seu universo em quadrinhos</span></span></a>
+    <nav class="dashboard-navigation" aria-label="Navegação principal">
+        <p class="nav-group-label">Sua coleção</p>
+        <a th:href="@{/dashboard}" th:classappend="${navigation.key == 'dashboard'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'dashboard' ? 'page' : null}"><span aria-hidden="true">⌂</span>Início</a>
+        <a th:href="@{/edicoes}" th:classappend="${navigation.key == 'edicoes'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'edicoes' ? 'page' : null}"><span aria-hidden="true">▤</span>Catálogo de edições</a>
+        <a th:href="@{/series}" th:classappend="${navigation.key == 'series'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'series' ? 'page' : null}"><span aria-hidden="true">✓</span>Séries e checklist</a>
+        <a th:href="@{/localizacoes}" th:classappend="${navigation.key == 'localizacoes'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'localizacoes' ? 'page' : null}"><span aria-hidden="true">▦</span>Localizações</a>
+        <p class="nav-group-label">Dados do catálogo</p>
+        <a th:href="@{/editoras}" th:classappend="${navigation.key == 'editoras'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'editoras' ? 'page' : null}"><span aria-hidden="true">◇</span>Editoras</a>
+        <a th:href="@{/obras}" th:classappend="${navigation.key == 'obras'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'obras' ? 'page' : null}"><span aria-hidden="true">▧</span>Obras</a>
+        <a th:href="@{/criadores}" th:classappend="${navigation.key == 'criadores'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'criadores' ? 'page' : null}"><span aria-hidden="true">✎</span>Criadores</a>
+    </nav>
+    <form class="navigation-logout dashboard-logout" th:action="@{/logout}" method="post"><button type="submit">Sair</button></form>
+    <div class="sidebar-note"><strong>Cada quadrinho tem uma história.</strong><p>A sua coleção também.</p></div>
+</aside>
+<div th:fragment="breadcrumbs(currentLabel, parentLabel, parentUrl)" class="navigation-context">
+    <nav aria-label="Você está aqui"><ol class="breadcrumbs">
+        <li><a th:href="@{/dashboard}">Início</a></li>
+        <li th:if="${currentLabel != navigation.label}"><a th:href="@{${navigation.listReturnUrl}}" th:text="${navigation.label}"></a></li>
+        <li th:if="${parentUrl}"><a th:href="@{${navigation.parentUrl(parentUrl)}}" th:text="${parentLabel}"></a></li>
+        <li><span aria-current="page" th:text="${currentLabel}"></span></li>
+    </ol></nav>
+    <a class="navigation-back" th:href="@{${parentUrl != null ? navigation.parentUrl(parentUrl) : (currentLabel == navigation.label ? '/dashboard' : navigation.returnUrl)}}" th:text="${parentUrl != null ? '← Voltar para ' + parentLabel : (currentLabel == navigation.label ? '← Voltar ao início' : '← Voltar para ' + navigation.label)}"></a>
+</div>
+</body></html>

@@ -1,11 +1,13 @@
 <!DOCTYPE html><html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/head :: head('Excluir item do checklist')}"><title>Excluir item</title></head>
-<body><main class="content form-content" aria-labelledby="page-title">
-    <a class="brand" th:href="@{/series/{id}/checklist(id=${series.id})}">Minha Gibiteca</a><h1 id="page-title">Excluir item do checklist</h1>
+<body class="dashboard-page"><a class="skip-link" href="#main-content">Pular para o conteúdo</a><div class="dashboard-layout"><aside th:replace="~{fragments/navigation :: sidebar}"></aside><main id="main-content" tabindex="-1" class="content form-content page-content" aria-labelledby="page-title">
+<div th:replace="~{fragments/navigation :: breadcrumbs('Excluir item do checklist', ${navigation.returnUrl.startsWith('/series/' + series.id + '/faltantes') ? 'Faltantes de ' + series.name : 'Checklist de ' + series.name}, ${'/series/' + series.id + '/checklist'})}"></div>
+
+    <h1 id="page-title">Excluir item do checklist</h1>
     <p>Excluir o item <strong th:text="${item.editorialNumber}"></strong> da série <strong th:text="${series.name}"></strong>?</p>
     <p>A exclusão é permanente e não altera edições nem exemplares.</p>
-    <form class="stack" th:action="@{/checklist/itens/{id}/excluir(id=${item.id})}" method="post">
+    <form class="stack" th:action="@{/checklist/itens/{id}/excluir(id=${item.id})}" method="post"><input type="hidden" name="returnTo" th:value="${navigation.pageReturnUrl}">
         <label><input type="checkbox" name="confirmed" value="true" required> Confirmo a exclusão deste item.</label>
-        <div class="form-actions"><button type="submit">Excluir item</button><a th:href="@{/series/{id}/checklist(id=${series.id})}">Cancelar</a></div>
+        <div class="form-actions"><button type="submit">Excluir item</button><a th:href="@{${navigation.parentUrl('/series/' + series.id + '/checklist')}}">Cancelar</a></div>
     </form>
-</main></body></html>
+</main></div></body></html>

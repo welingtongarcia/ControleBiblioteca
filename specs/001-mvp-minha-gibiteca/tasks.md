@@ -32,6 +32,8 @@ Cada tarefa só começa após suas dependências e os requisitos associados esta
 
 ## Fase 5 — Consulta
 
+- [x] T023 Padronizar menu, trilhas, retornos e cancelamento nas telas privadas; preservar contexto permitido e impedir redirecionamento externo. **Dep.:** T022/módulos entregues. **Aceite:** AC-013, segurança e layout verificados; 71 testes e conferência visual registrados em verification-navigation.md. (FR-052, NFR-001/004)
+
 - [x] T022 Melhorar visual/navegação da página inicial, com pesquisa, atalhos e logout seguro, sem métricas fictícias. **Dep.:** módulos já entregues. **Aceite:** HTML/rotas/CSRF e prévia visual verificados. (FR-051, AC-012, NFR-001/004; evidências em verification-home.md)
 
 - [x] T015 Implementar CRUD de checklist explícito, estado manual e faltantes paginados; proteger referências de séries e isolamento por dono. **Dep.:** T009/T014. **Aceite:** nenhuma lacuna é inferida, AC-006/duplicados/limites/CSRF/paginação/referências validados. (FR-040/041/033, AC-006; evidências em verification-checklist.md)

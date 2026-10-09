@@ -41,3 +41,7 @@ Checklist não é inventário: estado manual autoritativo, sem criar/atualizar i
 ## Análise incremental — página inicial T022 (2026-10-09)
 
 Melhoria de interface não antecipa totais da T016 nem cria dados de demonstração. Pesquisa reutiliza o catálogo e atalhos apontam apenas para funcionalidades existentes. Logout mantém POST/CSRF. Template usa HTML semântico; CSS próprio separado evita regressões nas telas de cadastro. Ilustração de capas é decorativa, aria-hidden, sem imagens externas. Sem mudança de modelo, migration ou consulta privada nesta etapa.
+
+## Análise incremental — navegação T023 (2026-10-09)
+
+Marca volta sempre ao início; volta contextual é um controle distinto. Origem mais próxima de lista é transportada explicitamente, validada e limitada à mesma seção; não usar histórico do navegador nem confiar em Referer. Allowlist impede retorno externo e rotas de mutação. Autorização permanece nos controllers/serviços, e trilhas de entidades usam apenas DTOs já autorizados. Fragment evita menu divergente entre telas. Interceptor só altera redirects MVC de apresentação previstos, com contexto presente, preservando fluxos sem parâmetro. Não altera regras de domínio, esquema nem dependências. Histórico de múltiplas origens aninhadas fica fora desta fase.

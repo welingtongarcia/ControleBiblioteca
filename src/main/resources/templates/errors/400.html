@@ -1,8 +1,10 @@
 <!DOCTYPE html>
 <html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/head :: head('Pesquisa inválida')}"><title>Pesquisa inválida</title></head>
-<body><main class="content" aria-labelledby="page-title">
+<body class="dashboard-page"><a class="skip-link" href="#main-content">Pular para o conteúdo</a><div class="dashboard-layout"><aside th:replace="~{fragments/navigation :: sidebar}"></aside><main id="main-content" tabindex="-1" class="content page-content" aria-labelledby="page-title">
+<div th:replace="~{fragments/navigation :: breadcrumbs('Endereço inválido', null, null)}"></div>
+
     <h1 id="page-title">Não foi possível abrir esta página</h1>
-    <p>Um dos parâmetros do endereço é inválido. Volte ao catálogo e selecione os filtros novamente.</p>
-    <a class="button-link" th:href="@{/edicoes}">Voltar ao catálogo</a>
-</main></body></html>
+    <p>Um dos parâmetros do endereço é inválido. Use o menu ou volte à seção para selecionar os filtros novamente.</p>
+    <a class="button-link" th:href="@{${navigation.listUrl}}">Voltar à seção</a>
+</main></div></body></html>

@@ -13,11 +13,14 @@ public class MvcExceptionHandler {
 
     @ExceptionHandler(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    String invalidParameter() { return "errors/400"; }
+    String invalidParameter(Model model, jakarta.servlet.http.HttpServletRequest request) {
+        model.addAttribute("navigation", NavigationContext.from(request)); return "errors/400";
+    }
 
     @ExceptionHandler(ResourceNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    String notFound(Model model) {
+    String notFound(Model model, jakarta.servlet.http.HttpServletRequest request) {
+        model.addAttribute("navigation", NavigationContext.from(request));
         model.addAttribute("pageTitle", "Página não encontrada");
         return "errors/404";
     }

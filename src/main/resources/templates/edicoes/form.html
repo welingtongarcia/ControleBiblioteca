@@ -3,11 +3,13 @@
 <head th:replace="~{fragments/head :: head(${pageTitle})}">
     <title>Edição | Minha Gibiteca</title>
 </head>
-<body>
-<main class="content form-content" aria-labelledby="page-title">
-    <a class="brand" th:href="@{/edicoes}">Minha Gibiteca</a>
+<body class="dashboard-page"><a class="skip-link" href="#main-content">Pular para o conteúdo</a><div class="dashboard-layout"><aside th:replace="~{fragments/navigation :: sidebar}"></aside>
+<main id="main-content" tabindex="-1" class="content form-content page-content" aria-labelledby="page-title">
+<div th:replace="~{fragments/navigation :: breadcrumbs(${pageTitle}, ${editionId != null ? 'Detalhe da edição' : null}, ${editionId != null ? '/edicoes/' + editionId : null})}"></div>
+
+
     <h1 id="page-title" th:text="${pageTitle}">Nova edição</h1>
-    <form class="stack" th:action="${formAction}" th:object="${editionForm}" method="post">
+    <form class="stack" th:action="${formAction}" th:object="${editionForm}" method="post"><input type="hidden" name="returnTo" th:value="${navigation.pageReturnUrl}">
         <div class="field">
             <label for="title">Título <span aria-hidden="true">*</span></label>
             <input id="title" th:field="*{title}" maxlength="240" required>
@@ -96,9 +98,9 @@
         </div>
         <div class="form-actions">
             <button type="submit">Salvar edição</button>
-            <a th:href="@{/edicoes}">Cancelar</a>
+            <a th:href="@{${editionId != null ? navigation.withReturn('/edicoes/' + editionId) : navigation.returnUrl}}">Cancelar</a>
         </div>
     </form>
-</main>
+</main></div>
 </body>
 </html>

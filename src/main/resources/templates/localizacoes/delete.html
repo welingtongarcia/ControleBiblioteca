@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/head :: head('Excluir localização')}"><title>Excluir localização</title></head>
-<body><main class="content form-content" aria-labelledby="page-title">
+<body class="dashboard-page"><a class="skip-link" href="#main-content">Pular para o conteúdo</a><div class="dashboard-layout"><aside th:replace="~{fragments/navigation :: sidebar}"></aside><main id="main-content" tabindex="-1" class="content form-content page-content" aria-labelledby="page-title">
+<div th:replace="~{fragments/navigation :: breadcrumbs('Excluir localização', null, null)}"></div>
+
     <h1 id="page-title">Excluir localização</h1>
     <p>Deseja excluir a localização <strong th:text="${location.path}"></strong>?</p>
     <p>A exclusão só será permitida se ela não tiver localizações internas nem exemplares vinculados.</p>
-    <form class="form-actions" th:action="@{/localizacoes/{id}/excluir(id=${location.id})}" method="post">
+    <form class="form-actions" th:action="@{/localizacoes/{id}/excluir(id=${location.id})}" method="post"><input type="hidden" name="returnTo" th:value="${navigation.pageReturnUrl}">
         <input type="hidden" name="confirmed" value="true">
-        <button type="submit">Confirmar exclusão</button><a th:href="@{/localizacoes}">Cancelar</a>
+        <button type="submit">Confirmar exclusão</button><a th:href="@{${navigation.returnUrl}}">Cancelar</a>
     </form>
-</main></body></html>
+</main></div></body></html>
