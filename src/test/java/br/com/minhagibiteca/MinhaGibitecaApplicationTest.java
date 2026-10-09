@@ -151,6 +151,13 @@ class MinhaGibitecaApplicationTest {
         var digital = Edition.create(owner.getId(), null, null, "Digital resumo", "2", null, null, null, null, null);
         digital.updatePricingAndMedia(br.com.minhagibiteca.catalog.domain.MediaType.DIGITAL, null, new java.math.BigDecimal("500.00"));
         editionRepository.save(digital);
+        editionRepository.save(Edition.create(owner.getId(), null, null, "Sem suporte e preço", null, null, null, null, null, null));
+        var catalogOnly = (br.com.minhagibiteca.dashboard.application.CollectionSummary) mockMvc.perform(get("/dashboard").with(auth))
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("1.499,00")))
+                .andReturn().getModelAndView().getModel().get("summary");
+        assertThat(catalogOnly.copies()).isZero(); assertThat(catalogOnly.physicalEditions()).isEqualTo(1);
+        assertThat(catalogOnly.digitalEditions()).isEqualTo(1); assertThat(catalogOnly.unknownMediaEditions()).isEqualTo(1);
+        assertThat(catalogOnly.pricedEditions()).isEqualTo(2); assertThat(catalogOnly.unpricedEditions()).isEqualTo(1);
         var foreign = editionRepository.save(Edition.create(other.getId(), null, null, "Privado", null, null, null, null, null, null));
         copyService.create(foreign.getId(), other.getId(), new CopyService.Command(null, CopyCondition.GOOD, null, null, null, new java.math.BigDecimal("1000.00"), null));
         var unknown = copyService.create(edition.getId(), owner.getId(), new CopyService.Command(null, CopyCondition.GOOD, null, null, null, null, null));
@@ -165,7 +172,9 @@ class MinhaGibitecaApplicationTest {
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("30,30")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("pode estar incompleto"))).andReturn();
         var summary = (br.com.minhagibiteca.dashboard.application.CollectionSummary) result.getModelAndView().getModel().get("summary");
-        assertThat(summary.editions()).isEqualTo(2); assertThat(summary.copies()).isEqualTo(4);
+        assertThat(summary.editions()).isEqualTo(3); assertThat(summary.copies()).isEqualTo(4);
+        assertThat(summary.registeredPaid()).isEqualByComparingTo("1499.00");
+        assertThat(summary.physicalEditions()).isEqualTo(1); assertThat(summary.digitalEditions()).isEqualTo(1);
         assertThat(summary.ownedEditions()).isEqualTo(1); assertThat(summary.pricedCopies()).isEqualTo(3);
         assertThat(summary.totalPaid()).isEqualByComparingTo("30.30");
         var preview = java.nio.file.Path.of("target/ui-summary"); java.nio.file.Files.createDirectories(preview.resolve("css"));
@@ -177,7 +186,37 @@ class MinhaGibitecaApplicationTest {
                 .andExpect(status().isOk()).andReturn().getModelAndView().getModel().get("summary");
         assertThat(refreshed.copies()).isEqualTo(3); assertThat(refreshed.unpricedCopies()).isZero();
         assertThat(refreshed.totalPaid()).isEqualByComparingTo("35.35");
+        assertThat(refreshed.registeredPaid()).isEqualByComparingTo("1499.00");
         mockMvc.perform(get("/dashboard")).andExpect(status().is3xxRedirection());
+    }
+
+    @Test
+    void refreshesRegisteredPricesAndMediaAfterEditionFormsWithoutCopies() throws Exception {
+        var owner = userAccountRepository.save(UserAccount.create("edition-summary@example.com", "hash", UserRole.USER));
+        var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
+        mockMvc.perform(post("/edicoes").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                        .param("title", "HQ financeira").param("mediaType", "PHYSICAL").param("referencePaidPrice", "29,90").param("coverPrice", "99,00"))
+                .andExpect(status().is3xxRedirection());
+        var id = editionRepository.findAll().getFirst().getId();
+        var initial = (br.com.minhagibiteca.dashboard.application.CollectionSummary) mockMvc.perform(get("/dashboard").with(auth))
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("29,90")))
+                .andReturn().getModelAndView().getModel().get("summary");
+        assertThat(initial.physicalEditions()).isEqualTo(1); assertThat(initial.digitalEditions()).isZero();
+        assertThat(initial.copies()).isZero(); assertThat(initial.registeredPaid()).isEqualByComparingTo("29.90");
+        mockMvc.perform(post("/edicoes/{id}/editar", id).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                        .param("title", "HQ financeira").param("mediaType", "DIGITAL").param("referencePaidPrice", "0,00"))
+                .andExpect(redirectedUrl("/edicoes/" + id));
+        var digital = (br.com.minhagibiteca.dashboard.application.CollectionSummary) mockMvc.perform(get("/").with(auth))
+                .andExpect(status().isOk()).andReturn().getModelAndView().getModel().get("summary");
+        assertThat(digital.physicalEditions()).isZero(); assertThat(digital.digitalEditions()).isEqualTo(1);
+        assertThat(digital.pricedEditions()).isEqualTo(1); assertThat(digital.registeredPaid()).isEqualByComparingTo("0");
+        mockMvc.perform(post("/edicoes/{id}/editar", id).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                        .param("title", "HQ financeira").param("mediaType", "DIGITAL").param("referencePaidPrice", ""))
+                .andExpect(redirectedUrl("/edicoes/" + id));
+        var unknown = (br.com.minhagibiteca.dashboard.application.CollectionSummary) mockMvc.perform(get("/dashboard").with(auth))
+                .andExpect(status().isOk()).andReturn().getModelAndView().getModel().get("summary");
+        assertThat(unknown.registeredPaid()).isNull(); assertThat(unknown.registeredPaidLabel()).isEqualTo("Não informado");
+        assertThat(unknown.unpricedEditions()).isEqualTo(1);
     }
 
     @Test

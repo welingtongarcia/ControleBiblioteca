@@ -32,6 +32,8 @@ Cada tarefa só começa após suas dependências e os requisitos associados esta
 
 ## Fase 5 — Consulta
 
+- [x] T025 Corrigir total principal para valores pagos das edições, contar físicas/digitais e manter inventário/aquisições separados. **Dep.:** T024. **Aceite:** AC-007/T025; sem duplicação, isolamento e atualização verificados; 77 testes e prévia visual em verification-summary-correction.md. (FR-050)
+
 - [x] T024 Resumo na inicial: exemplares físicos, edições cadastradas/com exemplares, total pago conhecido e cobertura de preços; decimal e isolamento testados. **Dep.:** T014/T022. **Aceite:** AC-007/T024; 75 testes e prévia desktop/celular em verification-summary.md. (FR-050; subconjunto de T016)
   - [x] Reforço T024: validar atualização dos totais após POST de cadastro/edição de exemplar, incluindo rejeição e retirada do preço, sem recálculo manual. Evidência: verification-summary.md; 76 testes passaram.
 

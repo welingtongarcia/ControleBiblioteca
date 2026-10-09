@@ -51,3 +51,6 @@ Constituição preservada: DTO, proprietário da sessão, agregação no banco, 
 # Reforço T024 — atualização após formulários (2026-10-09)
 
 Inspeção confirma DashboardService sem cache e consulta SQL a cada GET; CopyService grava/flush em transação concluída antes do redirect. Não é necessário armazenar/recalcular totais na escrita, o que criaria risco de divergência. Verificação adicional cobre os controllers, não só chamadas diretas ao serviço. Limite explícito: abas já abertas não recebem push; novo acesso/recarregamento mostra dados atuais. Sem mudança de comportamento, schema ou dados privados.
+# Análise T025 — correção aprovada do resumo (2026-10-09)
+
+Usuário confirmou somar Valor pago dos cadastros e mostrar físicos/digitais; diagnóstico mostrou indicador anterior restrito ao inventário. Constitução permanece: distinguir edição/exemplar, não criar cópias fictícias. Total principal é referência cadastrada, não gasto de múltiplas cópias nem avaliação. Duas fontes independentes e rótulos explícitos evitam dupla contagem. Ausências não viram zero em coleção não vazia sem valores. Sem schema novo nem dados reais alterados; testar sem exemplares e alterações de suporte/preço. Atualização permanece na próxima leitura, não push entre abas. T016 amplo segue pendente.

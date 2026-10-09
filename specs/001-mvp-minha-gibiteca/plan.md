@@ -8,6 +8,10 @@ Fluxo padrão: controller MVC → form DTO validado → serviço de aplicação 
 
 ## Modelo e persistência
 
+### T025 — correção do resumo segundo o cadastro (2026-10-09)
+
+Estender DTO/consulta agregada de dashboard com count filtrado por media_type, count reference_paid_price e sum reference_paid_price. Agregados independentes de edições e exemplares evitam multiplicação; SQL parametrizado por dono, uma consulta, índices existentes. Indicador principal usa referências das edições; aquisição física fica em linha secundária e seu valor não é somado às referências. Cartões físicos/digitais explicitam que são edições, não unidades. Suporte desconhecido e cobertura informados. Sem migration/backfill/cache. Testes de PostgreSQL/MockMvc com cadastro sem exemplares, físico/digital/desconhecido, zero/nulo, edição por POST e isolamento; unitários de formatação e prévia desktop/celular.
+
 ### T024 — resumo financeiro e quantitativo (2026-10-09)
 
 DashboardController resolve CurrentAuthenticatedUser e usa DashboardService read-only → DashboardQueries JDBC → DTO CollectionSummary. Uma consulta com subconsultas agregadas independentes por owner_user_id evita multiplicação: count de edições e count/count distinct edition_id/count acquisition_price/sum acquisition_price de physical_copies. Índices existentes iniciados por dono atendem o acesso, sem migration. BigDecimal e long; soma nula permanece desconhecida quando há exemplares sem qualquer preço; vazio tem zero. Formatação NumberFormat pt-BR no DTO sem instância mutável compartilhada. Cartões semânticos na inicial, antes do destaque, com explicação de cobertura e links aos cadastros. Testes unitários e PostgreSQL/MockMvc verificam isolamento, atualização e limites; prévia responsiva com dados de teste. É subconjunto de T016, não encerra a tarefa ampla.

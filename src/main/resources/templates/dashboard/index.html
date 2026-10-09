@@ -20,15 +20,19 @@
         <section class="dashboard-section collection-summary" aria-labelledby="summary-title">
             <div class="dashboard-section-heading"><h2 id="summary-title">Sua coleção em números</h2><span>Resumo dos seus registros</span></div>
             <dl class="summary-grid">
-                <div class="summary-card"><dt>Total pago registrado</dt><dd id="summary-total" th:text="${summary.totalPaidLabel()}">Não informado</dd><p>Somente valores de aquisição dos exemplares físicos.</p></div>
+                <div class="summary-card"><dt>Total pago nos cadastros</dt><dd id="summary-total" th:text="${summary.registeredPaidLabel()}">Não informado</dd><p>Valor pago informado em cada edição, contado uma única vez.</p></div>
+                <div class="summary-card"><dt>Edições físicas</dt><dd id="summary-physical" th:text="${summary.physicalEditions}">0</dd><p>Cadastros marcados como físicos, mesmo sem exemplares.</p></div>
+                <div class="summary-card"><dt>Edições digitais</dt><dd id="summary-digital" th:text="${summary.digitalEditions}">0</dd><p>Cadastros marcados como digitais.</p></div>
                 <div class="summary-card"><dt>Exemplares físicos</dt><dd id="summary-copies" th:text="${summary.copies}">0</dd><p>Cada cópia cadastrada conta como um exemplar.</p></div>
                 <div class="summary-card"><dt>Edições com exemplares</dt><dd id="summary-owned-editions" th:text="${summary.ownedEditions}">0</dd><p>Edições distintas presentes no acervo físico.</p></div>
                 <div class="summary-card"><dt>Edições cadastradas</dt><dd id="summary-editions" th:text="${summary.editions}">0</dd><p>Inclui digitais e edições ainda sem exemplares.</p></div>
             </dl>
-            <p class="summary-explanation" th:if="${summary.copies > 0}">Valores informados em <strong th:text="${summary.pricedCopies}">0</strong> de <strong th:text="${summary.copies}">0</strong> exemplares físicos.</p>
-            <p class="summary-coverage" th:if="${summary.unpricedCopies() > 0}"><strong th:text="${summary.unpricedCopies()}">0</strong> exemplar(es) sem valor pago informado. O total considera apenas os preços conhecidos e pode estar incompleto.</p>
-            <p class="summary-coverage" th:if="${summary.copies == 0}">Ainda não há exemplares físicos. Abra uma edição no catálogo e cadastre seus exemplares e valores de aquisição.</p>
-            <p class="summary-explanation">Este total não é uma avaliação de mercado. Preços de capa, valores de referência das edições e gastos digitais não entram na soma. <a th:href="@{/edicoes}">Consultar edições e exemplares →</a></p>
+            <p class="summary-explanation" th:if="${summary.editions > 0}">Valor pago informado em <strong th:text="${summary.pricedEditions}">0</strong> de <strong th:text="${summary.editions}">0</strong> edições.</p>
+            <p class="summary-coverage" th:if="${summary.unpricedEditions() > 0}"><strong th:text="${summary.unpricedEditions()}">0</strong> edição(ões) sem valor pago informado. O total considera apenas os preços conhecidos e pode estar incompleto.</p>
+            <p class="summary-explanation" th:if="${summary.unknownMediaEditions() > 0}"><strong th:text="${summary.unknownMediaEditions()}">0</strong> edição(ões) com suporte não informado; não entram nas contagens de físicas ou digitais.</p>
+            <p class="summary-coverage" th:if="${summary.editions == 0}">Sua coleção ainda não tem edições cadastradas. Cadastre seus quadrinhos, suporte e valor pago para acompanhar o resumo.</p>
+            <p class="summary-explanation" th:if="${summary.copies > 0}">Aquisições dos exemplares físicos (separadas): <strong id="summary-copy-total" th:text="${summary.totalPaidLabel()}">Não informado</strong>. Valores informados em <strong th:text="${summary.pricedCopies}">0</strong> de <strong th:text="${summary.copies}">0</strong> exemplares; <strong th:text="${summary.unpricedCopies()}">0</strong> sem preço.</p>
+            <p class="summary-explanation">O total principal soma o campo “Valor pago” dos cadastros físicos, digitais e de suporte não informado. Não soma preços de capa nem valores dos exemplares, e não é avaliação de mercado. Exemplares físicos representam cópias cadastradas separadamente. <a th:href="@{/edicoes}">Consultar edições e exemplares →</a></p>
         </section>
         <section class="collection-hero" aria-labelledby="hero-title">
             <div class="hero-copy"><p class="hero-eyebrow">Organize. Encontre. Complete.</p><h2 id="hero-title">Sua coleção,<br>no lugar certo.</h2><p>Dos clássicos aos novos favoritos, guarde os detalhes de cada edição e encontre espaço para a próxima história.</p>
