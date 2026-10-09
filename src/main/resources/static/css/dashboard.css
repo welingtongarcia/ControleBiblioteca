@@ -94,3 +94,4 @@
 .reading-status { display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin:12px 0; }
 .reading-status form { margin:0; }
 .reading-status button { min-height:44px; }
+.isbn-suggestions { border:1px solid #414954; border-radius:12px; padding:16px; margin:16px 0; overflow-wrap:anywhere; }

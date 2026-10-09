@@ -87,6 +87,8 @@ class MinhaGibitecaApplicationTest {
 
     @Autowired private CopyService copyService;
     @Autowired private br.com.minhagibiteca.collection.application.ReadingService readingService;
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
+    private br.com.minhagibiteca.catalog.application.IsbnLookupService isbnLookup;
     @Autowired private PhysicalCopyRepository physicalCopyRepository;
     @Autowired private br.com.minhagibiteca.collection.application.ChecklistService checklistService;
     @Autowired private br.com.minhagibiteca.collection.infrastructure.ChecklistRepository checklistRepository;
@@ -135,6 +137,76 @@ class MinhaGibitecaApplicationTest {
         comicSeriesRepository.deleteAll();
         publisherRepository.deleteAll();
         userAccountRepository.deleteAll();
+    }
+
+    @Test
+    void fillsIsbnDraftWithoutSavingOrOverwritingAndAssociatesOnlyOwnedNames() throws Exception {
+        var owner = userAccountRepository.save(UserAccount.create("isbn@example.com", "hash", UserRole.USER));
+        var other = userAccountRepository.save(UserAccount.create("foreign-isbn@example.com", "hash", UserRole.USER));
+        var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
+        var pub = publisherRepository.save(Publisher.create(owner.getId(), "Editora ISBN", null, null));
+        var creator = creatorService.create(owner.getId(), new CreatorService.Command("Autor ISBN", null));
+        publisherRepository.save(Publisher.create(other.getId(), "Editora ISBN", null, null));
+        creatorService.create(other.getId(), new CreatorService.Command("Autor estrangeiro", null));
+        var found = new br.com.minhagibiteca.catalog.application.IsbnMetadata("9780140328721", "Título encontrado <script>", 2001,
+                List.of("editora isbn"), List.of("autor isbn", "Autor estrangeiro"), true);
+        org.mockito.Mockito.when(isbnLookup.lookup("9780140328721")).thenReturn(java.util.Optional.of(found));
+        mockMvc.perform(post("/edicoes/isbn").with(auth).param("isbn", "9780140328721")).andExpect(status().isForbidden());
+        mockMvc.perform(post("/edicoes/isbn").with(SecurityMockMvcRequestPostProcessors.csrf()).param("isbn", "9780140328721"))
+                .andExpect(status().is3xxRedirection());
+        var result = mockMvc.perform(post("/edicoes/isbn").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                        .param("isbn", "9780140328721").param("referencePaidPrice", "19,50").param("mediaType", "DIGITAL")
+                        .param("notes", "Anotação própria").param("returnTo", "/edicoes?q=HQ&page=1"))
+                .andExpect(redirectedUrl("/edicoes/nova?returnTo=/edicoes?q%3DHQ%26page%3D1")).andReturn();
+        var draft = (br.com.minhagibiteca.catalog.presentation.EditionForm) result.getFlashMap().get("editionForm");
+        assertThat(draft.getTitle()).isEqualTo(found.title()); assertThat(draft.getPublicationYear()).isEqualTo(2001);
+        assertThat(draft.getPublisherId()).isEqualTo(pub.getId()); assertThat(draft.getCreatorIds()).containsExactly(creator.getId());
+        assertThat(draft.getReferencePaidPrice()).isEqualByComparingTo("19.50"); assertThat(draft.getMediaType()).isEqualTo(br.com.minhagibiteca.catalog.domain.MediaType.DIGITAL);
+        assertThat(draft.getNotes()).isEqualTo("Anotação própria"); assertThat(editionRepository.count()).isZero();
+        var rendered = mockMvc.perform(get("/edicoes/nova").param("returnTo", "/edicoes?q=HQ&page=1").with(auth).flashAttrs(result.getFlashMap()))
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("Título encontrado &lt;script&gt;")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("/edicoes?q=HQ&amp;page=1")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Buscar pelo ISBN"))).andReturn();
+        var preview = java.nio.file.Path.of("target/ui-isbn"); java.nio.file.Files.createDirectories(preview.resolve("css"));
+        java.nio.file.Files.writeString(preview.resolve("index.html"), rendered.getResponse().getContentAsString());
+        for (String css : List.of("main.css", "dashboard.css")) java.nio.file.Files.copy(java.nio.file.Path.of("src/main/resources/static/css", css), preview.resolve("css").resolve(css), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        var preserve = mockMvc.perform(post("/edicoes/isbn").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                        .param("isbn", "9780140328721").param("title", "Meu título").param("publicationYear", "2020")
+                        .param("publisherId", pub.getId().toString()).param("creatorIds", creator.getId().toString()))
+                .andExpect(redirectedUrl("/edicoes/nova")).andReturn();
+        var kept = (br.com.minhagibiteca.catalog.presentation.EditionForm) preserve.getFlashMap().get("editionForm");
+        assertThat(kept.getTitle()).isEqualTo("Meu título"); assertThat(kept.getPublicationYear()).isEqualTo(2020);
+        mockMvc.perform(post("/edicoes").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                        .param("title", draft.getTitle()).param("isbn", draft.getIsbn()).param("publicationYear", draft.getPublicationYear().toString())
+                        .param("publisherId", draft.getPublisherId().toString()).param("creatorIds", creator.getId().toString())
+                        .param("mediaType", "DIGITAL").param("referencePaidPrice", "19,50"))
+                .andExpect(redirectedUrl("/edicoes"));
+        assertThat(editionRepository.count()).isEqualTo(1);
+    }
+
+    @Test
+    void preservesIsbnDraftWhenLookupFailsOrBindingIsInvalid() throws Exception {
+        var owner = userAccountRepository.save(UserAccount.create("isbn-failure@example.com", "hash", UserRole.USER));
+        var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
+        org.mockito.Mockito.when(isbnLookup.lookup("123")).thenThrow(new br.com.minhagibiteca.catalog.application.IsbnLookupService.LookupException("ISBN inválido"));
+        org.mockito.Mockito.when(isbnLookup.lookup("9780140328721")).thenReturn(java.util.Optional.empty());
+        org.mockito.Mockito.when(isbnLookup.lookup("9780132350884")).thenThrow(new br.com.minhagibiteca.catalog.application.IsbnLookupService.LookupException("Serviço indisponível"));
+        for (String isbn : List.of("123", "9780140328721", "9780132350884")) {
+            var result = mockMvc.perform(post("/edicoes/isbn").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                            .param("isbn", isbn).param("title", "Rascunho").param("notes", "Não perder"))
+                    .andExpect(redirectedUrl("/edicoes/nova")).andReturn();
+            var draft = (br.com.minhagibiteca.catalog.presentation.EditionForm) result.getFlashMap().get("editionForm");
+            assertThat(draft.getTitle()).isEqualTo("Rascunho"); assertThat(draft.getNotes()).isEqualTo("Não perder");
+            assertThat(result.getFlashMap().containsKey("isbnMessage")).isTrue();
+            mockMvc.perform(get("/edicoes/nova").with(auth).flashAttrs(result.getFlashMap())).andExpect(status().isOk());
+        }
+        var invalid = mockMvc.perform(post("/edicoes/isbn").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                        .param("isbn", "9780140328721").param("title", "Rascunho").param("referencePaidPrice", "abc"))
+                .andExpect(redirectedUrl("/edicoes/nova")).andReturn();
+        mockMvc.perform(get("/edicoes/nova").with(auth).flashAttrs(invalid.getFlashMap())).andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("abc")));
+        org.mockito.Mockito.verify(isbnLookup, org.mockito.Mockito.times(1)).lookup("9780140328721");
+        assertThat(editionRepository.count()).isZero();
     }
 
     @Test

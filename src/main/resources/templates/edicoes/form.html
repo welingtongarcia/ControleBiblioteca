@@ -9,7 +9,25 @@
 
 
     <h1 id="page-title" th:text="${pageTitle}">Nova edição</h1>
+    <p class="alert" th:classappend="${isbnMetadata != null ? 'alert-success' : 'alert-error'}" th:if="${isbnMessage}" role="status" th:text="${isbnMessage}"></p>
+    <section class="isbn-suggestions" th:if="${isbnMetadata}" aria-labelledby="isbn-result-title">
+        <h2 id="isbn-result-title">Sugestões da Open Library</h2>
+        <dl class="details-list"><dt>Título encontrado</dt><dd th:text="${isbnMetadata.title}"></dd>
+            <dt>Editora(s)</dt><dd th:text="${isbnMetadata.publishers.empty ? 'Não informada' : #strings.listJoin(isbnMetadata.publishers, ', ')}"></dd>
+            <dt>Autor(es)</dt><dd th:text="${isbnMetadata.authors.empty ? 'Não informados' : #strings.listJoin(isbnMetadata.authors, ', ')}"></dd>
+        </dl>
+        <p>Editora e criadores são selecionados somente quando já existem nos seus cadastros e o nome corresponde de forma única. Confira as associações abaixo; nenhum cadastro auxiliar foi criado.</p>
+        <a th:href="${isbnMetadata.sourceUrl()}" target="_blank" rel="noopener noreferrer">Consultar registro na Open Library</a>
+        <p th:if="${isbnMetadata.coverAvailable}">A fonte informa uma capa disponível. Consulte-a no link acima; o upload de capa continua disponível após salvar a edição.</p>
+    </section>
     <form class="stack" th:action="${formAction}" th:object="${editionForm}" method="post"><input type="hidden" name="returnTo" th:value="${navigation.pageReturnUrl}">
+        <div class="field">
+            <label for="isbn">ISBN</label>
+            <input id="isbn" th:field="*{isbn}" maxlength="32" aria-describedby="isbn-help isbn-error">
+            <p id="isbn-error" class="field-error" th:if="${#fields.hasErrors('isbn')}" th:errors="*{isbn}"></p>
+            <button th:if="${editionId == null}" type="submit" th:formaction="@{/edicoes/isbn}" formnovalidate>Buscar pelo ISBN</button>
+            <p id="isbn-help" class="help-text">ISBN é opcional. A busca envia somente o ISBN à Open Library e preenche campos vazios. Revise os dados; se não houver resultado, continue manualmente. Não altera valores, suporte ou leitura.</p>
+        </div>
         <div class="field">
             <label for="title">Título <span aria-hidden="true">*</span></label>
             <input id="title" th:field="*{title}" maxlength="240" required>
@@ -26,11 +44,6 @@
             <p class="field-error" th:if="${#fields.hasErrors('variant')}" th:errors="*{variant}"></p>
         </div>
         <div class="year-grid">
-            <div class="field">
-                <label for="isbn">ISBN</label>
-                <input id="isbn" th:field="*{isbn}" maxlength="32">
-                <p class="field-error" th:if="${#fields.hasErrors('isbn')}" th:errors="*{isbn}"></p>
-            </div>
             <div class="field">
                 <label for="publicationYear">Ano de publicação</label>
                 <input id="publicationYear" th:field="*{publicationYear}" type="number" min="1800" max="2100">

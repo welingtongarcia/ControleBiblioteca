@@ -33,6 +33,9 @@ Uma edição contém zero ou mais obras e uma obra pode estar em várias ediçõ
 
 ### Edições e catálogo
 
+- **FR-027:** no cadastro novo, Buscar pelo ISBN consulta Open Library após ação explícita e preenche somente campos vazios de título/ano. Validar ISBN-10/13 e checksum apenas para busca, mantendo ISBN opcional/manual no cadastro. Editora/criadores próprios só são associados por nome exato sem distinção de maiúsculas e correspondência única; não criar registros automaticamente. Exibir sugestões bibliográficas, fonte e link de consulta à capa quando disponível; capa não é baixada/importada nesta etapa. Não sobrescrever campos existentes, valores, série, numeração, suporte, obras ou leitura. Consultar envia somente ISBN público, nunca dados privados do formulário. Revisão e Salvar continuam obrigatórios; busca não persiste edição.
+- **FR-028:** busca autenticada com POST/CSRF e PRG preserva rascunho/contexto. ISBN inválido, ausência, timeout, indisponibilidade e limite de consultas mostram mensagens pt-BR e permitem continuar manualmente. Sem chave externa, URLs arbitrárias, JavaScript obrigatório ou segredos em logs. Cache limitado/temporário por ISBN e teto global de uma consulta externa por segundo; timeout/resposta limitados. Editar registros existentes permanece manual nesta etapa.
+
 - **FR-020:** usuário pode criar, consultar, editar e solicitar exclusão de edição própria com título obrigatório, número editorial textual opcional, editora/série opcionais, ano parcial opcional, ISBN opcional, formato, variante e metadados essenciais opcionais.
 - **FR-021:** o mesmo ISBN pode existir em mais de uma edição; ISBN em branco é válido. Uma combinação de título, série, número e variante pode gerar aviso de possível duplicidade, nunca bloqueio automático.
 - **FR-022:** usuário pode associar zero ou mais obras e criadores a uma edição. Uma obra pode ocorrer em várias edições.
@@ -72,6 +75,8 @@ Uma edição contém zero ou mais obras e uma obra pode estar em várias ediçõ
 
 ## Cenários de aceitação prioritários
 
+- **AC-015 / FR-027/028:** buscar ISBN válido preenche título/ano/associações vazias próprias, mostra autores/editora/fonte; conteúdo externo escapado. Rascunho já preenchido preservado, lookup não salva nem associa dados alheios. Inválido não chama provedor; ausência/falha preservam formulário; CSRF/login/PRG/contexto e salvar posterior testados. ISBN manual livre continua aceito. Link de capa gerado para fonte fixa, sem download. Testes determinísticos com HTTP simulado, sem depender da internet; smoke externo separado documentado com limites.
+
 - **AC-014 / FR-042–044:** cadastro antigo/novo não lido; marcar/desmarcar em catálogo/detalhe preserva retorno permitido e estado após edição bibliográfica; CSRF/owner no servidor. Uma série com 1 lida em 3 mostra 33,3%, outra vazia 0,0%; geral inclui edição sem série e digital, ignora cópias e checklist. Usuários isolados, percentual usa total além da página, alterações atualizam denominador e numerador; unitários de percentuais/serviço, integrado PostgreSQL/MockMvc e migration upgrade preservam cadastros.
 
 - **AC-001 / FR-003:** dado o usuário A autenticado, quando acessa a URL de uma edição de B, então recebe 404 e nenhum título/metadado de B é renderizado.
@@ -103,4 +108,4 @@ Uma edição contém zero ou mais obras e uma obra pode estar em várias ediçõ
 
 ## Fora do escopo do MVP
 
-Reconhecimento por IA, scanner/barcode, consulta automática de ISBN, avaliação automática de preços/valorização, empréstimos, recursos sociais, wishlist avançada, controle financeiro e recuperação de senha por e-mail. O registro manual de preço de capa e valor pago está incluído conforme FR-026.
+Reconhecimento por IA, scanner/barcode, consulta automática de ISBN sem ação explícita, avaliação automática de preços/valorização, empréstimos, recursos sociais, wishlist avançada, controle financeiro e recuperação de senha por e-mail. A busca assistida por ISBN está incluída conforme FR-027/028. O registro manual de preço de capa e valor pago está incluído conforme FR-026.
