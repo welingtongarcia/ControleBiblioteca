@@ -121,4 +121,4 @@ Uma edição contém zero ou mais obras e uma obra pode estar em várias ediçõ
 
 ## Fora do escopo do MVP
 
-Reconhecimento por IA, scanner/barcode, consulta automática de ISBN sem ação explícita, avaliação automática de preços/valorização, empréstimos, recursos sociais, wishlist avançada, controle financeiro e recuperação de senha por e-mail. A busca assistida por ISBN está incluída conforme FR-027/028. O registro manual de preço de capa e valor pago está incluído conforme FR-026.
+Reconhecimento por IA, scanner/barcode, consulta automática de ISBN sem ação explícita, avaliação automática de preços/valorização, empréstimos, recursos sociais, wishlist avançada, controle financeiro e recuperação de senha por e-mail. A busca assistida por ISBN está incluída conforme FR-027/028. O registro manual de preço de capa e valor pago está incluído conforme FR-026. Evolução Financeiro solicitada em 2026-10-09 é planejada separadamente em specs/002-financeiro; não implica alterar a semântica do resumo existente ou somar referências/aquisições sem decisão explícita.
