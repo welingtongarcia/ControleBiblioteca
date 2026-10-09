@@ -17,6 +17,8 @@ Cada tarefa só começa após suas dependências e os requisitos associados esta
 
 ## Fase 3 — Catálogo
 
+- [x] T030 Reorganizar catálogo com cartões, filtros expansíveis, valores/leitura, faixa de resultados e vazio contextual; preservar consultas/retornos/CSRF e conferir desktop/móvel. **Dep.:** T012/T021/T023/T026. **Aceite:** FR-046, AC-018; verification-catalog-layout.md.
+
 - [x] T029 Reorganizar início com ações/visão geral/acervo/apoio, disclosure de metodologia e vazio contextual; manter cálculos/links/segurança e validar desktop/móvel. **Dep.:** T026. **Aceite:** FR-045, AC-017; evidências em verification-home-layout.md.
 
 - [x] T027 Buscar metadados por ISBN no cadastro novo, preencher vazios/revisar sugestões, preservar rascunho e fallback manual; testar checksum/HTTP/CSRF/isolamento/PRG. **Dep.:** T026. **Aceite:** AC-015, FR-027/028; evidências e limites em verification-isbn.md; sem importação automática de capa.

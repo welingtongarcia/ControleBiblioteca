@@ -32,6 +32,7 @@ import br.com.minhagibiteca.inventory.application.CopyService;
 import br.com.minhagibiteca.inventory.domain.CopyCondition;
 import br.com.minhagibiteca.inventory.infrastructure.PhysicalCopyRepository;
 import java.sql.Connection;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Base64;
 import javax.sql.DataSource;
@@ -838,6 +839,8 @@ class MinhaGibitecaApplicationTest {
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("format=Encadernado")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("order=TITLE_DESC")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("page=1")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Exibindo 1–20")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("class=\"edition-filter-details\" open")))
                 .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Formato privado"))));
         mockMvc.perform(get("/edicoes").with(auth).param("order", "qualquer-coluna"))
                 .andExpect(status().isOk())
@@ -851,6 +854,73 @@ class MinhaGibitecaApplicationTest {
                         .param("publisherId", publisher.getId().toString())).andExpect(status().isNotFound());
         mockMvc.perform(get("/edicoes").with(SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(other)))
                         .param("seriesId", series.getId().toString())).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void rendersCatalogCardsWithMetadataPricesReadingAndSafeActions() throws Exception {
+        var owner = userAccountRepository.save(UserAccount.create("catalog-layout@example.com", "hash", UserRole.USER));
+        var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
+        var physical = editionService.create(owner.getId(), new EditionService.Command(null, null,
+                "A aventura do colecionador", "1A", "Capa alternativa", "9786559601325", 2026, "Encadernado", null,
+                br.com.minhagibiteca.catalog.domain.MediaType.PHYSICAL, new BigDecimal("59.90"), new BigDecimal("39.50")));
+        editionService.create(owner.getId(), new EditionService.Command(null, null,
+                "Biblioteca digital", "Especial", null, null, 2025, "Digital", null,
+                br.com.minhagibiteca.catalog.domain.MediaType.DIGITAL, null, BigDecimal.ZERO));
+        editionService.create(owner.getId(), new EditionService.Command(null, null,
+                "Coleção com título extenso para conferir a quebra de linhas em telas pequenas", null, null, null, null, null, null));
+        var escaped = editionService.create(owner.getId(), new EditionService.Command(null, null,
+                "<script>alert('teste')</script>", null, null, null, null, null, null));
+        editionCoverService.replace(escaped.getId(), owner.getId(), new MockMultipartFile("cover", "capa.png", "image/png",
+                Base64.getDecoder().decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=")));
+        mockMvc.perform(post("/edicoes/{id}/leitura", physical.getId()).with(auth)
+                .with(SecurityMockMvcRequestPostProcessors.csrf()).param("read", "true").param("fromCatalog", "true"))
+                .andExpect(status().is3xxRedirection());
+        var result = mockMvc.perform(get("/edicoes").with(auth))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("loading=\"lazy\"")))
+                .andReturn();
+        var html = result.getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+        assertThat(html.split("class=\"edition-card\"", -1)).hasSize(5);
+        assertThat(html.split("class=\"edition-delete\"", -1)).hasSize(5);
+        assertThat(html.split("name=\"_csrf\"", -1)).hasSize(10); // logout + leitura/exclusão por cartão
+        assertThat(html).doesNotContain("class=\"edition-filter-details\" open", "class=\"edition-delete\" open");
+        assertThat(html).contains("4 edições encontradas", "Exibindo 1–4", "Nº 1A", "2026", "Encadernado",
+                "Variante: Capa alternativa", "ISBN: 9786559601325", "39,50", "59,90", "0,00",
+                "Não informado", "Já li", "Não li", "Sem<br>capa", "Valor pago da edição", "Preço de capa",
+                "&lt;script&gt;", "/edicoes/" + escaped.getId() + "/capa")
+                .doesNotContain("<script>alert(");
+        var preview = java.nio.file.Path.of("target/ui-catalog");
+        java.nio.file.Files.createDirectories(preview.resolve("css"));
+        java.nio.file.Files.writeString(preview.resolve("index.html"), html);
+        var coverDir = preview.resolve("edicoes").resolve(escaped.getId().toString());
+        java.nio.file.Files.createDirectories(coverDir);
+        try (var input = editionCoverService.load(escaped.getId(), owner.getId()).resource().getInputStream()) {
+            java.nio.file.Files.copy(input, coverDir.resolve("capa"), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        }
+        for (String css : List.of("main.css", "dashboard.css"))
+            java.nio.file.Files.copy(java.nio.file.Path.of("src/main/resources/static/css", css),
+                    preview.resolve("css").resolve(css), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+    }
+
+    @Test
+    void distinguishesEmptyCatalogFromEmptySearchAndSelectedFilters() throws Exception {
+        var owner = userAccountRepository.save(UserAccount.create("empty-catalog-layout@example.com", "hash", UserRole.USER));
+        var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
+        var empty = mockMvc.perform(get("/edicoes").with(auth)).andExpect(status().isOk()).andReturn();
+        assertThat(empty.getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8))
+                .contains("Seu catálogo começa aqui", "Cadastrar primeira edição", "0 edições encontradas");
+        var filtered = mockMvc.perform(get("/edicoes").with(auth).param("q", "inexistente").param("mediaType", "DIGITAL"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("class=\"edition-filter-details\" open")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("value=\"DIGITAL\" selected")))
+                .andReturn();
+        assertThat(filtered.getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8))
+                .contains("Nenhuma edição nesta consulta", "Filtros ativos", "Ver todo o catálogo")
+                .doesNotContain("Cadastrar primeira edição");
+        var preview = java.nio.file.Path.of("target/ui-catalog");
+        java.nio.file.Files.createDirectories(preview);
+        java.nio.file.Files.writeString(preview.resolve("empty.html"), empty.getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8));
+        java.nio.file.Files.writeString(preview.resolve("filtered.html"), filtered.getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8));
     }
 
     @Test

@@ -103,6 +103,10 @@ Reforço T024 (2026-10-09): teste PostgreSQL/MockMvc exercita POST real com CSRF
 
 ## Marcos de entrega
 
+### T030 — reorganização do catálogo
+
+Clarificação: melhoria da apresentação existente; não adicionar filtros de leitura, inferir posse ou somar preços. Implementar somente template/CSS escopado: pesquisa e ordem, filtros nativos expansíveis, grade de cartões, faixa paginada, valores rotulados e vazio contextual. Reutilizar DTO EditionView e fragment de leitura; URLs, serviços e autorização existentes. Testar HTML/segurança/contexto e gerar fixtures sintéticas para QA visual desktop/móvel. Executar clean verify, registrar limites e commit após validação.
+
 1. Fundação: wrapper Maven, Boot MVC/Thymeleaf, config, Flyway inicial, Compose/health, esqueleto visual e testes de fumaça.
 2. Acesso: usuário/bootstrap, login/logout, isolamento proprietário testado.
 3. Catálogo: editoras/séries/edições, capa e listagem pesquisável.
