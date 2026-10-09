@@ -8,6 +8,10 @@ Fluxo padrão: controller MVC → form DTO validado → serviço de aplicação 
 
 ## Modelo e persistência
 
+### T014 — exemplares físicos (2026-10-09)
+
+V11 cria physical_copies: UUID/dono/edição, localização opcional, conservação e observações, origem/data/preço opcionais, timestamps UTC; numeric(12,2) BRL e FKs compostas por proprietário. Índices dono/edição/data/id e dono/localização. Módulo inventory retorna DTOs via consulta paginada com joins do caminho de localização e consulta separada da edição autorizada. Mutações usam o mesmo lock do proprietário de T013, incluindo mudança de suporte/exclusão de edição para não disputar referências. Detalhe bibliográfico integra contagem/avisos e paginação de exemplares. Formulários usam decimal pt-BR e confirmação server-side. Edições digitais rejeitadas para exemplares físicos; preços de referência não migram/inferem aquisições. Testar regras, proprietário, valores distintos, bloqueios de referência, CSRF e renderização.
+
 ### T013 — localizações (2026-10-09)
 
 Módulo inventory com domain/application/infrastructure/presentation; nenhum objeto JPA nas telas. V10 cria storage_locations, FK composta de pai/proprietário, check de tipo e auto-referência, nomes únicos entre irmãos com NULLS NOT DISTINCT (PostgreSQL 16). Enum estabelece quatro posições; cada ligação deve aumentar a posição, permitindo omitir níveis. Serviço verifica pai/ancestrais e filhos antes de editar, usa lock transacional da linha do proprietário para serializar alterações da árvore e evita ciclos concorrentes. Listagem e seleção de pai usam consulta com três joins ancestrais e DTO de caminho, sem consultas por nó. Seleção de pai apresenta caminhos e tipos do proprietário e exclui o próprio registro; servidor valida compatibilidade e ciclos ao salvar, sem JavaScript obrigatório. Exclusão usa tela de confirmação e POST/CSRF; bloqueio por filhos no serviço e FK. T014 acrescentará bloqueio por exemplares. Testes de domínio/serviço e MockMvc/PostgreSQL cobrem regras e isolamento.
@@ -29,7 +33,7 @@ T012 (2026-10-09): GET `/edicoes` aceita `q`, `publisherId`, `seriesId`, `format
 | Autenticação | `GET/POST /login`, `POST /logout` | POST é conduzido por Spring Security; login customizado Thymeleaf. |
 | Dashboard | `GET /dashboard` | Página inicial autenticada. |
 | Edições | `GET /edicoes`, `GET /edicoes/{id}`, `GET /edicoes/nova`, `POST /edicoes`, `GET/POST /edicoes/{id}/editar`, `POST /edicoes/{id}/excluir`, `POST /edicoes/{id}/capa` | Filtros em query string; exclusão com confirmação e CSRF. |
-| Exemplares | `GET /edicoes/{edicaoId}/exemplares/novo`, `POST /edicoes/{edicaoId}/exemplares`, `GET/POST /exemplares/{id}/editar`, `POST /exemplares/{id}/excluir` | Sempre valida dono da edição/exemplar. |
+| Exemplares | `GET /edicoes/{editionId}/exemplares/novo`, `POST /edicoes/{editionId}/exemplares`, `GET/POST /exemplares/{id}/editar`, `GET/POST /exemplares/{id}/excluir` | Sempre valida dono da edição/exemplar; GET confirma exclusão, POST exige confirmação/CSRF. |
 | Editoras | `GET /editoras`, `GET/POST /editoras/nova`, `GET/POST /editoras/{id}/editar`, `POST /editoras/{id}/excluir` | Exclusão segura. |
 | Séries/checklist | `GET /series`, `GET/POST /series/nova`, `GET/POST /series/{id}/editar`, `POST /series/{id}/excluir`, `GET/POST /series/{id}/checklist`, `GET /series/{id}/faltantes` | Lacunas explícitas. |
 | Localizações | `GET /localizacoes`, `GET/POST /localizacoes/nova`, `GET/POST /localizacoes/{id}/editar`, `POST /localizacoes/{id}/excluir` | Árvore limitada a quatro níveis. |

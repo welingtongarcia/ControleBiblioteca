@@ -4,7 +4,7 @@
 <body><main class="content form-content" aria-labelledby="page-title">
     <h1 id="page-title">Excluir localização</h1>
     <p>Deseja excluir a localização <strong th:text="${location.path}"></strong>?</p>
-    <p>A exclusão só será permitida se ela não tiver localizações internas.</p>
+    <p>A exclusão só será permitida se ela não tiver localizações internas nem exemplares vinculados.</p>
     <form class="form-actions" th:action="@{/localizacoes/{id}/excluir(id=${location.id})}" method="post">
         <input type="hidden" name="confirmed" value="true">
         <button type="submit">Confirmar exclusão</button><a th:href="@{/localizacoes}">Cancelar</a>

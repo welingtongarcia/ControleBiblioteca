@@ -27,3 +27,9 @@ Todos os FR possuem pelo menos uma tarefa: acesso T005–T007; editoras/séries 
 4. Validar a estratégia de backup do volume de capas junto do PostgreSQL em T019; `pg_dump` isolado não é backup completo.
 
 Nenhuma contradição impede iniciar a fundação. Não há código funcional nesta entrega.
+
+## Análise incremental — T014 (2026-10-09)
+
+FR-030/031/033 e AC-003/011 detalhados na especificação e no plano. Exemplar continua distinto de edição: não duplica dados bibliográficos nem infere preço de aquisição. A possibilidade de suporte desconhecido preserva registros antigos, enquanto DIGITAL rejeita exemplar físico. FKs compostas protegem ownership e exclusões; o mesmo lock do proprietário serializa cadastro de cópia, edição de suporte, remoção de edição/localização e realocação. Consultas de detalhe/lista usam DTOs com joins e paginação, sem carregar entidades nas telas. Nenhum serviço injeta outro em ciclo (EditionService e LocationService consultam referências por JDBC).
+
+Riscos restantes: opções de localização carregam todas as localizações próprias; aferição com volume real e concorrência fica em T018. Não se garante regra física/digital para SQL manual fora dos serviços; propriedade e referências são protegidas também pelo banco. Aquisição não modela empréstimos, vendas ou histórico financeiro nesta tarefa.

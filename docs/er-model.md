@@ -22,3 +22,5 @@ Edition 1 ─── 0..1 CoverImage
 - Uma `StorageLocation` pode apontar para pai do mesmo dono; validação impede ciclo e profundidade maior que quatro. Ordem: ROOM → SHELF_UNIT → SHELF → BOX, permitindo omitir níveis e começar com qualquer tipo na raiz. Cada ligação aumenta a posição do tipo. V10 garante pai do mesmo dono com FK composta e nomes únicos entre irmãos.
 - `CoverImage` guarda somente chave de armazenamento, nome original sanitizado, tipo, tamanho, hash e datas. O conteúdo vive fora do banco.
 - Edição não é apagável enquanto houver PhysicalCopy; demais exclusões seguem a mesma validação de dependências especificada.
+- V11 garante edição/localização do mesmo dono que PhysicalCopy via FKs compostas. Localização ocupada não é apagável; realocação é explícita, inclusive para nenhuma localização. Não há cascata de exclusão de exemplares.
+- PhysicalCopy representa somente cópia física; edição DIGITAL não recebe cópias e edição com cópias não muda para DIGITAL. Preço pago é opcional por exemplar, independente do valor de referência bibliográfico. Várias cópias são permitidas, apenas sinalizadas no detalhe.

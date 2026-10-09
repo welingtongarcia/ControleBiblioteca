@@ -61,4 +61,6 @@ select { background: #11151d; border: 1px solid #657084; border-radius: .5rem; c
 .catalog-filters select, .catalog-filters input { width: 100%; min-width: 0; }
 .catalog-cover { object-fit: contain; vertical-align: middle; margin-right: .75rem; }
 .pagination { margin-top: 1.5rem; }
+.copy-form .field { min-width: 0; }
+.copy-form input, .copy-form select, .copy-form textarea { min-width: 0; width: 100%; }
 @media (max-width: 38rem) { .page-heading, .resource-list li { align-items: start; flex-direction: column; } .year-grid { grid-template-columns: 1fr; } }

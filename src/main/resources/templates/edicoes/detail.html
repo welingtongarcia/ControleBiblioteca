@@ -47,6 +47,34 @@
         <p th:if="${creators.empty}">Nenhum criador associado.</p>
         <ul th:unless="${creators.empty}"><li th:each="creator : ${creators}" th:text="${creator.name}"></li></ul>
     </section>
+    <section class="details-section" aria-labelledby="copies-title">
+        <h2 id="copies-title">Exemplares físicos</h2>
+        <p th:unless="${canAddCopy}">Edição digital: não possui exemplares físicos.</p>
+        <a class="button-link" th:if="${canAddCopy}" th:href="@{/edicoes/{id}/exemplares/novo(id=${edition.id})}">Novo exemplar</a>
+        <p th:if="${copies.empty and canAddCopy}">Nenhum exemplar cadastrado.</p>
+        <p class="alert" role="status" th:if="${copies.totalElements > 1}" th:text="|Você possui ${copies.totalElements} exemplares desta edição. Duplicados são permitidos.|"></p>
+        <article th:each="copy, item : ${copies}" class="details-section" th:attr="aria-labelledby=|copy-${copy.id}|">
+            <h3 th:id="|copy-${copy.id}|" th:text="|Exemplar ${copies.number * copies.size + item.count}|">Exemplar</h3>
+            <dl class="details-list">
+                <dt>Conservação</dt><dd th:text="${copy.condition.label}"></dd>
+                <dt>Detalhes da conservação</dt><dd th:text="${copy.conditionNotes ?: 'Não informados'}"></dd>
+                <dt>Localização</dt><dd th:text="${copy.locationPath}"></dd>
+                <dt>Origem da aquisição</dt><dd th:text="${copy.acquisitionSource ?: 'Não informada'}"></dd>
+                <dt>Data de aquisição</dt><dd th:text="${copy.formattedDate}"></dd>
+                <dt>Valor pago</dt><dd th:text="${copy.formattedPrice}"></dd>
+                <dt>Observações</dt><dd th:text="${copy.notes ?: 'Nenhuma observação cadastrada'}"></dd>
+            </dl>
+            <div class="form-actions">
+                <a th:href="@{/exemplares/{id}/editar(id=${copy.id})}" th:attr="aria-label=|Editar exemplar ${copies.number * copies.size + item.count}|">Editar exemplar</a>
+                <a th:href="@{/exemplares/{id}/excluir(id=${copy.id})}" th:attr="aria-label=|Excluir exemplar ${copies.number * copies.size + item.count}|">Excluir exemplar</a>
+            </div>
+        </article>
+        <nav class="pagination" th:if="${copies.totalPages > 1}" aria-label="Paginação dos exemplares">
+            <a th:if="${copies.hasPrevious()}" th:href="@{/edicoes/{id}(id=${edition.id},copyPage=${copies.number - 1})}">Anterior</a>
+            <span th:text="|Página ${copies.number + 1} de ${copies.totalPages}|"></span>
+            <a th:if="${copies.hasNext()}" th:href="@{/edicoes/{id}(id=${edition.id},copyPage=${copies.number + 1})}">Próxima</a>
+        </nav>
+    </section>
     <form th:action="@{/edicoes/{id}/excluir(id=${edition.id})}" method="post">
         <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
         <button class="link-button" type="submit">Excluir edição</button>

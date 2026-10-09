@@ -35,6 +35,7 @@ public class LocationService {
     @Transactional public void delete(UUID id, UUID owner) {
         lockOwner(owner); var location = owned(id, owner);
         if (locations.existsByParentIdAndOwnerUserId(id, owner)) throw new RuleViolation("parentId", "Esta localização contém outras localizações. Mova ou exclua as localizações internas antes de continuar.");
+        if (Boolean.TRUE.equals(jdbc.queryForObject("select exists(select 1 from physical_copies where storage_location_id = ? and owner_user_id = ?)", Boolean.class, id, owner))) throw new RuleViolation("parentId", "Esta localização contém exemplares. Realoque ou remova os exemplares antes de excluí-la.");
         locations.delete(location); locations.flush();
     }
     private StorageLocation owned(UUID id, UUID owner) { return locations.findByIdAndOwnerUserId(id, owner).orElseThrow(ResourceNotFoundException::new); }

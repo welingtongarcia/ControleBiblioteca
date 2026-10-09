@@ -14,6 +14,7 @@
         <a class="button-link" th:href="@{/edicoes/nova}">Nova edição</a>
     </div>
     <p class="alert alert-success" th:if="${successMessage}" role="status" th:text="${successMessage}"></p>
+    <p class="alert alert-error" th:if="${errorMessage}" role="alert" th:text="${errorMessage}"></p>
     <form class="catalog-filters" method="get" th:action="@{/edicoes}" aria-label="Pesquisa e filtros do catálogo">
         <div class="field catalog-search">
             <label for="q">Buscar edição</label>

@@ -28,6 +28,9 @@ import br.com.minhagibiteca.catalog.application.EditionCoverService;
 import br.com.minhagibiteca.catalog.application.EditionService;
 import br.com.minhagibiteca.catalog.application.WorkService;
 import br.com.minhagibiteca.catalog.domain.Edition;
+import br.com.minhagibiteca.inventory.application.CopyService;
+import br.com.minhagibiteca.inventory.domain.CopyCondition;
+import br.com.minhagibiteca.inventory.infrastructure.PhysicalCopyRepository;
 import java.sql.Connection;
 import java.util.List;
 import java.util.Base64;
@@ -82,6 +85,9 @@ class MinhaGibitecaApplicationTest {
     @Autowired
     private EditionService editionService;
 
+    @Autowired private CopyService copyService;
+    @Autowired private PhysicalCopyRepository physicalCopyRepository;
+
     @Autowired
     private WorkService workService;
 
@@ -116,6 +122,7 @@ class MinhaGibitecaApplicationTest {
 
     @BeforeEach
     void clearUsers() {
+        physicalCopyRepository.deleteAllInBatch();
         editionRepository.deleteAll();
         workRepository.deleteAll();
         creatorRepository.deleteAll();
@@ -552,6 +559,152 @@ class MinhaGibitecaApplicationTest {
         mockMvc.perform(post("/localizacoes/{id}/excluir", box.id()).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("confirmed", "true"))
                 .andExpect(redirectedUrl("/localizacoes"));
         assertThat(storageLocationRepository.findById(box.id())).isEmpty();
+    }
+
+    @Test
+    void registersDuplicateCopiesWithIndependentPricesAndUpdatesTheirDetails() throws Exception {
+        var owner = userAccountRepository.save(UserAccount.create("copias@example.com", "hash", UserRole.USER));
+        var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
+        var edition = editionService.create(owner.getId(), new EditionService.Command(null, null, "HQ física", null, null, null, null, null, null,
+                br.com.minhagibiteca.catalog.domain.MediaType.PHYSICAL, null, new java.math.BigDecimal("80.00")));
+        var room = locationService.create(owner.getId(), new br.com.minhagibiteca.inventory.application.LocationService.Command(
+                null, br.com.minhagibiteca.inventory.domain.LocationLevel.ROOM, "Sala HQ", null));
+        var box = locationService.create(owner.getId(), new br.com.minhagibiteca.inventory.application.LocationService.Command(
+                room, br.com.minhagibiteca.inventory.domain.LocationLevel.BOX, "Caixa HQ", null));
+        mockMvc.perform(get("/edicoes/{id}/exemplares/novo", edition.getId()).with(auth)).andExpect(status().isOk())
+                .andExpect(view().name("exemplares/form"));
+        for (String price : List.of("29,90", "0,00")) {
+            mockMvc.perform(post("/edicoes/{id}/exemplares", edition.getId()).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                            .param("condition", "GOOD").param("storageLocationId", box.toString()).param("acquisitionPrice", price)
+                            .param("acquisitionDate", "2020-03-15").param("acquisitionSource", "Sebo"))
+                    .andExpect(redirectedUrl("/edicoes/" + edition.getId()));
+        }
+        var page = copyService.list(edition.getId(), owner.getId(), 0);
+        assertThat(page.getTotalElements()).isEqualTo(2);
+        assertThat(page.getContent().getFirst().acquisitionPrice()).isEqualByComparingTo("29.90");
+        assertThat(page.getContent().getLast().acquisitionPrice()).isEqualByComparingTo("0.00");
+        mockMvc.perform(get("/edicoes/{id}", edition.getId()).with(auth)).andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Duplicados são permitidos")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Sala HQ › Caixa HQ")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("15/03/2020")));
+        var id = page.getContent().getFirst().id();
+        mockMvc.perform(get("/exemplares/{id}/editar", id).with(auth)).andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("29,90")));
+        mockMvc.perform(post("/exemplares/{id}/editar", id).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                        .param("condition", "FAIR").param("notes", "<script>alert(1)</script>").param("editionId", java.util.UUID.randomUUID().toString()))
+                .andExpect(redirectedUrl("/edicoes/" + edition.getId()));
+        var updated = copyService.find(id, owner.getId());
+        assertThat(updated.editionId()).isEqualTo(edition.getId());
+        assertThat(updated.condition()).isEqualTo(CopyCondition.FAIR);
+        assertThat(updated.storageLocationId()).isNull();
+        assertThat(updated.acquisitionPrice()).isNull();
+        mockMvc.perform(get("/edicoes/{id}", edition.getId()).with(auth)).andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("&lt;script&gt;")));
+    }
+
+    @Test
+    void rejectsInvalidCopyValuesDigitalEditionsAndForeignReferences() throws Exception {
+        var owner = userAccountRepository.save(UserAccount.create("valid-copias@example.com", "hash", UserRole.USER));
+        var other = userAccountRepository.save(UserAccount.create("foreign-copias@example.com", "hash", UserRole.USER));
+        var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
+        var foreign = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(other));
+        var edition = editionService.create(owner.getId(), new EditionService.Command(null, null, "Suporte desconhecido", null, null, null, null, null, null));
+        var digital = editionService.create(owner.getId(), new EditionService.Command(null, null, "HQ digital", null, null, null, null, null, null,
+                br.com.minhagibiteca.catalog.domain.MediaType.DIGITAL, null, null));
+        var location = locationService.create(other.getId(), new br.com.minhagibiteca.inventory.application.LocationService.Command(
+                null, br.com.minhagibiteca.inventory.domain.LocationLevel.BOX, "Caixa alheia", null));
+        for (String price : List.of("-1", "1,234", "10000000000", "texto", "1.234,56")) {
+            mockMvc.perform(post("/edicoes/{id}/exemplares", edition.getId()).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                            .param("condition", "GOOD").param("acquisitionPrice", price))
+                    .andExpect(status().isOk()).andExpect(view().name("exemplares/form"))
+                    .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.model().attributeHasFieldErrors("copyForm", "acquisitionPrice"));
+        }
+        for (String date : List.of("2999-01-01", "2026-99-99")) {
+            mockMvc.perform(post("/edicoes/{id}/exemplares", edition.getId()).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                            .param("condition", "GOOD").param("acquisitionDate", date)).andExpect(status().isOk())
+                    .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.model().attributeHasFieldErrors("copyForm", "acquisitionDate"));
+        }
+        mockMvc.perform(post("/edicoes/{id}/exemplares", edition.getId()).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                        .param("condition", "INVALID"))
+                .andExpect(status().isOk()).andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.model().attributeHasFieldErrors("copyForm", "condition"));
+        mockMvc.perform(get("/edicoes/{id}/exemplares/novo", digital.getId()).with(auth)).andExpect(redirectedUrl("/edicoes/" + digital.getId()));
+        mockMvc.perform(post("/edicoes/{id}/exemplares", digital.getId()).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(redirectedUrl("/edicoes/" + digital.getId()))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash().attributeExists("errorMessage"));
+        mockMvc.perform(get("/edicoes/{id}", digital.getId()).with(auth)).andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Novo exemplar"))));
+        mockMvc.perform(post("/edicoes/{id}/exemplares", edition.getId()).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                        .param("storageLocationId", location.toString())).andExpect(status().isNotFound());
+        mockMvc.perform(get("/edicoes/{id}/exemplares/novo", edition.getId()).with(foreign)).andExpect(status().isNotFound());
+        mockMvc.perform(post("/edicoes/{id}/exemplares", edition.getId()).with(foreign).with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isNotFound());
+        assertThat(physicalCopyRepository.count()).isZero();
+        var id = copyService.create(edition.getId(), owner.getId(), new CopyService.Command(null, CopyCondition.UNKNOWN, null, null, null, null, null));
+        for (String action : List.of("editar", "excluir")) {
+            mockMvc.perform(get("/exemplares/{id}/" + action, id).with(foreign)).andExpect(status().isNotFound());
+            mockMvc.perform(post("/exemplares/{id}/" + action, id).with(foreign).with(SecurityMockMvcRequestPostProcessors.csrf()))
+                    .andExpect(status().isNotFound());
+        }
+        assertThat(physicalCopyRepository.count()).isEqualTo(1);
+    }
+
+    @Test
+    void protectsReferencedEditionsAndLocationsAndRequiresConfirmedCopyDeletion() throws Exception {
+        var owner = userAccountRepository.save(UserAccount.create("delete-copias@example.com", "hash", UserRole.USER));
+        var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
+        var edition = editionService.create(owner.getId(), new EditionService.Command(null, null, "HQ protegida", null, null, null, null, null, null));
+        var box = locationService.create(owner.getId(), new br.com.minhagibiteca.inventory.application.LocationService.Command(
+                null, br.com.minhagibiteca.inventory.domain.LocationLevel.BOX, "Caixa ocupada", null));
+        var copy = copyService.create(edition.getId(), owner.getId(), new CopyService.Command(box, CopyCondition.NEW, null, null, null, null, null));
+        mockMvc.perform(post("/edicoes/{id}/excluir", edition.getId()).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(redirectedUrl("/edicoes")).andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash().attributeExists("errorMessage"));
+        mockMvc.perform(post("/localizacoes/{id}/excluir", box).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("confirmed", "true"))
+                .andExpect(redirectedUrl("/localizacoes")).andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash().attributeExists("errorMessage"));
+        mockMvc.perform(post("/edicoes/{id}/editar", edition.getId()).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                        .param("title", "HQ protegida").param("mediaType", "DIGITAL"))
+                .andExpect(status().isOk()).andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.model().attributeHasFieldErrors("editionForm", "mediaType"));
+        assertThat(editionService.viewOwned(edition.getId(), owner.getId()).mediaType()).isNull();
+        copyService.update(copy, owner.getId(), new CopyService.Command(null, CopyCondition.NEW, null, null, null, null, null));
+        locationService.delete(box, owner.getId());
+        mockMvc.perform(get("/exemplares/{id}/excluir", copy).with(auth)).andExpect(status().isOk()).andExpect(view().name("exemplares/delete"));
+        mockMvc.perform(post("/exemplares/{id}/excluir", copy).with(auth).param("confirmed", "true")).andExpect(status().isForbidden());
+        mockMvc.perform(post("/exemplares/{id}/excluir", copy).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(redirectedUrl("/exemplares/" + copy + "/excluir"));
+        assertThat(physicalCopyRepository.existsById(copy)).isTrue();
+        mockMvc.perform(post("/exemplares/{id}/excluir", copy).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("confirmed", "true"))
+                .andExpect(redirectedUrl("/edicoes/" + edition.getId()));
+        assertThat(physicalCopyRepository.existsById(copy)).isFalse();
+        assertThat(editionRepository.existsById(edition.getId())).isTrue();
+        editionService.delete(edition.getId(), owner.getId());
+    }
+
+    @Test
+    void paginatesCopiesAndEnforcesCompositeOwnerForeignKeysInPostgres() throws Exception {
+        var owner = userAccountRepository.save(UserAccount.create("page-copias@example.com", "hash", UserRole.USER));
+        var other = userAccountRepository.save(UserAccount.create("fk-copias@example.com", "hash", UserRole.USER));
+        var edition = editionService.create(owner.getId(), new EditionService.Command(null, null, "HQ paginada", null, null, null, null, null, null));
+        var foreignEdition = editionService.create(other.getId(), new EditionService.Command(null, null, "HQ alheia", null, null, null, null, null, null));
+        var box = locationService.create(other.getId(), new br.com.minhagibiteca.inventory.application.LocationService.Command(
+                null, br.com.minhagibiteca.inventory.domain.LocationLevel.BOX, "Caixa privada", null));
+        var ids = new java.util.ArrayList<java.util.UUID>();
+        for (int i = 0; i < 21; i++) ids.add(copyService.create(edition.getId(), owner.getId(), new CopyService.Command(null, CopyCondition.UNKNOWN, null, null, null, null, null)));
+        assertThat(copyService.list(edition.getId(), owner.getId(), 0).getContent()).hasSize(20);
+        assertThat(copyService.list(edition.getId(), owner.getId(), 1).getContent()).hasSize(1);
+        mockMvc.perform(get("/edicoes/{id}", edition.getId()).with(SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner))))
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("copyPage=1")));
+        mockMvc.perform(get("/edicoes/{id}", edition.getId()).param("copyPage", "1").with(SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner))))
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("Exemplar 21")));
+        try (Connection connection = dataSource.getConnection()) {
+            for (String column : List.of("edition_id", "storage_location_id")) {
+                try (var sql = connection.prepareStatement("update physical_copies set " + column + " = ? where id = ?")) {
+                    sql.setObject(1, column.equals("edition_id") ? foreignEdition.getId() : box); sql.setObject(2, ids.getFirst());
+                    assertThatThrownBy(sql::executeUpdate).isInstanceOf(java.sql.SQLException.class);
+                }
+            }
+            try (var sql = connection.prepareStatement("delete from editions where id = ?")) {
+                sql.setObject(1, edition.getId()); assertThatThrownBy(sql::executeUpdate).isInstanceOf(java.sql.SQLException.class);
+            }
+        }
     }
 
     @Test
