@@ -20,6 +20,38 @@
                 <span th:if="${error.global}" th:text="${error.message}"></span>
             </li></ul>
         </section>
+        <fieldset class="edition-form-section" th:if="${editionId == null}">
+            <legend>Buscar dados pelo título <span class="edition-optional">opcional</span></legend>
+            <p class="help-text">Sem ISBN ou sem resultado? Pesquise em fontes gratuitas e escolha a edição. Somente o texto da busca é enviado à fonte escolhida.</p>
+            <div class="edition-form-grid">
+                <div class="field"><label for="metadataQuery">Título para pesquisar</label><input id="metadataQuery" name="metadataQuery" th:value="${metadataQuery}" maxlength="240" placeholder="Ex.: Batman — Ano Um"></div>
+                <div class="field"><label for="metadataSource">Fonte gratuita</label><select id="metadataSource" name="metadataSource"><option value="OPEN_LIBRARY" th:selected="${metadataSource == null or metadataSource == 'OPEN_LIBRARY'}">Open Library</option><option value="GOOGLE_BOOKS" th:selected="${metadataSource == 'GOOGLE_BOOKS'}">Google Books (exige chave configurada)</option></select></div>
+            </div>
+            <button type="submit" th:formaction="@{/edicoes/metadados/buscar}" formnovalidate>Pesquisar pelo título</button>
+            <p class="help-text">A busca não salva nem substitui campos preenchidos. Confira a edição brasileira, pois podem aparecer outras traduções e reimpressões. Valores, data da compra e suporte continuam sob seu controle.</p>
+            <p class="alert" th:if="${metadataMessage}" role="status" th:text="${metadataMessage}"></p>
+            <div th:if="${metadataResult}">
+                <input type="hidden" name="metadataToken" th:value="${metadataResult.token}">
+                <section class="isbn-suggestions" th:each="candidate, state : ${metadataResult.candidates}">
+                    <h2 th:text="${candidate.title}"></h2>
+                    <dl class="details-list">
+                        <dt>Fonte</dt><dd th:text="${candidate.sourceName()}"></dd>
+                        <dt>ISBN</dt><dd th:text="${candidate.isbn ?: 'Não informado'}"></dd>
+                        <dt>Ano desta edição</dt><dd th:text="${candidate.year ?: 'Não informado'}"></dd>
+                        <dt>Editora(s)</dt><dd th:text="${candidate.publishers.empty ? 'Não informada' : #strings.listJoin(candidate.publishers, ', ')}"></dd>
+                        <dt>Autor(es)</dt><dd th:text="${candidate.authors.empty ? 'Não informados' : #strings.listJoin(candidate.authors, ', ')}"></dd>
+                    </dl>
+                    <a th:href="${candidate.sourceUrl()}" th:text="${'Consultar na ' + candidate.sourceName()}" target="_blank" rel="noopener noreferrer"></a>
+                    <button type="submit" th:formaction="@{/edicoes/metadados/aplicar}" name="candidateIndex" th:value="${state.index}" th:attr="aria-label=${'Aplicar dados de ' + candidate.title}" formnovalidate>Aplicar dados desta edição</button>
+                </section>
+            </div>
+            <section class="isbn-suggestions" th:if="${metadataApplied}">
+                <h2 th:text="${'Dados selecionados — ' + metadataApplied.sourceName()}"></h2>
+                <p th:text="${metadataApplied.title}"></p>
+                <p class="help-text">Editora e autores só são associados quando já existem nos seus cadastros e correspondem de forma única. Nenhuma capa ou cadastro auxiliar foi importado.</p>
+                <a th:href="${metadataApplied.sourceUrl()}" th:text="${'Consultar na ' + metadataApplied.sourceName()}" target="_blank" rel="noopener noreferrer"></a>
+            </section>
+        </fieldset>
         <fieldset class="edition-form-section edition-isbn-section">
             <legend>ISBN <span class="edition-optional">opcional</span></legend>
             <p class="help-text" th:if="${editionId == null}">Tem o ISBN? Você pode buscar sugestões antes de preencher. Não tem? Continue manualmente.</p>

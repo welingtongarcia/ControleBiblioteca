@@ -1,6 +1,6 @@
 package br.com.minhagibiteca.catalog.presentation;
 import br.com.minhagibiteca.auth.application.CurrentAuthenticatedUser; import br.com.minhagibiteca.inventory.application.CopyService; import br.com.minhagibiteca.catalog.application.*; import br.com.minhagibiteca.catalog.domain.MediaType; import java.math.BigDecimal; import java.beans.PropertyEditorSupport; import org.springframework.web.bind.WebDataBinder; import jakarta.validation.Valid; import java.util.UUID; import org.springframework.core.io.Resource; import org.springframework.data.domain.*; import org.springframework.http.CacheControl; import org.springframework.http.ResponseEntity; import org.springframework.stereotype.Controller; import org.springframework.ui.Model; import org.springframework.validation.BindingResult; import org.springframework.web.bind.annotation.*; import org.springframework.web.multipart.MultipartFile; import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-@Controller public class EditionController { private final EditionService editions; private final PublisherService publishers; private final ComicSeriesService series; private final WorkService works; private final CreatorService creators; private final EditionAssociationService associations; private final EditionCoverService covers; private final EditionCatalogViewService catalogViews; private final CopyService copies; private final CurrentAuthenticatedUser user; private final IsbnLookupService isbnLookup; private final CharacterService characters; private final EditionRegistrationService registration; public EditionController(EditionService e,PublisherService p,ComicSeriesService s,WorkService w,CreatorService c,EditionAssociationService a,EditionCoverService coverService,EditionCatalogViewService views,CopyService copyService,CurrentAuthenticatedUser u,IsbnLookupService isbnLookup,CharacterService characters,EditionRegistrationService registration){editions=e;publishers=p;series=s;works=w;creators=c;associations=a;covers=coverService;catalogViews=views;copies=copyService;user=u;this.isbnLookup=isbnLookup;this.characters=characters;this.registration=registration;}
+@Controller public class EditionController { private final EditionService editions; private final PublisherService publishers; private final ComicSeriesService series; private final WorkService works; private final CreatorService creators; private final EditionAssociationService associations; private final EditionCoverService covers; private final EditionCatalogViewService catalogViews; private final CopyService copies; private final CurrentAuthenticatedUser user; private final IsbnLookupService isbnLookup; private final CharacterService characters; private final EditionRegistrationService registration; private final MetadataSearchService metadataSearch; public EditionController(EditionService e,PublisherService p,ComicSeriesService s,WorkService w,CreatorService c,EditionAssociationService a,EditionCoverService coverService,EditionCatalogViewService views,CopyService copyService,CurrentAuthenticatedUser u,IsbnLookupService isbnLookup,CharacterService characters,EditionRegistrationService registration,MetadataSearchService metadataSearch){editions=e;publishers=p;series=s;works=w;creators=c;associations=a;covers=coverService;catalogViews=views;copies=copyService;user=u;this.isbnLookup=isbnLookup;this.characters=characters;this.registration=registration;this.metadataSearch=metadataSearch;}
 
  @InitBinder("editionForm")
  void bindMoney(WebDataBinder binder) {
@@ -62,6 +62,59 @@ import br.com.minhagibiteca.auth.application.CurrentAuthenticatedUser; import br
  private UUID uniqueName(java.util.List<EditionCatalogViewService.NamedOption> options, String name) {
      var matches = options.stream().filter(o -> o.name().strip().equalsIgnoreCase(name.strip())).toList();
      return matches.size() == 1 ? matches.getFirst().id() : null;
+ }
+ @PostMapping("/edicoes/metadados/buscar")
+ String searchMetadata(@ModelAttribute("editionForm") EditionForm f, BindingResult r,
+         @RequestParam(defaultValue="") String metadataQuery, @RequestParam(defaultValue="OPEN_LIBRARY") String metadataSource,
+         RedirectAttributes a) {
+     a.addFlashAttribute("editionForm", f);
+     if (r.hasErrors()) {
+         a.addFlashAttribute(BindingResult.MODEL_KEY_PREFIX + "editionForm", r);
+         a.addFlashAttribute("metadataMessage", "Corrija os campos inválidos antes de pesquisar. Seus dados foram preservados.");
+         return "redirect:/edicoes/nova";
+     }
+     try {
+         MetadataCandidate.Source source;
+         try { source = MetadataCandidate.Source.valueOf(metadataSource); }
+         catch (IllegalArgumentException error) { throw new MetadataSearchService.SearchException("Escolha uma fonte disponível para pesquisar."); }
+         String query = MetadataSearchService.normalize(metadataQuery);
+         a.addFlashAttribute("metadataQuery", query); a.addFlashAttribute("metadataSource", source.name());
+         var result = metadataSearch.search(user.id(), source, query);
+         a.addFlashAttribute("metadataResult", result);
+         a.addFlashAttribute("metadataMessage", result.candidates().isEmpty()
+                 ? "Nenhuma edição encontrada nesta fonte. Tente outra fonte ou continue manualmente."
+                 : "Escolha a edição correta. Confira editora, ano e idioma antes de aplicar os dados.");
+     } catch (MetadataSearchService.SearchException error) { a.addFlashAttribute("metadataMessage", error.getMessage()); }
+     return "redirect:/edicoes/nova";
+ }
+ @PostMapping("/edicoes/metadados/aplicar")
+ String applyMetadata(@ModelAttribute("editionForm") EditionForm f, BindingResult r,
+         @RequestParam(defaultValue="") String metadataToken, @RequestParam(defaultValue="") String candidateIndex,
+         RedirectAttributes a) {
+     a.addFlashAttribute("editionForm", f);
+     if (r.hasErrors()) {
+         a.addFlashAttribute(BindingResult.MODEL_KEY_PREFIX + "editionForm", r);
+         a.addFlashAttribute("metadataMessage", "Corrija os campos inválidos e pesquise novamente. Seus dados foram preservados.");
+         return "redirect:/edicoes/nova";
+     }
+     try {
+         int index;
+         try { index = Integer.parseInt(candidateIndex); }
+         catch (NumberFormatException error) { throw new MetadataSearchService.SearchException("Seleção inválida. Pesquise novamente."); }
+         var found = metadataSearch.select(user.id(), metadataToken, index);
+         if (f.getTitle() == null || f.getTitle().isBlank()) f.setTitle(found.title());
+         if (f.getIsbn() == null || f.getIsbn().isBlank()) f.setIsbn(found.isbn());
+         if (f.getPublicationYear() == null) f.setPublicationYear(found.year());
+         if (f.getPublisherId() == null && found.publishers().size() == 1) f.setPublisherId(uniqueName(catalogViews.publishers(user.id()), found.publishers().getFirst()));
+         if (f.getCreatorIds() == null || f.getCreatorIds().isEmpty()) {
+             var options = catalogViews.creators(user.id()); var ids = new java.util.LinkedHashSet<UUID>();
+             for (String author : found.authors()) { UUID id = uniqueName(options, author); if (id != null) ids.add(id); }
+             f.setCreatorIds(java.util.List.copyOf(ids));
+         }
+         a.addFlashAttribute("metadataApplied", found);
+         a.addFlashAttribute("metadataMessage", "Dados aplicados somente nos campos vazios. Revise e salve a edição para concluir.");
+     } catch (MetadataSearchService.SearchException error) { a.addFlashAttribute("metadataMessage", error.getMessage()); }
+     return "redirect:/edicoes/nova";
  }
  @PostMapping("/edicoes") String c(@Valid @ModelAttribute("editionForm")EditionForm f,BindingResult r,Model m,RedirectAttributes a){if(r.hasErrors())return form(m,"Nova edição","/edicoes");registration.save(user.id(),null,cmd(f),f.getWorkIds(),f.getCreatorIds(),f.getCharacterIds());a.addFlashAttribute("successMessage","Edição cadastrada com sucesso.");return "redirect:/edicoes";}
  @GetMapping("/edicoes/{id}") String detail(@PathVariable UUID id,@RequestParam(defaultValue="0") int copyPage,Model m){EditionView edition=editions.viewOwned(id,user.id());m.addAttribute("edition",edition);m.addAttribute("copies",copies.list(id,user.id(),copyPage));m.addAttribute("canAddCopy",edition.mediaType()!=MediaType.DIGITAL);m.addAttribute("publisherName",catalogViews.publisherName(edition.publisherId(),user.id()));m.addAttribute("seriesName",catalogViews.seriesName(edition.seriesId(),user.id()));m.addAttribute("works",catalogViews.editionWorks(id,user.id()));m.addAttribute("creators",catalogViews.editionCreators(id,user.id()));m.addAttribute("characters",characters.edition(user.id(),id));return "edicoes/detail";}

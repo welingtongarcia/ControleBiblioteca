@@ -90,6 +90,8 @@ class MinhaGibitecaApplicationTest {
     @Autowired private br.com.minhagibiteca.collection.application.ReadingService readingService;
     @org.springframework.test.context.bean.override.mockito.MockitoBean
     private br.com.minhagibiteca.catalog.application.IsbnLookupService isbnLookup;
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
+    private br.com.minhagibiteca.catalog.application.MetadataSearchProvider metadataProvider;
     @Autowired private PhysicalCopyRepository physicalCopyRepository;
     @Autowired private br.com.minhagibiteca.collection.application.ChecklistService checklistService;
     @Autowired private br.com.minhagibiteca.collection.infrastructure.ChecklistRepository checklistRepository;
@@ -138,6 +140,72 @@ class MinhaGibitecaApplicationTest {
         comicSeriesRepository.deleteAll();
         publisherRepository.deleteAll();
         userAccountRepository.deleteAll();
+    }
+
+    @Test
+    void searchesAndAppliesFreeMetadataWithCsrfOwnerIsolationAndDraftPreservation() throws Exception {
+        var owner = userAccountRepository.save(UserAccount.create("metadata@example.com", "hash", UserRole.USER));
+        var other = userAccountRepository.save(UserAccount.create("metadata-other@example.com", "hash", UserRole.USER));
+        var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
+        var foreignAuth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(other));
+        var publisher = publisherRepository.save(Publisher.create(owner.getId(), "Editora", null, null));
+        publisherRepository.save(Publisher.create(other.getId(), "Editora", null, null));
+        var creator = creatorService.create(owner.getId(), new CreatorService.Command("Autor", null));
+        creatorService.create(other.getId(), new CreatorService.Command("Estrangeiro", null));
+        var candidate = new br.com.minhagibiteca.catalog.application.MetadataCandidate("OL123M", "9780140328721", "HQ <script>", 2021,
+                List.of("Editora"), List.of("Autor", "Estrangeiro"), br.com.minhagibiteca.catalog.application.MetadataCandidate.Source.OPEN_LIBRARY);
+        org.mockito.Mockito.when(metadataProvider.search(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyString())).thenReturn(List.of(candidate));
+        mockMvc.perform(post("/edicoes/metadados/buscar").with(auth).param("metadataQuery", "Batman")).andExpect(status().isForbidden());
+        mockMvc.perform(post("/edicoes/metadados/buscar").with(SecurityMockMvcRequestPostProcessors.csrf()).param("metadataQuery", "Batman")).andExpect(status().is3xxRedirection());
+        var result = mockMvc.perform(post("/edicoes/metadados/buscar").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                .param("metadataQuery", "Batman").param("referencePaidPrice", "19,50").param("purchaseDate", "2025-10-01").param("mediaType", "DIGITAL").param("notes", "Meu rascunho"))
+                .andExpect(redirectedUrl("/edicoes/nova")).andReturn();
+        var search = (br.com.minhagibiteca.catalog.application.MetadataSearchService.Result) result.getFlashMap().get("metadataResult");
+        var draft = (br.com.minhagibiteca.catalog.presentation.EditionForm) result.getFlashMap().get("editionForm");
+        assertThat(draft.getTitle()).isNull(); assertThat(editionRepository.count()).isZero();
+        var rendered = mockMvc.perform(get("/edicoes/nova").with(auth).flashAttrs(result.getFlashMap()))
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("HQ &lt;script&gt;")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("https://openlibrary.org/books/OL123M")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Aplicar dados desta edição"))).andReturn();
+        var preview = java.nio.file.Path.of("target/ui-metadata"); java.nio.file.Files.createDirectories(preview.resolve("css"));
+        java.nio.file.Files.writeString(preview.resolve("index.html"), rendered.getResponse().getContentAsString());
+        for (String css : List.of("main.css", "dashboard.css")) java.nio.file.Files.copy(java.nio.file.Path.of("src/main/resources/static/css", css), preview.resolve("css").resolve(css), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        mockMvc.perform(post("/edicoes/metadados/aplicar").with(auth).param("metadataToken", search.token().toString()).param("candidateIndex", "0")).andExpect(status().isForbidden());
+        var foreign = mockMvc.perform(post("/edicoes/metadados/aplicar").with(foreignAuth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                .param("metadataToken", search.token().toString()).param("candidateIndex", "0"))
+                .andExpect(redirectedUrl("/edicoes/nova")).andReturn();
+        assertThat(foreign.getFlashMap().get("metadataMessage").toString()).contains("inválida");
+        var applied = mockMvc.perform(post("/edicoes/metadados/aplicar").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                .param("metadataToken", search.token().toString()).param("candidateIndex", "0").param("referencePaidPrice", "19,50")
+                .param("purchaseDate", "2025-10-01").param("mediaType", "DIGITAL").param("notes", "Meu rascunho"))
+                .andExpect(redirectedUrl("/edicoes/nova")).andReturn();
+        var filled = (br.com.minhagibiteca.catalog.presentation.EditionForm) applied.getFlashMap().get("editionForm");
+        assertThat(filled.getTitle()).isEqualTo("HQ <script>"); assertThat(filled.getIsbn()).isEqualTo("9780140328721");
+        assertThat(filled.getPublicationYear()).isEqualTo(2021); assertThat(filled.getPublisherId()).isEqualTo(publisher.getId());
+        assertThat(filled.getCreatorIds()).containsExactly(creator.getId()); assertThat(filled.getReferencePaidPrice()).isEqualByComparingTo("19.50");
+        assertThat(filled.getPurchaseDate()).isEqualTo(java.time.LocalDate.of(2025, 10, 1)); assertThat(filled.getMediaType()).isEqualTo(br.com.minhagibiteca.catalog.domain.MediaType.DIGITAL);
+        assertThat(filled.getNotes()).isEqualTo("Meu rascunho"); assertThat(editionRepository.count()).isZero();
+        mockMvc.perform(get("/edicoes/nova").with(auth).flashAttrs(applied.getFlashMap())).andExpect(status().isOk());
+        var preserve = mockMvc.perform(post("/edicoes/metadados/aplicar").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                .param("metadataToken", search.token().toString()).param("candidateIndex", "0").param("title", "Meu título").param("isbn", "manual")
+                .param("publicationYear", "2020").param("publisherId", publisher.getId().toString()).param("creatorIds", creator.getId().toString()))
+                .andExpect(redirectedUrl("/edicoes/nova")).andReturn();
+        var kept = (br.com.minhagibiteca.catalog.presentation.EditionForm) preserve.getFlashMap().get("editionForm");
+        assertThat(kept.getTitle()).isEqualTo("Meu título"); assertThat(kept.getIsbn()).isEqualTo("manual"); assertThat(kept.getPublicationYear()).isEqualTo(2020);
+        for (String index : List.of("-1", "99", "bad")) {
+            var invalid = mockMvc.perform(post("/edicoes/metadados/aplicar").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                    .param("metadataToken", search.token().toString()).param("candidateIndex", index)).andExpect(redirectedUrl("/edicoes/nova")).andReturn();
+            assertThat(invalid.getFlashMap().get("metadataMessage").toString()).containsIgnoringCase("inválida");
+        }
+        var invalidFields = mockMvc.perform(post("/edicoes/metadados/buscar").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                .param("metadataQuery", "Batman").param("referencePaidPrice", "bad")).andExpect(redirectedUrl("/edicoes/nova")).andReturn();
+        assertThat(invalidFields.getFlashMap().containsKey(org.springframework.validation.BindingResult.MODEL_KEY_PREFIX + "editionForm")).isTrue();
+        mockMvc.perform(get("/edicoes/nova").with(auth).flashAttrs(invalidFields.getFlashMap())).andExpect(status().isOk());
+        var invalidSource = mockMvc.perform(post("/edicoes/metadados/buscar").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                .param("metadataQuery", "Batman").param("metadataSource", "PAID"))
+                .andExpect(redirectedUrl("/edicoes/nova")).andReturn();
+        assertThat(invalidSource.getFlashMap().get("metadataMessage").toString()).contains("fonte disponível");
+        org.mockito.Mockito.verify(metadataProvider, org.mockito.Mockito.times(1)).search(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyString());
     }
 
     @Test
