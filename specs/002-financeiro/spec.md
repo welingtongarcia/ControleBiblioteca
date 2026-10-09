@@ -1,6 +1,6 @@
-# Financeiro — especificação proposta
+# Financeiro — especificação
 
-2026-10-09. Status: base confirmada pelo usuário (opção 2); clarificação/plano/análise fechados para implementação.
+2026-10-09. Status: opção 2 confirmada; implementação concluída e verificação funcional registrada em verification.md, com limites de validação explícitos.
 
 ## Objetivo e escopo solicitado
 
@@ -23,7 +23,7 @@ Aba Financeiro privada para acompanhar gastos registrados, aplicar filtros combi
 
 ## Modelo aprovado
 
-Escolher um modelo:
+Alternativas consideradas no planejamento:
 
 1. **Valores cadastrados nas edições (recomendação de continuidade):** cada edição contribui uma vez com reference_paid_price, igual ao resumo inicial, incluindo digitais. Adicionar data de compra opcional ao registro da edição. Cópias extras não aumentam esse total; valores de aquisição de exemplares ficam separados. Rótulo valor pago registrado, não livro-caixa de transações.
 2. **Compras individuais:** cada aquisição é um lançamento próprio vinculado a uma edição; admite cópias extras e compras digitais, datas/valores por lançamento. Referências de edição nunca somadas automaticamente. Exige fluxo de lançamentos e decisão de reaproveitamento dos dados existentes, com revisão explícita para não duplicar.

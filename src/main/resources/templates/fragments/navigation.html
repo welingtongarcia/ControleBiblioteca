@@ -7,10 +7,12 @@
         <a th:href="@{/edicoes}" th:classappend="${navigation.key == 'edicoes'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'edicoes' ? 'page' : null}"><span aria-hidden="true">▤</span>Catálogo de edições</a>
         <a th:href="@{/series}" th:classappend="${navigation.key == 'series'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'series' ? 'page' : null}"><span aria-hidden="true">✓</span>Séries e checklist</a>
         <a th:href="@{/localizacoes}" th:classappend="${navigation.key == 'localizacoes'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'localizacoes' ? 'page' : null}"><span aria-hidden="true">▦</span>Localizações</a>
+        <a th:href="@{/financeiro}" th:classappend="${navigation.key == 'financeiro'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'financeiro' ? 'page' : null}"><span aria-hidden="true">R$</span>Financeiro</a>
         <p class="nav-group-label">Dados do catálogo</p>
         <a th:href="@{/editoras}" th:classappend="${navigation.key == 'editoras'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'editoras' ? 'page' : null}"><span aria-hidden="true">◇</span>Editoras</a>
         <a th:href="@{/obras}" th:classappend="${navigation.key == 'obras'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'obras' ? 'page' : null}"><span aria-hidden="true">▧</span>Obras</a>
         <a th:href="@{/criadores}" th:classappend="${navigation.key == 'criadores'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'criadores' ? 'page' : null}"><span aria-hidden="true">✎</span>Criadores</a>
+        <a th:href="@{/personagens}" th:classappend="${navigation.key == 'personagens'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'personagens' ? 'page' : null}"><span aria-hidden="true">☆</span>Personagens</a>
     </nav>
     <form class="navigation-logout dashboard-logout" th:action="@{/logout}" method="post"><button type="submit">Sair</button></form>
     <div class="sidebar-note"><strong>Cada quadrinho tem uma história.</strong><p>A sua coleção também.</p></div>

@@ -19,3 +19,5 @@ A Fase 1 está em execução: a fundação Spring Boot MVC/Thymeleaf, Flyway, Po
 ## Executar
 
 Consulte o [guia de instalação](docs/installation.md). A verificação completa é feita com `./mvnw clean verify`.
+
+Para registrar compras e explorar gastos por período, coleção, criador, personagem e editora, consulte o [guia do Financeiro](docs/financeiro.md).

@@ -54,6 +54,16 @@
         <p th:if="${creators.empty}">Nenhum criador associado.</p>
         <ul th:unless="${creators.empty}"><li th:each="creator : ${creators}" th:text="${creator.name}"></li></ul>
     </section>
+    <section class="details-section" aria-labelledby="characters-title">
+        <h2 id="characters-title">Personagens</h2>
+        <p th:if="${characters.empty}">Nenhum personagem associado. Use Editar edição para vincular.</p>
+        <ul th:unless="${characters.empty}"><li th:each="character : ${characters}" th:text="${character.name}"></li></ul>
+    </section>
+    <section class="details-section" aria-labelledby="edition-finance-title">
+        <h2 id="edition-finance-title">Compras</h2>
+        <p>Registre cada compra separadamente no Financeiro. Não cria exemplares nem soma o valor de referência desta edição.</p>
+        <a class="button-link" th:href="@{/financeiro/compras/nova(editionId=${edition.id})}">Registrar compra desta edição</a>
+    </section>
     <section class="details-section" aria-labelledby="copies-title">
         <h2 id="copies-title">Exemplares físicos</h2>
         <p th:unless="${canAddCopy}">Edição digital: não possui exemplares físicos.</p>

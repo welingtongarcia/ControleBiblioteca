@@ -8,4 +8,4 @@ Arquitetura compatível com constituição se agregações/DTOs/autorizações e
 
 Status: escolha 2 confirmada; gate concluído para implementação conforme clarify/plan. Valor obrigatório no ledger torna cobertura de preços 100% dos lançamentos, não 100% das compras reais do usuário; alerta de universo evita falsa completude. Datas ainda opcionais; período invalida intervalo parcial/invertido/excessivo, não inventa datas. Personagens privados com FKs compostas e vínculo via EXISTS. Bloquear edição referenciada preserva histórico, sincronizando lock de usuário com criação/mudança do lançamento. Consultas fixas/paginadas; sem N+1, desempenho em massa precisa evidência própria e não será alegado por teste funcional.
 
-Testes, migrations e gráficos ainda não executados neste gate. data/ não versionado preservado.
+No gate de planejamento, testes/migrations/gráficos ainda não haviam sido executados. A implementação e a verificação posterior estão registradas em verification.md. data/ não versionado preservado.
