@@ -9,6 +9,17 @@ import org.springframework.mock.web.MockHttpServletRequest;
 
 class NavigationContextTest {
     private static final String SERIES = "11111111-1111-1111-1111-111111111111";
+    @Test void editionCanReturnOnlyToValidatedFinancePanel() {
+        String finance="/financeiro?start=2026-06-01&end=2026-06-10&mediaType=UNSPECIFIED&ranking=QUANTITY&page=2";
+        var c=context("/edicoes/"+SERIES+"/editar",finance);
+        assertThat(c.returnUrl()).isEqualTo(finance);
+        assertThat(c.getReturnLabel()).isEqualTo("Financeiro");
+        assertThat(c.redirect("/edicoes/"+SERIES)).isEqualTo(finance);
+        assertThat(c.redirect("/edicoes")).isEqualTo(finance);
+        assertThat(context("/edicoes/nova","/financeiro/compras/nova").returnUrl()).isEqualTo("/edicoes");
+        assertThat(context("/edicoes/nova","//example.com/financeiro").returnUrl()).isEqualTo("/edicoes");
+        assertThat(context("/editoras/nova",finance).returnUrl()).isEqualTo("/editoras");
+    }
     private NavigationContext context(String path, String back) {
         var request = new MockHttpServletRequest("GET", path); if (back != null) request.setParameter("returnTo", back); return NavigationContext.from(request);
     }

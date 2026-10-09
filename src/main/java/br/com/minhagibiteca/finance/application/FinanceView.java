@@ -8,13 +8,14 @@ import org.springframework.data.domain.Page;
 public final class FinanceView {
  private FinanceView(){}
  public record Option(UUID id,String name){}
- public record Purchase(UUID id,UUID editionId,String title,BigDecimal amount,LocalDate purchaseDate,String vendor,String notes) {
-  public String getMoney(){return FinanceMath.money(amount);}
+ public record Entry(UUID id,String title,BigDecimal amount,LocalDate purchaseDate) {
+  public String getMoney(){return amount==null?"Não informado":FinanceMath.money(amount);}
   public String getDateLabel(){return purchaseDate==null?"Não informada":purchaseDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));}
  }
- public record Summary(long count,BigDecimal total,long undatedCount,BigDecimal undatedAmount,BigDecimal unreadAmount) {
+ public record Summary(long count,BigDecimal total,long undatedCount,BigDecimal undatedAmount,BigDecimal unreadAmount,long pricedCount) {
+  public long getUnknownCount(){return count-pricedCount;}
   public String getMoney(){return FinanceMath.money(total);}
-  public String getAverage(){return count==0?"Não informado":FinanceMath.money(total.divide(BigDecimal.valueOf(count),2,RoundingMode.HALF_UP));}
+  public String getAverage(){return pricedCount==0?"Não informado":FinanceMath.money(total.divide(BigDecimal.valueOf(pricedCount),2,RoundingMode.HALF_UP));}
   public String getUndatedMoney(){return FinanceMath.money(undatedAmount);}
   public String getUnreadMoney(){return FinanceMath.money(unreadAmount);}
  }
@@ -30,5 +31,5 @@ public final class FinanceView {
  public record Comparison(Summary previous,String period,BigDecimal difference,String change,BigDecimal currentWidth,BigDecimal previousWidth) {
   public String getDifferenceMoney(){return FinanceMath.money(difference);}
  }
- public record Report(Summary summary,Summary coverage,Page<Purchase> purchases,List<Chart> charts,Monthly monthly,Comparison comparison){}
+ public record Report(Summary summary,Summary coverage,Page<Entry> entries,List<Chart> charts,Monthly monthly,Comparison comparison){}
 }

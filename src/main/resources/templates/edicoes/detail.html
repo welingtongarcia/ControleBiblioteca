@@ -41,7 +41,8 @@
         <dt>Formato</dt><dd th:text="${edition.format ?: 'Não informado'}"></dd>
         <dt>Suporte do quadrinho</dt><dd th:text="${edition.mediaLabel}"></dd>
         <dt>Preço de capa</dt><dd th:text="${edition.formattedCoverPrice}"></dd>
-        <dt>Valor pago (referência)</dt><dd th:text="${edition.formattedReferencePaidPrice}"></dd>
+        <dt>Valor pago</dt><dd th:text="${edition.formattedReferencePaidPrice}"></dd>
+        <dt>Data da compra</dt><dd th:text="${edition.purchaseDateLabel}"></dd>
         <dt>Observações</dt><dd th:text="${edition.notes ?: 'Nenhuma observação cadastrada'}"></dd>
     </dl>
     <section class="details-section" aria-labelledby="works-title">
@@ -60,9 +61,9 @@
         <ul th:unless="${characters.empty}"><li th:each="character : ${characters}" th:text="${character.name}"></li></ul>
     </section>
     <section class="details-section" aria-labelledby="edition-finance-title">
-        <h2 id="edition-finance-title">Compras</h2>
-        <p>Registre cada compra separadamente no Financeiro. Não cria exemplares nem soma o valor de referência desta edição.</p>
-        <a class="button-link" th:href="@{/financeiro/compras/nova(editionId=${edition.id})}">Registrar compra desta edição</a>
+        <h2 id="edition-finance-title">Financeiro</h2>
+        <p>O Financeiro usa o valor pago e a data da compra deste cadastro. Altere-os em Editar edição.</p>
+        <a class="button-link" th:href="@{/financeiro}">Ver análises financeiras</a>
     </section>
     <section class="details-section" aria-labelledby="copies-title">
         <h2 id="copies-title">Exemplares físicos</h2>

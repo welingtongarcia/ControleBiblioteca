@@ -3,6 +3,7 @@ package br.com.minhagibiteca.catalog.domain;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -17,6 +18,7 @@ public class Edition {
  @Enumerated(EnumType.STRING) @Column(name="media_type",length=20) private MediaType mediaType;
  @Column(name="cover_price",precision=12,scale=2) private BigDecimal coverPrice;
  @Column(name="reference_paid_price",precision=12,scale=2) private BigDecimal referencePaidPrice;
+ @Column(name="purchase_date") private LocalDate purchaseDate;
  @Column(name="is_read",nullable=false) private boolean read;
  @Column(name="cover_file_name",length=255) private String coverFileName; @Column(name="cover_content_type",length=100) private String coverContentType; @Column(name="cover_updated_at") private Instant coverUpdatedAt;
  @Column(name="created_at",nullable=false,updatable=false) private Instant createdAt; @Column(name="updated_at",nullable=false) private Instant updatedAt;
@@ -34,6 +36,11 @@ public class Edition {
          throw new IllegalArgumentException("Informe um valor não negativo com até duas casas decimais.");
      }
  }
+ public void updatePurchaseDate(LocalDate date) {
+     if(date!=null && (date.isBefore(LocalDate.of(1900,1,1)) || date.isAfter(LocalDate.now()))) throw new IllegalArgumentException("Informe a data da compra entre 1900 e hoje, ou deixe em branco.");
+     purchaseDate=date;
+ }
+ public LocalDate getPurchaseDate(){return purchaseDate;}
  public MediaType getMediaType() { return mediaType; }
  public boolean isRead() { return read; }
  public void markRead(boolean read) { this.read = read; this.updatedAt = Instant.now(); }

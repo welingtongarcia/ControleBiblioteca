@@ -24,6 +24,6 @@
         <li th:if="${parentUrl}"><a th:href="@{${navigation.parentUrl(parentUrl)}}" th:text="${parentLabel}"></a></li>
         <li><span aria-current="page" th:text="${currentLabel}"></span></li>
     </ol></nav>
-    <a class="navigation-back" th:href="@{${parentUrl != null ? navigation.parentUrl(parentUrl) : (currentLabel == navigation.label ? '/dashboard' : navigation.returnUrl)}}" th:text="${parentUrl != null ? '← Voltar para ' + parentLabel : (currentLabel == navigation.label ? '← Voltar ao início' : '← Voltar para ' + navigation.label)}"></a>
+    <a class="navigation-back" th:href="@{${parentUrl != null ? navigation.parentUrl(parentUrl) : (currentLabel == navigation.label ? '/dashboard' : navigation.returnUrl)}}" th:text="${parentUrl != null ? '← Voltar para ' + parentLabel : (currentLabel == navigation.label ? '← Voltar ao início' : '← Voltar para ' + navigation.returnLabel)}"></a>
 </div>
 </body></html>

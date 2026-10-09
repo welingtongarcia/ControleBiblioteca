@@ -1,5 +1,7 @@
 # Clarificação — Financeiro
 
+> Histórico da implementação anterior. A revisão vigente está em [revision-edition-source.md](revision-edition-source.md): valores e data no cadastro da HQ substituem o ledger como fonte financeira.
+
 ## Evidência do ambiente
 
 Edition tem reference_paid_price e cover_price, mas não data de compra. PhysicalCopy possui acquisition_price e acquisition_date. Datas de criação não equivalem a compra. Personagem não existe; Creator é genérico, sem papel de autoria. O resumo inicial já soma valores de referência de edição e separa aquisição de cópias.

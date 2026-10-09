@@ -1,7 +1,7 @@
 <!DOCTYPE html><html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"><head th:replace="~{fragments/head :: head('Financeiro')}"><title>Minha Gibiteca</title></head><body class="dashboard-page"><a class="skip-link" href="#main-content">Pular para o conteúdo</a><div class="dashboard-layout"><aside th:replace="~{fragments/navigation :: sidebar}"></aside><main id="main-content" tabindex="-1" class="content page-content finance-page" aria-labelledby="page-title"><div th:replace="~{fragments/navigation :: breadcrumbs('Financeiro', null, null)}"></div>
- <header class="page-heading"><div><p class="eyebrow">Suas compras</p><h1 id="page-title">Financeiro</h1><p class="muted">Acompanhe quanto gastou e explore suas compras.</p></div><a class="button-link" th:href="@{/financeiro/compras/nova(returnTo=${navigation.pageReturnUrl})}">Registrar compra</a></header>
+ <header class="page-heading"><div><p class="eyebrow">Seu acervo em valores</p><h1 id="page-title">Financeiro</h1><p class="muted">Acompanhe os valores pagos nas HQs do seu catálogo.</p></div><a class="button-link" th:href="@{/edicoes/nova(returnTo=${navigation.pageReturnUrl})}">Cadastrar HQ</a></header>
  <p class="alert alert-success" role="status" th:if="${successMessage}" th:text="${successMessage}"></p><p class="alert alert-error" role="alert" th:if="${errorMessage}" th:text="${errorMessage}"></p>
- <p class="finance-scope">Somente compras registradas aqui entram nestes números. Valores das edições e exemplares não são importados nem somados automaticamente. Cada lançamento representa uma cópia comprada.</p>
+ <p class="finance-scope">Os valores e as datas vêm do cadastro da HQ. Cada edição conta uma vez, física ou digital. Não somamos preços de capa, valores de exemplares extras ou lançamentos antigos de compras.</p>
  <form method="get" th:action="@{/financeiro}" class="finance-filter-panel" aria-label="Filtros do Financeiro">
   <h2>Escolha o que analisar</h2><div class="finance-filter-grid">
    <div class="field"><label for="start">Compras a partir de</label><input id="start" name="start" type="date" th:value="${filter.start}" aria-describedby="period-help"></div>
@@ -11,19 +11,20 @@
 <div class="field"><label for="characterId">Personagem</label><select id="characterId" name="characterId"><option value="">Todos os personagens</option><option th:each="item : ${characterOptions}" th:value="${item.id}" th:text="${item.name}" th:selected="${item.id == filter.characterId}"></option></select></div>
 <div class="field"><label for="publisherId">Editora</label><select id="publisherId" name="publisherId"><option value="">Todas as editoras</option><option th:each="item : ${publisherOptions}" th:value="${item.id}" th:text="${item.name}" th:selected="${item.id == filter.publisherId}"></option></select></div>
    <div class="field"><label for="mediaType">Suporte</label><select id="mediaType" name="mediaType"><option value="">Todos os suportes</option><option th:each="item : ${mediaTypes}" th:value="${item}" th:text="${item.label}" th:selected="${item == filter.mediaType}"></option><option value="UNSPECIFIED" th:selected="${filter.unknownMedia}">Não informado</option></select></div>
-   <div class="field"><label for="ranking">Comparar rankings por</label><select id="ranking" name="ranking"><option value="AMOUNT" th:selected="${ranking == 'AMOUNT'}">Valor gasto</option><option value="QUANTITY" th:selected="${ranking == 'QUANTITY'}">Quantidade de compras</option></select></div>
+   <div class="field"><label for="ranking">Comparar rankings por</label><select id="ranking" name="ranking"><option value="AMOUNT" th:selected="${ranking == 'AMOUNT'}">Valor gasto</option><option value="QUANTITY" th:selected="${ranking == 'QUANTITY'}">Quantidade de edições</option></select></div>
   </div><p id="period-help" class="help-text">Informe início e fim juntos, entre 1900 e hoje, até 3.660 dias. Sem período: totais gerais e evolução dos últimos 12 meses. Criadores incluem autores, artistas e outros papéis cadastrados, sem inferência.</p>
   <div class="form-actions"><button type="submit">Aplicar filtros</button><a th:href="@{/financeiro}">Limpar filtros</a></div>
  </form>
  <section aria-labelledby="finance-overview"><h2 id="finance-overview">Resumo da seleção</h2>
   <div class="finance-metrics">
-   <article><h3>Total gasto registrado</h3><strong th:text="${report.summary.money}"></strong><p>Valor pago nos lançamentos selecionados.</p></article>
-   <article><h3>Compras registradas</h3><strong th:text="${report.summary.count}"></strong><p>Uma cópia por lançamento, incluindo gratuitas.</p></article>
-   <article><h3>Valor médio por compra</h3><strong th:text="${report.summary.average}"></strong><p>Total dividido pelas compras selecionadas.</p></article>
-   <article><h3>Em edições ainda não lidas</h3><strong th:text="${report.summary.unreadMoney}"></strong><p>Estado de leitura atual das edições compradas.</p></article>
+   <article><h3>Total gasto registrado</h3><strong th:text="${report.summary.money}"></strong><p>Soma dos valores pagos informados nas HQs selecionadas.</p></article>
+   <article><h3>Edições selecionadas</h3><strong th:text="${report.summary.count}"></strong><p>Uma vez por edição, independentemente das cópias.</p></article>
+   <article><h3>Valor médio por edição</h3><strong th:text="${report.summary.average}"></strong><p>Total dividido apenas pelas edições com valor pago informado.</p></article>
+   <article><h3>Em edições ainda não lidas</h3><strong th:text="${report.summary.unreadMoney}"></strong><p>Estado de leitura atual das edições selecionadas.</p></article>
   </div>
-  <p class="alert finance-data-warning" role="status" th:if="${report.coverage.undatedCount > 0}" th:text="|Compras sem data nos filtros bibliográficos: ${report.coverage.undatedCount} (${report.coverage.undatedMoney}). Entram no total sem período, mas não nos gráficos mensais nem em períodos selecionados.|"></p>
-  <p class="help-text">Todos os lançamentos têm valor informado; isso não significa que todas as suas compras reais foram registradas. Zero indica compra gratuita. Classificações e leitura seguem os dados atuais da edição.</p>
+  <p class="alert finance-data-warning" role="status" th:if="${report.coverage.undatedCount > 0}" th:text="|Edições sem data da compra nos filtros bibliográficos: ${report.coverage.undatedCount} (${report.coverage.undatedMoney}). Entram no total sem período, mas não nos gráficos mensais nem em períodos selecionados.|"></p>
+  <p class="alert finance-data-warning" role="status" th:if="${report.summary.unknownCount > 0}" th:text="|Edições sem valor pago: ${report.summary.unknownCount}. Os totais, a média e as comparações monetárias usam apenas valores informados e podem subestimar o gasto real.|"></p>
+  <p class="help-text" th:text="|Cobertura de valores: ${report.summary.pricedCount} de ${report.summary.count} edições selecionadas. Zero informado significa gratuita; campo vazio significa desconhecido. Classificações e leitura seguem o cadastro atual da HQ.|"></p>
  </section>
  <section class="finance-panel" aria-labelledby="finance-comparison"><h2 id="finance-comparison">Comparação de períodos</h2>
   <p th:if="${report.comparison == null}" class="muted">Escolha as duas datas para comparar com o período anterior de mesma duração.</p>
@@ -31,6 +32,7 @@
    <p th:text="|Atual: ${report.monthly.range}. Anterior: ${report.comparison.period}. Mesmos filtros bibliográficos.|"></p>
    <div class="finance-comparison-row"><span>Atual</span><div class="finance-bar"><span th:style="|width:${report.comparison.currentWidth}%|"></span></div><strong th:text="${report.summary.money}"></strong></div>
    <div class="finance-comparison-row"><span>Anterior</span><div class="finance-bar"><span th:style="|width:${report.comparison.previousWidth}%|"></span></div><strong th:text="${report.comparison.previous.money}"></strong></div>
+   <p class="help-text" th:text="|Valores informados — atual: ${report.summary.pricedCount} de ${report.summary.count} edições; anterior: ${report.comparison.previous.pricedCount} de ${report.comparison.previous.count}. Comparação do total conhecido, não uma estimativa de valores ausentes.|"></p>
    <p th:text="|Diferença: ${report.comparison.differenceMoney}. Variação: ${report.comparison.change}.|"></p>
   </div>
  </section>
@@ -40,35 +42,35 @@
   <svg class="finance-line" viewBox="0 0 720 220" role="img" aria-label="Evolução mensal dos valores pagos. Valores exatos na tabela abaixo."><line x1="20" y1="190" x2="700" y2="190" class="finance-axis"/><polyline th:attr="points=${report.monthly.points}" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/></svg>
   <div class="finance-chart-range"><span th:text="${report.monthly.items[0].label}"></span><span th:text="${report.monthly.items[report.monthly.items.size()-1].label}"></span></div>
   <p><strong>Mês de maior gasto: </strong><span th:text="${report.monthly.peak}"></span></p>
-  <details><summary>Ver valores mensais em tabela</summary><div class="finance-table-wrap"><table><caption>Compras por mês nos filtros selecionados</caption><thead><tr><th scope="col">Mês</th><th scope="col">Compras</th><th scope="col">Valor pago</th></tr></thead><tbody><tr th:each="month : ${report.monthly.items}"><th scope="row" th:text="${month.label}"></th><td th:text="${month.count}"></td><td th:text="${month.money}"></td></tr></tbody></table></div></details>
+  <details><summary>Ver valores mensais em tabela</summary><div class="finance-table-wrap"><table><caption>Edições por mês nos filtros selecionados</caption><thead><tr><th scope="col">Mês</th><th scope="col">Edições</th><th scope="col">Valor pago</th></tr></thead><tbody><tr th:each="month : ${report.monthly.items}"><th scope="row" th:text="${month.label}"></th><td th:text="${month.count}"></td><td th:text="${month.money}"></td></tr></tbody></table></div></details>
  </section>
- <h2>Distribuição e principais compras</h2><p class="help-text">Os gráficos abaixo usam a seleção inteira, não somente a página da lista. Clique em um nome para refinar os filtros.</p>
+ <h2>Distribuição dos gastos no acervo</h2><p class="help-text">Os gráficos abaixo usam a seleção inteira, não somente a página da lista. Valores monetários são totais conhecidos; valores ausentes não significam gratuidade. Clique em um nome para refinar os filtros.</p>
  <div class="finance-chart-grid">
   <section class="finance-panel" th:each="chart : ${report.charts}">
    <h3 th:text="${chart.title}"></h3>
-   <p class="help-text" th:text="${chart.ring ? 'Distribuição do valor gasto' : (chart.quantity ? 'Ranking por quantidade de compras' : 'Ranking por valor gasto')}"></p>
+   <p class="help-text" th:text="${chart.ring ? 'Distribuição do valor gasto' : (chart.quantity ? 'Ranking por quantidade de edições' : 'Ranking por valor gasto')}"></p>
    <p class="muted" th:if="${chart.items.empty}">Sem dados vinculados nesta seleção.</p>
-   <p class="help-text" th:if="${chart.shared}">Atribuição compartilhada: a mesma compra pode aparecer em mais de um criador ou personagem. Não some as linhas como se fossem o total.</p>
+   <p class="help-text" th:if="${chart.shared}">Atribuição compartilhada: a mesma edição pode aparecer em mais de um criador ou personagem. Não some as linhas como se fossem o total.</p>
    <p class="help-text" th:if="${chart.truncated}" th:text="${chart.ring ? 'As demais editoras estão agrupadas em Outras editoras.' : 'Mostrando os 10 primeiros. O ranking é parcial.'}"></p>
    <svg class="finance-ring" th:if="${chart.ring and !chart.items.empty and report.summary.total.signum() > 0}" viewBox="0 0 200 200" role="img" th:aria-label="|${chart.title}: distribuição do valor. Consulte os valores abaixo.|"><circle cx="100" cy="100" r="70" fill="none" stroke="#414954" stroke-width="24"/><g class="finance-ring-slices" transform="rotate(-90 100 100)"><circle th:each="item : ${chart.items}" class="finance-slice" cx="100" cy="100" r="70" fill="none" stroke-width="24" th:attr="stroke-dasharray=${item.dash},stroke-dashoffset=${item.offset}"/></g><text x="100" y="105" text-anchor="middle" fill="currentColor" font-size="14">Valor pago</text></svg>
-   <p class="muted" th:if="${chart.ring and !chart.items.empty and report.summary.total.signum() == 0}">Todas as compras selecionadas são gratuitas; não há proporção monetária para a rosca.</p>
+   <p class="muted" th:if="${chart.ring and !chart.items.empty and report.summary.total.signum() == 0}">Não há valores pagos positivos informados nesta seleção; não há proporção monetária para a rosca.</p>
    <ul class="finance-ranking">
     <li class="finance-chart-item" th:each="item : ${chart.items}">
      <div class="finance-ranking-label"><a th:if="${item.bucket.key != null}" th:href="${links.refine(chart.parameter,item.bucket.key)}" th:text="${item.bucket.label}"></a><span th:if="${item.bucket.key == null}" th:text="${item.bucket.label}"></span><strong th:text="${item.bucket.money}"></strong></div>
      <div class="finance-bar" th:unless="${chart.ring}" aria-hidden="true"><span th:style="|width:${item.width}%|"></span></div>
-     <p class="help-text" th:text="|Compras: ${item.bucket.count}|"></p>
+     <p class="help-text" th:text="|Edições: ${item.bucket.count}|"></p>
     </li>
    </ul>
-   <details th:unless="${chart.items.empty}"><summary>Ver tabela comparativa</summary><div class="finance-table-wrap"><table><caption th:text="${chart.title}"></caption><thead><tr><th scope="col">Grupo</th><th scope="col">Compras</th><th scope="col">Valor pago</th></tr></thead><tbody><tr th:each="item : ${chart.items}"><th scope="row" th:text="${item.bucket.label}"></th><td th:text="${item.bucket.count}"></td><td th:text="${item.bucket.money}"></td></tr></tbody></table></div></details>
+   <details th:unless="${chart.items.empty}"><summary>Ver tabela comparativa</summary><div class="finance-table-wrap"><table><caption th:text="${chart.title}"></caption><thead><tr><th scope="col">Grupo</th><th scope="col">Edições</th><th scope="col">Valor pago</th></tr></thead><tbody><tr th:each="item : ${chart.items}"><th scope="row" th:text="${item.bucket.label}"></th><td th:text="${item.bucket.count}"></td><td th:text="${item.bucket.money}"></td></tr></tbody></table></div></details>
   </section>
  </div>
- <section aria-labelledby="finance-purchases"><div class="page-heading"><h2 id="finance-purchases">Compras da seleção</h2><span th:text="|${report.purchases.totalElements} lançamentos|"></span></div>
-  <div class="empty-state" th:if="${report.purchases.empty}"><h3>Nenhuma compra nesta seleção</h3><p>Registre uma compra ou revise os filtros. Cadastros antigos não geram lançamentos automaticamente.</p></div>
-  <ul class="resource-list" th:unless="${report.purchases.empty}"><li th:each="purchase : ${report.purchases}">
-   <div><h3 th:text="${purchase.title}"></h3><p th:text="|${purchase.money} · Data: ${purchase.dateLabel}|"></p><p class="muted" th:text="${purchase.vendor ?: 'Origem não informada'}"></p></div>
-   <div class="resource-actions"><a th:href="@{/financeiro/compras/{id}/editar(id=${purchase.id},returnTo=${navigation.pageReturnUrl})}">Editar compra</a><a th:href="@{/financeiro/compras/{id}/excluir(id=${purchase.id},returnTo=${navigation.pageReturnUrl})}">Excluir compra</a><a th:href="@{/edicoes/{id}(id=${purchase.editionId})}">Ver edição</a></div>
+ <section aria-labelledby="finance-editions"><div class="page-heading"><h2 id="finance-editions">HQs da seleção</h2><span th:text="|${report.entries.totalElements} edições|"></span></div>
+  <div class="empty-state" th:if="${report.entries.empty}"><h3>Nenhuma HQ nesta seleção</h3><p>Cadastre uma edição ou revise os filtros. Informe valor pago e data da compra no próprio cadastro da HQ.</p></div>
+  <ul class="resource-list" th:unless="${report.entries.empty}"><li th:each="entry : ${report.entries}">
+   <div><h3 th:text="${entry.title}"></h3><p th:text="|${entry.money} · Data da compra: ${entry.dateLabel}|"></p></div>
+   <div class="resource-actions"><a th:href="@{/edicoes/{id}/editar(id=${entry.id},returnTo=${navigation.pageReturnUrl})}">Editar HQ</a><a th:href="@{/edicoes/{id}(id=${entry.id},returnTo=${navigation.pageReturnUrl})}">Ver edição</a></div>
   </li></ul>
-  <nav class="pagination" th:if="${report.purchases.totalPages > 1}" aria-label="Paginação das compras"><a th:if="${report.purchases.hasPrevious()}" th:href="${links.page(report.purchases.number-1)}">Anterior</a><span th:text="|Página ${report.purchases.number+1} de ${report.purchases.totalPages}|"></span><a th:if="${report.purchases.hasNext()}" th:href="${links.page(report.purchases.number+1)}">Próxima</a></nav>
+  <nav class="pagination" th:if="${report.entries.totalPages > 1}" aria-label="Paginação das edições"><a th:if="${report.entries.hasPrevious()}" th:href="${links.page(report.entries.number-1)}">Anterior</a><span th:text="|Página ${report.entries.number+1} de ${report.entries.totalPages}|"></span><a th:if="${report.entries.hasNext()}" th:href="${links.page(report.entries.number+1)}">Próxima</a></nav>
  </section>
- <details class="finance-panel"><summary>Entenda os cálculos</summary><p>Cada compra é um lançamento independente: duas cópias da mesma edição podem ter dois lançamentos. Valor informado é o total daquela compra, não preço de capa. Lançamentos não criam exemplares e não reaproveitam valores antigos automaticamente.</p><p>Períodos usam a data real de compra, nunca data de cadastro ou publicação. Comparação anterior usa o mesmo número de dias e os mesmos filtros. Com valor anterior zero, o percentual não pode ser calculado. Personagens e criadores dependem dos vínculos manuais das edições.</p><p>O resumo da página inicial continua usando os valores de referência por edição; não é o mesmo universo deste Financeiro. Nenhuma análise representa valor de mercado ou rentabilidade.</p></details>
+ <details class="finance-panel"><summary>Entenda os cálculos</summary><p>O total soma o campo Valor pago do cadastro das edições, uma vez por HQ. Preço de capa, valores de exemplares e registros do antigo fluxo de compras não são somados. Valor vazio é desconhecido; zero informado é gratuito. A média considera apenas edições com valor informado.</p><p>Períodos usam a Data da compra da HQ, nunca data de cadastro ou publicação. Datas desconhecidas ficam fora dos períodos e do gráfico mensal. Valores desconhecidos não representam gasto zero; as comparações mostram apenas o total conhecido.</p><p>O período anterior tem o mesmo número de dias e os mesmos filtros. Base anterior zero não produz percentual. Personagens/criadores dependem dos vínculos manuais e suas linhas não são somáveis. Alterar ou excluir uma HQ atualiza as análises na próxima consulta.</p><p>O resumo inicial e o Financeiro sem filtros usam a mesma fonte de valores por edição. Estas análises não estimam valor de mercado ou rentabilidade.</p></details>
  </main></div></body></html>

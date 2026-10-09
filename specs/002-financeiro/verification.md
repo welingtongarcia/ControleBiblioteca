@@ -1,5 +1,7 @@
 # Verificação — Financeiro
 
+> Histórico da implementação anterior. A revisão vigente está em [revision-edition-source.md](revision-edition-source.md): valores e data no cadastro da HQ substituem o ledger como fonte financeira.
+
 2026-10-09. Fonte confirmada pelo usuário: opção 2, compras individuais. Planejamento registrado no commit 0668c9d; especificação inicial no 55d25a3.
 
 ## Arquivos e entrega

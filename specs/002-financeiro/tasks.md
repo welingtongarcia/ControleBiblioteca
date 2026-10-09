@@ -1,5 +1,7 @@
 # Tarefas — Financeiro
 
+> A revisão vigente e suas tarefas concluídas estão em [revision-edition-source.md](revision-edition-source.md). As tarefas abaixo documentam a entrega anterior, substituída pelo cadastro financeiro na HQ.
+
 - [x] FIN-T001 Inspecionar modelo/ambiente e documentar especificação inicial com diferenças entre preço de edição/aquisição. Evidência: arquivos locais; nenhuma funcionalidade alterada.
 - [x] FIN-T002 Confirmar fonte financeira e fechar specify/clarify/plan/analyze antes da implementação. Dep.: FIN-T001. Usuário escolheu 2; ledger separado, nenhuma importação automática.
 - [x] FIN-T003 Implementar personagens/vínculos e datas/modelo aprovado com Flyway e testes conservadores. Dep.: FIN-T002. FIN-004/005/012.

@@ -1,5 +1,7 @@
 # Plano preliminar — Financeiro
 
+> Histórico da implementação anterior. A revisão vigente está em [revision-edition-source.md](revision-edition-source.md): valores e data no cadastro da HQ substituem o ledger como fonte financeira.
+
 Modelo aprovado: compras individuais em financial_purchases; SQL/JDBC parametrizado em repository separado, DTOs/serviços por domínio, sem entidades nos controllers.
 
 Gate fechado: migration V14 cria ledger e personagens/vínculos com FKs compostas por proprietário; dinheiro numeric(12,2), uma cópia por lançamento. Lock de usuário sincroniza compra/exclusão de edição; exclusão de personagem referenciado bloqueada. Autorização antecede renderização de formulários de edição/remoção.

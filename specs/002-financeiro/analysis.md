@@ -1,5 +1,7 @@
 # Análise preliminar — Financeiro
 
+> Histórico da implementação anterior. A revisão vigente está em [revision-edition-source.md](revision-edition-source.md): valores e data no cadastro da HQ substituem o ledger como fonte financeira.
+
 Solicitação amplia o MVP com controle financeiro, agora autorizado em escopo, mas não determina fonte contábil. Principal risco: referências de edição e aquisições de cópias representam universos diferentes e podem ser o mesmo gasto. Decisão do usuário necessária para fechar cálculos/modelo.
 
 Outros riscos: data desconhecida excluída silenciosamente dos períodos; joins multiplicando valores; personagens/autoria inferidos; grupos de ranking sobrepostos apresentados como distribuição; percentual de mudança com base zero. Requisitos explicitam cobertura, EXISTS, vínculos manuais, atribuição compartilhada e base insuficiente.

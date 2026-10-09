@@ -3,6 +3,12 @@ import jakarta.validation.constraints.*; import java.util.List; import java.util
 import br.com.minhagibiteca.catalog.domain.MediaType;
 import java.math.BigDecimal;
 public class EditionForm { private UUID publisherId,seriesId; private List<UUID> workIds = List.of(), creatorIds = List.of(), characterIds = List.of(); @NotBlank(message="Informe o título da edição.") @Size(max=240) private String title; @Size(max=60) private String editorialNumber; @Size(max=120) private String variant; @Size(max=32) private String isbn; @Min(1800) @Max(2100) private Integer publicationYear; @Size(max=60) private String format; @Size(max=2000) private String notes;
+ @org.springframework.format.annotation.DateTimeFormat(iso=org.springframework.format.annotation.DateTimeFormat.ISO.DATE)
+ @PastOrPresent(message="A data da compra não pode estar no futuro.")
+ private java.time.LocalDate purchaseDate;
+ @AssertTrue(message="A data da compra deve ser a partir de 1900.")
+ public boolean isPurchaseDateValid(){return purchaseDate==null || !purchaseDate.isBefore(java.time.LocalDate.of(1900,1,1));}
+ public java.time.LocalDate getPurchaseDate(){return purchaseDate;} public void setPurchaseDate(java.time.LocalDate value){purchaseDate=value;}
  private MediaType mediaType = MediaType.PHYSICAL;
  @DecimalMin(value="0.00",message="O preço de capa não pode ser negativo.") @Digits(integer=10,fraction=2,message="Informe até 10 dígitos inteiros e 2 casas decimais.") private BigDecimal coverPrice;
  @DecimalMin(value="0.00",message="O valor pago não pode ser negativo.") @Digits(integer=10,fraction=2,message="Informe até 10 dígitos inteiros e 2 casas decimais.") private BigDecimal referencePaidPrice;

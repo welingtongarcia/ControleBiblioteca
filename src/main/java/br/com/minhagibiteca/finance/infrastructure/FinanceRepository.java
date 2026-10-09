@@ -17,8 +17,8 @@ public class FinanceRepository {
    .addValue("publisher",f.publisherId()).addValue("media",f.mediaType()==null?null:f.mediaType().name());
  }
  private String where(FinanceFilter f){
-  String sql=" from financial_purchases p join editions e on e.id=p.edition_id and e.owner_user_id=p.owner_user_id where p.owner_user_id=:owner";
-  if(f.start()!=null)sql+=" and p.purchase_date between :start and :end";
+  String sql=" from editions e where e.owner_user_id=:owner";
+  if(f.start()!=null)sql+=" and e.purchase_date between :start and :end";
   if(f.seriesId()!=null)sql+=" and e.series_id=:series";
   if(f.publisherId()!=null)sql+=" and e.publisher_id=:publisher";
   if(f.mediaType()!=null)sql+=" and e.media_type=:media";
@@ -28,13 +28,13 @@ public class FinanceRepository {
   return sql;
  }
  public Summary summary(UUID owner,FinanceFilter f){
-  return jdbc.queryForObject("select count(*) n,coalesce(sum(p.amount),0) total,count(*) filter(where p.purchase_date is null) undated,coalesce(sum(p.amount) filter(where p.purchase_date is null),0) undated_amount,coalesce(sum(p.amount) filter(where not e.is_read),0) unread"+where(f),params(owner,f),
-   (r,n)->new Summary(r.getLong("n"),r.getBigDecimal("total"),r.getLong("undated"),r.getBigDecimal("undated_amount"),r.getBigDecimal("unread")));
+  return jdbc.queryForObject("select count(*) n,count(e.reference_paid_price) priced,coalesce(sum(e.reference_paid_price),0) total,count(*) filter(where e.purchase_date is null) undated,coalesce(sum(e.reference_paid_price) filter(where e.purchase_date is null),0) undated_amount,coalesce(sum(e.reference_paid_price) filter(where not e.is_read),0) unread"+where(f),params(owner,f),
+   (r,n)->new Summary(r.getLong("n"),r.getBigDecimal("total"),r.getLong("undated"),r.getBigDecimal("undated_amount"),r.getBigDecimal("unread"),r.getLong("priced")));
  }
- public Page<Purchase> list(UUID owner,FinanceFilter f,int page,long count){
+ public Page<Entry> list(UUID owner,FinanceFilter f,int page,long count){
   var param=params(owner,f).addValue("offset",(long)Math.max(0,page)*20);
-  var rows=jdbc.query("select p.*,e.title"+where(f)+" order by p.purchase_date desc nulls last,p.created_at desc,p.id limit 20 offset :offset",param,
-   (r,n)->new Purchase(r.getObject("id",UUID.class),r.getObject("edition_id",UUID.class),r.getString("title"),r.getBigDecimal("amount"),r.getObject("purchase_date",LocalDate.class),r.getString("vendor"),r.getString("notes")));
+  var rows=jdbc.query("select e.id,e.title,e.reference_paid_price amount,e.purchase_date"+where(f)+" order by e.purchase_date desc nulls last,e.created_at desc,e.id limit 20 offset :offset",param,
+   (r,n)->new Entry(r.getObject("id",UUID.class),r.getString("title"),r.getBigDecimal("amount"),r.getObject("purchase_date",LocalDate.class)));
   return new PageImpl<>(rows,PageRequest.of(Math.max(0,page),20),count);
  }
  public List<Bucket> groups(UUID owner,FinanceFilter f,String dimension,boolean quantity){
@@ -47,12 +47,12 @@ public class FinanceRepository {
    case "mediaType" -> {key="coalesce(e.media_type,'UNSPECIFIED')";label="case e.media_type when 'PHYSICAL' then 'Físico' when 'DIGITAL' then 'Digital' else 'Não informado' end";}
    default -> throw new IllegalArgumentException("Dimensão inválida");
   }
-  String base=where(f).replace(" where p.owner_user_id",join+" where p.owner_user_id");
-  return jdbc.query("select "+key+" k,"+label+" label,count(*) n,sum(p.amount) amount"+base+" group by "+key+","+label+" order by "+(quantity?"n":"amount")+" desc,label,k nulls last limit 11",params(owner,f),
+  String base=where(f).replace(" where e.owner_user_id",join+" where e.owner_user_id");
+  return jdbc.query("select "+key+" k,"+label+" label,count(*) n,coalesce(sum(e.reference_paid_price),0) amount"+base+" group by "+key+","+label+" order by "+(quantity?"n":"amount")+" desc,label,k nulls last limit 11",params(owner,f),
    (r,n)->new Bucket(r.getString("k"),r.getString("label"),r.getLong("n"),r.getBigDecimal("amount")));
  }
  public List<Bucket> months(UUID owner,FinanceFilter f){
-  return jdbc.query("select to_char(p.purchase_date,'YYYY-MM') k,count(*) n,sum(p.amount) amount"+where(f)+" group by k order by k",params(owner,f),
+  return jdbc.query("select to_char(e.purchase_date,'YYYY-MM') k,count(*) n,coalesce(sum(e.reference_paid_price),0) amount"+where(f)+" group by k order by k",params(owner,f),
    (r,n)->new Bucket(r.getString("k"),r.getString("k"),r.getLong("n"),r.getBigDecimal("amount")));
  }
  public List<Option> options(UUID owner,String kind){
@@ -65,14 +65,4 @@ public class FinanceRepository {
   String table=switch(kind){case "edition"->"editions";case "series"->"series";case "creator"->"creators";case "publisher"->"publishers";case "character"->"comic_characters";default->throw new IllegalArgumentException();};
   if(!Boolean.TRUE.equals(jdbc.queryForObject("select exists(select 1 from "+table+" where id=:id and owner_user_id=:owner)",Map.of("id",id,"owner",owner),Boolean.class)))throw new br.com.minhagibiteca.shared.application.ResourceNotFoundException();
  }
- public Purchase find(UUID owner,UUID id){
-  return jdbc.query("select p.*,e.title from financial_purchases p join editions e on e.id=p.edition_id and e.owner_user_id=p.owner_user_id where p.id=:id and p.owner_user_id=:owner",Map.of("id",id,"owner",owner),
-   (r,n)->new Purchase(id,r.getObject("edition_id",UUID.class),r.getString("title"),r.getBigDecimal("amount"),r.getObject("purchase_date",LocalDate.class),r.getString("vendor"),r.getString("notes"))).stream().findFirst().orElseThrow(br.com.minhagibiteca.shared.application.ResourceNotFoundException::new);
- }
- public void lock(UUID owner){jdbc.queryForObject("select id from users where id=:owner for update",Map.of("owner",owner),UUID.class);}
- public void save(UUID owner,UUID id,UUID edition,BigDecimal amount,LocalDate date,String vendor,String notes,boolean update){
-  var p=new MapSqlParameterSource("owner",owner).addValue("id",id).addValue("edition",edition).addValue("amount",amount).addValue("date",date).addValue("vendor",vendor).addValue("notes",notes);
-  jdbc.update(update?"update financial_purchases set edition_id=:edition,amount=:amount,purchase_date=:date,vendor=:vendor,notes=:notes,updated_at=current_timestamp where id=:id and owner_user_id=:owner":"insert into financial_purchases(id,owner_user_id,edition_id,amount,purchase_date,vendor,notes) values(:id,:owner,:edition,:amount,:date,:vendor,:notes)",p);
- }
- public void delete(UUID owner,UUID id){jdbc.update("delete from financial_purchases where id=:id and owner_user_id=:owner",Map.of("id",id,"owner",owner));}
 }

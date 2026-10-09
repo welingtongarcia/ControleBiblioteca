@@ -23,6 +23,8 @@ public record NavigationContext(String key, String label, String listUrl, String
         if (!LABELS.containsKey(key)) key = "dashboard";
         String list = "/" + key;
         String back = canonical(request.getParameter("returnTo"), key);
+        // O Financeiro edita os próprios dados da HQ; aceita só o painel local validado.
+        if (back == null && key.equals("edicoes")) back = canonical(request.getParameter("returnTo"), "financeiro");
         if (back == null) back = list;
         String page = back;
         if (request.getMethod().equals("GET") && allowedPath(path, key)) {
@@ -69,6 +71,7 @@ public record NavigationContext(String key, String label, String listUrl, String
         } catch (IllegalArgumentException | java.time.DateTimeException error) { return null; }
     }
     public String getListReturnUrl() { return URI.create(returnUrl).getPath().equals(listUrl) ? returnUrl : listUrl; }
+    public String getReturnLabel() { return URI.create(returnUrl).getPath().equals("/financeiro") ? "Financeiro" : label; }
     public String parentUrl(String fallback) {
         String path = URI.create(returnUrl).getPath();
         if (fallback.matches("/series/" + UUID_PATTERN + "/checklist") && path.matches("/series/" + UUID_PATTERN + "/(checklist|faltantes)")
@@ -82,6 +85,7 @@ public record NavigationContext(String key, String label, String listUrl, String
         if (returnUrl.equals(listUrl)) return destination;
         String targetPath = URI.create(destination).getPath();
         String backPath = URI.create(returnUrl).getPath();
+        if (key.equals("edicoes") && backPath.equals("/financeiro") && (targetPath.equals("/edicoes") || targetPath.matches("/edicoes/" + UUID_PATTERN))) return returnUrl;
         if (targetPath.equals(listUrl) && backPath.equals(listUrl)) return returnUrl;
         if (targetPath.matches("/series/" + UUID_PATTERN + "/checklist") && backPath.matches("/series/" + UUID_PATTERN + "/(checklist|faltantes)")
                 && targetPath.split("/")[2].equals(backPath.split("/")[2])) return returnUrl;

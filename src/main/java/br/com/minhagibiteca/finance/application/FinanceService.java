@@ -62,17 +62,4 @@ public class FinanceService {
   return new Report(summary,coverage,repo.list(owner,f,page,summary.count()),List.copyOf(charts),new Monthly(List.copyOf(months),points.toString(),range,peak),comparison);
  }
  @Transactional(readOnly=true) public List<Option> options(UUID owner,String kind){return repo.options(owner,kind);}
- @Transactional(readOnly=true) public Purchase find(UUID owner,UUID id){return repo.find(owner,id);}
- @Transactional public UUID save(UUID owner,UUID id,Command c){
-  repo.lock(owner);if(id!=null)repo.find(owner,id);
-  repo.requireOption(owner,"edition",c.editionId());
-  if(c.editionId()==null||c.amount()==null||c.amount().signum()<0||c.amount().scale()>2||c.amount().compareTo(new BigDecimal("9999999999.99"))>0)throw new InvalidPurchase("Informe edição e valor válido, não negativo, com até duas casas decimais.");
-  if(c.purchaseDate()!=null&&(c.purchaseDate().isAfter(LocalDate.now())||c.purchaseDate().isBefore(LocalDate.of(1900,1,1))))throw new InvalidPurchase("Informe a data real da compra, entre 1900 e hoje, ou deixe em branco.");
-  if((c.vendor()!=null&&c.vendor().length()>160)||(c.notes()!=null&&c.notes().length()>2000))throw new InvalidPurchase("Respeite os limites de origem e observações.");
-  UUID target=id==null?UUID.randomUUID():id;repo.save(owner,target,c.editionId(),c.amount(),c.purchaseDate(),blank(c.vendor()),blank(c.notes()),id!=null);return target;
- }
- @Transactional public void delete(UUID owner,UUID id){repo.lock(owner);repo.find(owner,id);repo.delete(owner,id);}
- private String blank(String s){return s==null||s.isBlank()?null:s.strip();}
- public record Command(UUID editionId,BigDecimal amount,LocalDate purchaseDate,String vendor,String notes){}
- public static class InvalidPurchase extends RuntimeException{public InvalidPurchase(String m){super(m);}}
 }

@@ -1,5 +1,7 @@
 # Financeiro — especificação
 
+> Histórico da implementação anterior. A revisão vigente está em [revision-edition-source.md](revision-edition-source.md): valores e data no cadastro da HQ substituem o ledger como fonte financeira.
+
 2026-10-09. Status: opção 2 confirmada; implementação concluída e verificação funcional registrada em verification.md, com limites de validação explícitos.
 
 ## Objetivo e escopo solicitado

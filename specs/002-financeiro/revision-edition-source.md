@@ -23,10 +23,22 @@ Esta revisão prevalece sobre as regras anteriores de ledger em spec/clarify/pla
 
 ## Tasks
 
-- [ ] FIN-RT001 Migration/data no cadastro e testes. R001/002/006.
-- [ ] FIN-RT002 Agregações/rotas/interface e navegação. R001/003/004/005.
-- [ ] FIN-RT003 Verificação completa, documentação e commit. R001–006.
+- [x] FIN-RT001 Migration/data no cadastro e testes. R001/002/006.
+- [x] FIN-RT002 Agregações/rotas/interface e navegação. R001/003/004/005.
+- [x] FIN-RT003 Verificação completa, documentação e commit. R001–006.
 
 ## Analyze
 
 Principal risco corrigido: a fonte anterior exigia duplicação de cadastro que o usuário não quer. Não sincronizar ledger e edição: isso recriaria duplicidade e ambiguidade. Valores ausentes reduzem cobertura e podem subestimar gastos; comparação usa somente o total conhecido, com aviso. Alterações de classificação/valor de edição mudam a análise retroativamente, sem snapshot histórico. Data sem precisão permanece vazia. Excluir edição não deve apagar legado: FK opcional protege valores, sem inventar um arquivo de histórico na interface. Sem alegação de benchmark/auditoria WCAG integral.
+
+## Verificação executada
+
+- Planejamento registrado em `6e9d224` antes das alterações funcionais. Arquivos: migration V15, Edition/Command/EditionView/EditionForm/EditionController e templates de edição; FinanceRepository/Service/View/Controller e painel; navegação compartilhada; guia docs/financeiro.md e testes finance/shared.
+- `./mvnw clean verify -q`: **exit 0, 133 testes, 0 falhas, 0 erros, 0 ignorados**. JUnit/Mockito, MockMvc e PostgreSQL 16 em Testcontainers. Primeira rodada encontrou retorno ao catálogo em vez do Financeiro; corrigida allowlist local e coberta por testes antes da rodada final.
+- FIN-R001/003/004: integração soma 350 a partir de cinco edições (quatro valores conhecidos, média 87,50), ignorando preço de capa 999, exemplar 333 e ledger 7777. Filtros combinados, vínculos compartilhados, suporte desconhecido, valores ausentes/zero, meses zerados e comparação 150 versus 100 (50%) cobertos. Paginação de 24 edições mantém total integral e distribuição com grupo residual.
+- FIN-R002/005: POST cria/edita valor/data na própria edição, mostra data nos detalhes e no formulário de edição, limpa valor/data, recalcula seleção temporal, reflete leitura e exclusão. Datas antes de 1900, futuras e malformadas conservam rascunho, sem mutação. CSRF, dono, XSS, autenticação e retorno validado mantidos; rotas antigas GET/POST retornam 404 autenticado.
+- FIN-R006: upgrade explícito de V14 com dados para V15 preserva preços, registros de compra/data/notas e deixa data da HQ desconhecida. Teste de exclusão da HQ mantém lançamento antigo com valor 500/notas/proprietário e vínculo nulo, sem somá-lo ao relatório.
+- QA em prévia local de HTML produzido por MockMvc: data ao lado do valor pago no desktop e empilhada no celular, foco por teclado, valor/data preenchidos, alertas de cobertura e tabela mensal aberta por Enter com 12 meses/total conhecido correto. Formulário e painel sem overflow horizontal em 320 px (documento 305 px com barra de rolagem). Interface sem links para registrar compra separada.
+- `git diff --check`: exit 0. Consultas continuam agregadas, limitadas/paginadas, sem N+1 por linha e com índice owner/purchase_date/id na V15.
+
+Limites: banco do usuário e processo IntelliJ não alterados durante testes; reinício aplica V15 no banco configurado. Não realizado deploy, benchmark de acervo grande ou auditoria integral WCAG/leitores de tela. Aviso de agente Mockito não impediu testes. `data/` local preservado fora do commit. Foram removidos controller/form/serviços de CRUD de compras do fluxo ativo e os templates exclusivos desse fluxo; nenhum lançamento existente foi apagado.
