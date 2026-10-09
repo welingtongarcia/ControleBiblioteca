@@ -30,6 +30,9 @@
         <dt>ISBN</dt><dd th:text="${edition.isbn ?: 'Não informado'}"></dd>
         <dt>Ano de publicação</dt><dd th:text="${edition.publicationYear ?: 'Não informado'}"></dd>
         <dt>Formato</dt><dd th:text="${edition.format ?: 'Não informado'}"></dd>
+        <dt>Suporte do quadrinho</dt><dd th:text="${edition.mediaLabel}"></dd>
+        <dt>Preço de capa</dt><dd th:text="${edition.formattedCoverPrice}"></dd>
+        <dt>Valor pago (referência)</dt><dd th:text="${edition.formattedReferencePaidPrice}"></dd>
         <dt>Observações</dt><dd th:text="${edition.notes ?: 'Nenhuma observação cadastrada'}"></dd>
     </dl>
     <section class="details-section" aria-labelledby="works-title">

@@ -29,6 +29,7 @@
                 <div>
                     <a th:href="@{/edicoes/{id}(id=${edition.id})}" th:text="${edition.title}">Título da edição</a>
                     <span th:if="${edition.editorialNumber}" th:text="|Nº ${edition.editorialNumber}|"></span>
+                    <span th:text="${edition.mediaLabel}"></span>
                 </div>
                 <div class="resource-actions">
                     <a th:href="@{/edicoes/{id}/editar(id=${edition.id})}">Editar</a>

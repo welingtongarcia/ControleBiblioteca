@@ -39,6 +39,7 @@ Uma edição contém zero ou mais obras e uma obra pode estar em várias ediçõ
 - **FR-023:** usuário pode enviar e substituir uma capa de edição autorizada; o sistema valida arquivo e exibe miniatura sem armazenar binário no PostgreSQL.
 - **FR-024:** catálogo lista edições próprias com paginação no servidor, busca textual, filtros de editora/série/formato/tipo e ordenação previsível.
 - **FR-025:** detalhe de edição mostra metadados, capa, obras/criadores associados e seus exemplares próprios.
+- **FR-026:** cadastro e edição permitem indicar suporte físico ou digital, preço de capa e valor pago de referência, ambos opcionais em reais. O valor pago de referência pertence ao registro privado da edição, sem representar valores de várias cópias; preços por exemplar serão registrados na aquisição de cada exemplar. Valores ausentes permanecem desconhecidos, zero é válido; rejeitar negativos, mais de duas casas decimais e valores acima de R$ 9.999.999.999,99. Aceitar vírgula ou ponto decimal, sem separador de milhares no formulário. Cadastros novos começam como físicos; registros anteriores recebem suporte não informado para não presumir sua natureza. Listagem mostra o suporte; detalhe e edição preservam os valores, formatados em pt-BR.
 
 ### Exemplares e localização
 
@@ -64,6 +65,7 @@ Uma edição contém zero ou mais obras e uma obra pode estar em várias ediçõ
 - **AC-006 / FR-040/041:** dado checklist configurado com `0`, `1A` e `Especial`, quando `1A` está faltante, então somente `1A` aparece como lacuna; nenhum número inventado é listado.
 - **AC-007 / FR-050:** dadas alterações no banco, quando o dashboard é aberto, então seus totais correspondem às consultas persistidas, sem valores de demonstração.
 - **AC-008 / FR-060:** dado o usuário A, quando exporta CSV, então o arquivo contém somente registros A, possui cabeçalho e codificação UTF-8.
+- **AC-009 / FR-026:** cadastrar edição digital com preço de capa `29,90` e valor pago `19,50`, verificar persistência decimal e detalhe em reais; editar para físico com valores vazios preserva ausência, zero continua zero. Entradas inválidas retornam erros nos campos e dados alheios continuam retornando 404. Migration preserva dados anteriores com suporte e preços não informados.
 
 ## Requisitos não funcionais
 
@@ -76,4 +78,4 @@ Uma edição contém zero ou mais obras e uma obra pode estar em várias ediçõ
 
 ## Fora do escopo do MVP
 
-Reconhecimento por IA, scanner/barcode, consulta automática de ISBN, preços/valorização, empréstimos, recursos sociais, wishlist avançada, controle financeiro e recuperação de senha por e-mail. Constam do roadmap, sem endpoints ou controles simulados.
+Reconhecimento por IA, scanner/barcode, consulta automática de ISBN, avaliação automática de preços/valorização, empréstimos, recursos sociais, wishlist avançada, controle financeiro e recuperação de senha por e-mail. O registro manual de preço de capa e valor pago está incluído conforme FR-026.

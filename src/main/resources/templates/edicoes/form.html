@@ -41,6 +41,27 @@
             <p class="field-error" th:if="${#fields.hasErrors('format')}" th:errors="*{format}"></p>
         </div>
         <div class="field">
+            <label for="mediaType">Suporte do quadrinho</label>
+            <select id="mediaType" th:field="*{mediaType}" aria-describedby="mediaType-error">
+                <option value="">Não informado</option>
+                <option th:each="media : ${mediaTypes}" th:value="${media}" th:text="${media.label}"></option>
+            </select>
+            <p id="mediaType-error" class="field-error" th:if="${#fields.hasErrors('mediaType')}" th:errors="*{mediaType}"></p>
+        </div>
+        <div class="year-grid">
+            <div class="field">
+                <label for="coverPrice">Preço de capa (R$)</label>
+                <input id="coverPrice" th:field="*{coverPrice}" type="text" inputmode="decimal" maxlength="13" placeholder="Ex.: 29,90" aria-describedby="prices-help coverPrice-error">
+                <p id="coverPrice-error" class="field-error" th:if="${#fields.hasErrors('coverPrice')}" th:errors="*{coverPrice}"></p>
+            </div>
+            <div class="field">
+                <label for="referencePaidPrice">Valor pago (R$)</label>
+                <input id="referencePaidPrice" th:field="*{referencePaidPrice}" type="text" inputmode="decimal" maxlength="13" placeholder="Ex.: 19,50" aria-describedby="prices-help referencePaidPrice-error">
+                <p id="referencePaidPrice-error" class="field-error" th:if="${#fields.hasErrors('referencePaidPrice')}" th:errors="*{referencePaidPrice}"></p>
+            </div>
+        </div>
+        <p id="prices-help" class="help-text">Valores opcionais em reais. Use até duas casas decimais, sem separador de milhares. Deixe em branco se não souber; informe 0 para gratuito. O valor pago é uma referência para esta edição.</p>
+        <div class="field">
             <label for="publisherId">Editora</label>
             <select id="publisherId" th:field="*{publisherId}">
                 <option value="">Não informada</option>

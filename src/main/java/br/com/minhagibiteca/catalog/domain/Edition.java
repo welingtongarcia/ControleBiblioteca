@@ -1,6 +1,7 @@
 package br.com.minhagibiteca.catalog.domain;
 
 import jakarta.persistence.*;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Locale;
 import java.util.UUID;
@@ -13,6 +14,9 @@ public class Edition {
  @Column(name="editorial_number",length=60) private String editorialNumber; @Column(length=120) private String variant;
  @Column(length=32) private String isbn; @Column(name="publication_year") private Integer publicationYear;
  @Column(name="format",length=60) private String format; @Column(length=2000) private String notes;
+ @Enumerated(EnumType.STRING) @Column(name="media_type",length=20) private MediaType mediaType;
+ @Column(name="cover_price",precision=12,scale=2) private BigDecimal coverPrice;
+ @Column(name="reference_paid_price",precision=12,scale=2) private BigDecimal referencePaidPrice;
  @Column(name="cover_file_name",length=255) private String coverFileName; @Column(name="cover_content_type",length=100) private String coverContentType; @Column(name="cover_updated_at") private Instant coverUpdatedAt;
  @Column(name="created_at",nullable=false,updatable=false) private Instant createdAt; @Column(name="updated_at",nullable=false) private Instant updatedAt;
  protected Edition() { }
@@ -20,6 +24,18 @@ public class Edition {
  public static Edition create(UUID owner, UUID publisher, UUID series, String title, String number, String variant, String isbn, Integer year, String format, String notes) { return new Edition(owner,publisher,series,title,number,variant,isbn,year,format,notes); }
  public void update(UUID publisher, UUID series, String title, String number, String variant, String isbn, Integer year, String format, String notes) { publisherId=publisher; seriesId=series; this.title=title.trim(); normalizedTitle=title.trim().toLowerCase(Locale.ROOT); editorialNumber=blank(number); this.variant=blank(variant); this.isbn=blank(isbn); publicationYear=year; this.format=blank(format); this.notes=blank(notes); updatedAt=Instant.now(); }
  public void updateCover(String fileName, String contentType) { coverFileName=fileName; coverContentType=contentType; coverUpdatedAt=Instant.now(); updatedAt=Instant.now(); }
+ public void updatePricingAndMedia(MediaType mediaType, BigDecimal coverPrice, BigDecimal referencePaidPrice) {
+     validatePrice(coverPrice); validatePrice(referencePaidPrice);
+     this.mediaType = mediaType; this.coverPrice = coverPrice; this.referencePaidPrice = referencePaidPrice;
+ }
+ private static void validatePrice(BigDecimal price) {
+     if (price != null && (price.signum() < 0 || price.scale() > 2 || price.compareTo(new BigDecimal("9999999999.99")) > 0)) {
+         throw new IllegalArgumentException("Informe um valor não negativo com até duas casas decimais.");
+     }
+ }
+ public MediaType getMediaType() { return mediaType; }
+ public BigDecimal getCoverPrice() { return coverPrice; }
+ public BigDecimal getReferencePaidPrice() { return referencePaidPrice; }
  private static String blank(String s){return s==null||s.isBlank()?null:s.trim();}
  public UUID getId(){return id;} public UUID getOwnerUserId(){return ownerUserId;} public UUID getPublisherId(){return publisherId;} public UUID getSeriesId(){return seriesId;} public String getTitle(){return title;} public String getEditorialNumber(){return editorialNumber;} public String getVariant(){return variant;} public String getIsbn(){return isbn;} public Integer getPublicationYear(){return publicationYear;} public String getFormat(){return format;} public String getNotes(){return notes;} public String getCoverFileName(){return coverFileName;} public String getCoverContentType(){return coverContentType;}
 }

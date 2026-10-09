@@ -17,6 +17,8 @@ Cada tarefa só começa após suas dependências e os requisitos associados esta
 
 ## Fase 3 — Catálogo
 
+- [x] T021 Adicionar suporte físico/digital, preço de capa e valor pago de referência no cadastro, edição, lista e detalhe; migration preserva registros antigos; testes de decimal, validação e isolamento. **Dep.:** T010. (FR-026, AC-009, NFR-001/004)
+
 - [x] T008 Implementar migrations/modelo e CRUD de editoras. **Dep.:** T007. **Aceite:** validação, PRG, busca e exclusão segura testadas. (FR-010/012)
 - [x] T009 Implementar migrations/modelo e CRUD de séries. **Dep.:** T008. **Aceite:** relação opcional com editora e dados alheios isolados. (FR-011/012)
 - [x] T010 Implementar modelo de edição, obra/criador e formulário DTO. **Dep.:** T008–T009. **Aceite:** ISBN vazio e numeração textual persistem. (FR-020–022, AC-002)

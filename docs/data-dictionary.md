@@ -18,3 +18,5 @@ Este é o contrato de modelagem para migrations da Fase 1 em diante; os nomes f�
 | `cover_images` | `id`, `owner_user_id`, `edition_id`, `storage_key`, `original_filename`, `content_type`, `byte_size`, `sha256`, auditoria | um por edição no MVP; `storage_key` único; nenhuma coluna binária. |
 
 Todos os timestamps usam instante UTC; valores monetários usam `numeric`, nunca `float`. Comprimentos, enums e regras exatas serão consolidados nos forms e na migration correspondente antes de implementação.
+
+Extensão FR-026 (V8): `editions.media_type` nullable PHYSICAL/DIGITAL; `cover_price` e `reference_paid_price` nullable `numeric(12,2)`, não negativos, em BRL. Null representa desconhecido e zero representa gratuito. Valor pago de referência não agrega preços de exemplares. Registros antigos preservam campos novos nulos.

@@ -8,6 +8,10 @@ Fluxo padrão: controller MVC → form DTO validado → serviço de aplicação 
 
 ## Modelo e persistência
 
+### Extensão solicitada em 2026-10-09 — valores e suporte (FR-026)
+
+Migration V8 adiciona `media_type` opcional (PHYSICAL/DIGITAL), `cover_price` e `reference_paid_price` como `numeric(12,2)` com constraints não negativas. Valores monetários em Java usam BigDecimal, validados antes da persistência. Formulário aceita vírgula ou ponto decimal e apresenta erros em pt-BR. DTO de leitura de edição impede exposição de entidades JPA pelo controller alterado. Sem backfill de preços ou suporte; novo formulário oferece físico como padrão. O valor pago é uma referência privada da edição até a implementação de aquisições por exemplar; não agrega nem substitui esse modelo. Verificar migration limpa e compatibilidade de dados anteriores, cadastro, edição, validação, formatação e isolamento com MockMvc/PostgreSQL.
+
 O modelo lógico está em [ER](../../docs/er-model.md) e o detalhamento físico em [dicionário](../../docs/data-dictionary.md). Todas as tabelas proprietárias carregam `owner_user_id`; relações entre dados do usuário exigem o mesmo proprietário no serviço e, onde possível, por constraints. UUIDs são preferidos para IDs externos/URLs. Flyway cria schema e índices em migrations imutáveis.
 
 Consultas de catálogo usam `Pageable`, projeções/fetch planejado e especificações JPA. Índices essenciais incluem proprietário + título/ordenação, proprietário + FK de série/editora e proprietário + edição em exemplares. Antes da Fase 5, aferir plano de consulta em uma massa representativa.

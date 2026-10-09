@@ -105,6 +105,7 @@ class MinhaGibitecaApplicationTest {
         registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
         registry.add("spring.datasource.username", POSTGRES::getUsername);
         registry.add("spring.datasource.password", POSTGRES::getPassword);
+        registry.add("app.cover-storage-path", () -> "target/test-covers");
     }
 
     @BeforeEach
@@ -279,5 +280,93 @@ class MinhaGibitecaApplicationTest {
         assertThatThrownBy(() -> editionCoverService.replace(edition.getId(), owner.getId(),
                 new MockMultipartFile("cover", "texto.png", "image/png", "não é imagem".getBytes())))
                 .isInstanceOf(EditionCoverService.InvalidCoverException.class);
+    }
+
+    @Test
+    void createsAndEditsDigitalEditionWithExactPricesAndOwnerIsolation() throws Exception {
+        UserAccount owner = userAccountRepository.save(UserAccount.create(
+                "precos@example.com", passwordEncoder.encode("senha-segura-123"), UserRole.USER));
+        UserAccount other = userAccountRepository.save(UserAccount.create(
+                "outro@example.com", passwordEncoder.encode("senha-segura-123"), UserRole.USER));
+        var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
+        mockMvc.perform(post("/edicoes").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                        .param("title", "Quadrinho digital").param("mediaType", "DIGITAL")
+                        .param("coverPrice", "29,90").param("referencePaidPrice", "19.50"))
+                .andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/edicoes"));
+        Edition edition = editionRepository.findAll().getFirst();
+        assertThat(edition.getMediaType()).isEqualTo(br.com.minhagibiteca.catalog.domain.MediaType.DIGITAL);
+        assertThat(edition.getCoverPrice()).isEqualByComparingTo("29.90");
+        assertThat(edition.getReferencePaidPrice()).isEqualByComparingTo("19.50");
+        mockMvc.perform(get("/edicoes/{id}", edition.getId()).with(auth))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Digital")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("29,90")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("19,50")));
+        mockMvc.perform(get("/edicoes/{id}/editar", edition.getId()).with(auth))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("29,90")));
+        mockMvc.perform(get("/edicoes").with(auth)).andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Digital")));
+        mockMvc.perform(post("/edicoes/{id}/editar", edition.getId())
+                        .with(SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(other)))
+                        .with(SecurityMockMvcRequestPostProcessors.csrf()).param("title", "Intrusão")
+                        .param("coverPrice", "10,00"))
+                .andExpect(status().isNotFound());
+        mockMvc.perform(post("/edicoes/{id}/editar", edition.getId()).with(auth)
+                        .with(SecurityMockMvcRequestPostProcessors.csrf()).param("title", "Quadrinho físico")
+                        .param("mediaType", "PHYSICAL").param("coverPrice", "").param("referencePaidPrice", "0"))
+                .andExpect(redirectedUrl("/edicoes/" + edition.getId()));
+        Edition updated = editionRepository.findById(edition.getId()).orElseThrow();
+        assertThat(updated.getCoverPrice()).isNull();
+        assertThat(updated.getReferencePaidPrice()).isEqualByComparingTo("0");
+        assertThat(updated.getMediaType()).isEqualTo(br.com.minhagibiteca.catalog.domain.MediaType.PHYSICAL);
+        mockMvc.perform(get("/edicoes/{id}", edition.getId()).with(auth))
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("0,00")));
+    }
+
+    @Test
+    void rejectsInvalidPricesWithoutSavingOrLosingFormValues() throws Exception {
+        UserAccount owner = userAccountRepository.save(UserAccount.create(
+                "validacao@example.com", passwordEncoder.encode("senha-segura-123"), UserRole.USER));
+        for (String value : List.of("-1,00", "1,234", "10000000000", "texto", "1.234,56")) {
+            mockMvc.perform(post("/edicoes")
+                            .with(SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner)))
+                            .with(SecurityMockMvcRequestPostProcessors.csrf())
+                            .param("title", "Preço inválido").param("mediaType", "DIGITAL")
+                            .param("coverPrice", value).param("referencePaidPrice", value))
+                    .andExpect(status().isOk()).andExpect(view().name("edicoes/form"))
+                    .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.model()
+                            .attributeHasFieldErrors("editionForm", "coverPrice", "referencePaidPrice"));
+        }
+        assertThat(editionRepository.count()).isZero();
+        mockMvc.perform(get("/edicoes/nova")
+                        .with(SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner))))
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("Preço de capa")));
+    }
+
+    @Test
+    void upgradesExistingEditionWithoutInventingPricesOrMedia() throws Exception {
+        String schema = "pricing_upgrade_test";
+        org.flywaydb.core.Flyway.configure()
+                .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
+                .schemas(schema).defaultSchema(schema).target("7").load().migrate();
+        try (Connection connection = dataSource.getConnection(); var sql = connection.createStatement()) {
+            sql.executeUpdate("insert into pricing_upgrade_test.users (id, email, password_hash, role) "
+                    + "values ('00000000-0000-0000-0000-000000000001', 'migration@example.com', 'test', 'USER')");
+            sql.executeUpdate("insert into pricing_upgrade_test.editions (id, owner_user_id, title, normalized_title, editorial_number) "
+                    + "values ('00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000001', 'Anterior', 'anterior', '1A')");
+        }
+        org.flywaydb.core.Flyway.configure()
+                .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
+                .schemas(schema).defaultSchema(schema).load().migrate();
+        try (Connection connection = dataSource.getConnection(); var sql = connection.createStatement();
+                var row = sql.executeQuery("select title, editorial_number, media_type, cover_price, reference_paid_price from pricing_upgrade_test.editions")) {
+            assertThat(row.next()).isTrue();
+            assertThat(row.getString("title")).isEqualTo("Anterior");
+            assertThat(row.getString("editorial_number")).isEqualTo("1A");
+            assertThat(row.getString("media_type")).isNull();
+            assertThat(row.getBigDecimal("cover_price")).isNull();
+            assertThat(row.getBigDecimal("reference_paid_price")).isNull();
+        }
     }
 }
