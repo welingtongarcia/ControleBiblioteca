@@ -21,7 +21,7 @@ import br.com.minhagibiteca.auth.application.CurrentAuthenticatedUser; import br
  String list(@RequestParam(defaultValue="") String q,@RequestParam(defaultValue="0") int page,
          @RequestParam(required=false) UUID publisherId,@RequestParam(required=false) UUID seriesId,
          @RequestParam(defaultValue="") String format,@RequestParam(required=false) MediaType mediaType,
-         @RequestParam(defaultValue="TITLE_ASC") String order,Model model) {
+         @RequestParam(required=false) String order,Model model) {
      CatalogFilter filter = new CatalogFilter(q,publisherId,seriesId,format,mediaType);
      CatalogOrder selectedOrder = CatalogOrder.parse(order);
      model.addAttribute("editions",editions.search(user.id(),filter,selectedOrder,page));

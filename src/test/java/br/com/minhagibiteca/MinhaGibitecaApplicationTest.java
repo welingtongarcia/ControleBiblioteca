@@ -1201,7 +1201,7 @@ class MinhaGibitecaApplicationTest {
         mockMvc.perform(get("/edicoes").with(auth).param("order", "qualquer-coluna"))
                 .andExpect(status().isOk())
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.model().attribute("selectedOrder",
-                        br.com.minhagibiteca.catalog.application.CatalogOrder.TITLE_ASC));
+                        br.com.minhagibiteca.catalog.application.CatalogOrder.TITLE_NUMBER_ASC));
         mockMvc.perform(get("/edicoes").with(auth).param("mediaType", "INVALIDO")).andExpect(status().isBadRequest())
                 .andExpect(view().name("errors/400"));
         mockMvc.perform(get("/edicoes").with(auth).param("publisherId", "inválido")).andExpect(status().isBadRequest());
@@ -1210,6 +1210,46 @@ class MinhaGibitecaApplicationTest {
                         .param("publisherId", publisher.getId().toString())).andExpect(status().isNotFound());
         mockMvc.perform(get("/edicoes").with(SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(other)))
                         .param("seriesId", series.getId().toString())).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void defaultsCatalogToTitleAndAscendingNumberAndPreservesExplicitOrder() throws Exception {
+        var owner = userAccountRepository.save(UserAccount.create("default-order@example.com", "hash", UserRole.USER));
+        var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
+        editionService.create(owner.getId(), new EditionService.Command(null, null,
+                "Superman", "1", null, null, null, null, null));
+        for (int number = 22; number >= 1; number--) {
+            editionService.create(owner.getId(), new EditionService.Command(null, null,
+                    "Batman", String.valueOf(number), null, null, null, null, null));
+        }
+        for (String order : java.util.Arrays.asList(null, "", "inválida")) {
+            for (int page = 0; page <= 1; page++) {
+                var request = get("/edicoes").with(auth).param("page", String.valueOf(page));
+                if (order != null) request.param("order", order);
+                var result = mockMvc.perform(request).andExpect(status().isOk())
+                        .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.model().attribute("selectedOrder",
+                                br.com.minhagibiteca.catalog.application.CatalogOrder.TITLE_NUMBER_ASC))
+                        .andReturn();
+                var editions = (org.springframework.data.domain.Page<?>) result.getModelAndView().getModel().get("editions");
+                var expected = new java.util.ArrayList<String>();
+                java.util.stream.IntStream.rangeClosed(page == 0 ? 1 : 21, page == 0 ? 20 : 22)
+                        .forEach(n -> expected.add("Batman:" + n));
+                if (page == 1) expected.add("Superman:1");
+                assertThat(editions.getContent().stream()
+                        .map(br.com.minhagibiteca.catalog.application.EditionView.class::cast)
+                        .map(v -> v.title() + ":" + v.editorialNumber()).toList())
+                        .containsExactlyElementsOf(expected);
+                assertThat(result.getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8))
+                        .contains("value=\"TITLE_NUMBER_ASC\" selected", "order=TITLE_NUMBER_ASC");
+            }
+        }
+        var explicit = mockMvc.perform(get("/edicoes").with(auth).param("order", "TITLE_DESC"))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.model().attribute("selectedOrder",
+                        br.com.minhagibiteca.catalog.application.CatalogOrder.TITLE_DESC)).andReturn();
+        var explicitPage = (org.springframework.data.domain.Page<?>) explicit.getModelAndView().getModel().get("editions");
+        assertThat(((br.com.minhagibiteca.catalog.application.EditionView) explicitPage.getContent().getFirst()).title())
+                .isEqualTo("Superman");
     }
 
     @Test

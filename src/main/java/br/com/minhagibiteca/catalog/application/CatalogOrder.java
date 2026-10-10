@@ -25,7 +25,7 @@ public enum CatalogOrder {
     public boolean isDescending() { return direction == Sort.Direction.DESC; }
     public Sort sort() { return isNumberOrder() ? Sort.unsorted() : Sort.by(direction, property).and(Sort.by("id")); }
     public static CatalogOrder parse(String value) {
-        if (value == null) return TITLE_ASC;
-        try { return valueOf(value); } catch (IllegalArgumentException exception) { return TITLE_ASC; }
+        if (value == null) return TITLE_NUMBER_ASC;
+        try { return valueOf(value); } catch (IllegalArgumentException exception) { return TITLE_NUMBER_ASC; }
     }
 }

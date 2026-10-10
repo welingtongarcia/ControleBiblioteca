@@ -40,7 +40,11 @@ Verificação da extensão: `./mvnw -q clean verify`, exit 0, 206 testes, 0 falh
 
 ## Extensão: ordenação padrão → plano e tarefas
 
-- [ ] T6 Centralizar o fallback em CatalogOrder.parse e remover o padrão antigo do controller; reutilizar a ordenação SQL existente, sem mudanças de esquema ou dados.
-- [ ] T7 Testar via MockMvc ordem ausente, vazia e inválida, títulos A–Z e números 1/2/10 crescentes, escolha explícita preservada e paginação; executar a suíte e registrar resultados.
+- [x] T6 Centralizar o fallback em CatalogOrder.parse e remover o padrão antigo do controller; reutilizar a ordenação SQL existente, sem mudanças de esquema ou dados.
+- [x] T7 Testar via MockMvc ordem ausente, vazia e inválida, títulos A–Z e números 1/2/10 crescentes, escolha explícita preservada e paginação; executar a suíte e registrar resultados.
 
 Análise NUM-005: apenas a seleção inicial muda. Os critérios naturais e o agrupamento já implementados continuam aplicados antes da paginação no PostgreSQL. O seletor existente acompanha selectedOrder automaticamente; não requer mudanças de interface, dependências ou migração.
+
+Implementação NUM-005: CatalogOrder.parse retorna TITLE_NUMBER_ASC para parâmetro ausente, vazio ou inválido; EditionController delega a escolha inicial a esse método. MinhaGibitecaApplicationTest verifica no PostgreSQL/Testcontainers e MockMvc as três entradas, 23 registros em duas páginas (Batman 1–22 seguido de Superman 1), opção selecionada, links e escolha explícita TITLE_DESC preservada. Expectativa anterior de fallback atualizada.
+
+Verificação: `./mvnw -q clean verify`, exit 0; 213 testes, 0 falhas, 0 erros, 0 ignorados. `git diff --check`, exit 0. NUM-005 atendido. Sem migração, mudanças no acervo real ou reinicialização da aplicação; diretório data/ existente preservado. Não houve nova avaliação visual, pois template e layout não foram alterados; seleção e links foram conferidos via HTML renderizado nos testes. Para a aplicação já em execução, é necessário reiniciá-la com o código atualizado.
