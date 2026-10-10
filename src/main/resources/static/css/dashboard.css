@@ -35,8 +35,8 @@
 .dashboard-kicker { color: #aeb7bd; font-size: 11px; letter-spacing: 1px; margin: 0 0 8px; }
 .dashboard-topbar h1 { font-size: 20px; font-weight: 650; line-height: 1.4; margin: 0; }
 .dashboard-search { display: flex; gap: 8px; margin-left: auto; max-width: 400px; min-width: 0; }
-.dashboard-search input { background: #1c2226; border-color: #697985; font-size: 12px; min-width: 0; width: 100%; }
-.dashboard-search button { background: #2b3338; border: 1px solid #697985; color: #eee9df; font-size: 12px; }
+.dashboard-search input { background: #1c2226; border-color: #697985; flex: 1 1 0; font-size: 12px; min-width: 0; width: 100%; }
+.dashboard-search button { background: #2b3338; border: 1px solid #697985; color: #eee9df; flex: 0 0 auto; font-size: 12px; white-space: nowrap; overflow-wrap: normal; }
 .dashboard-logout button { background: transparent; border: 1px solid #697985; color: #c2c9cd; font-size: 12px; }
 .collection-hero { background: #edc06a; border: 1px solid #f6d190; border-radius: 18px; color: #242016; display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(240px, .8fr); overflow: hidden; padding: 40px 42px; position: relative; }
 .hero-copy { position: relative; z-index: 1; }
