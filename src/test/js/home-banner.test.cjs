@@ -35,6 +35,8 @@ test('rotação a cada oito segundos e ciclo sem anúncios automáticos', () => 
     const f = fixture();
     assert.equal(f.controls.hidden, false);
     assert.deepEqual(f.slides.map(s => s.hidden), [false, true, true, true]);
+    assert.deepEqual(f.slides.map(s => s.inert), [false, true, true, true]);
+    assert.deepEqual(f.slides.map(s => s.attrs['aria-hidden']), ['false', 'true', 'true', 'true']);
     f.tick(); assert.equal(f.slides[1].hidden, false);
     f.tick(); f.tick(); f.tick(); assert.equal(f.slides[0].hidden, false);
     assert.equal(f.announcement.textContent, '');

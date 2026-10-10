@@ -24,6 +24,16 @@ public class ReadingService {
         editions.flush();
     }
     @Transactional(readOnly = true) public ReadingProgress overall(UUID owner) { return queries.overall(owner); }
+    @Transactional(readOnly = true) public void assertOwned(UUID edition, UUID owner) {
+        editions.findByIdAndOwnerUserId(edition, owner).orElseThrow(ResourceNotFoundException::new);
+    }
+    @Transactional public void updatePages(UUID edition, UUID owner, int completed) {
+        if (jdbc.queryForList("select id from users where id = ? for update", UUID.class, owner).isEmpty()) throw new ResourceNotFoundException();
+        var target = editions.findByIdAndOwnerUserId(edition, owner).orElseThrow(ResourceNotFoundException::new);
+        if (target.getTotalPages() == null) throw new IllegalArgumentException("Informe o total de páginas em Editar edição antes de registrar sua leitura.");
+        target.updatePages(target.getTotalPages(), completed);
+        editions.flush();
+    }
     @Transactional(readOnly = true) public ReadingProgress series(UUID id, UUID owner) {
         series.viewOwned(id, owner); return queries.bySeries(owner, List.of(id)).get(id);
     }

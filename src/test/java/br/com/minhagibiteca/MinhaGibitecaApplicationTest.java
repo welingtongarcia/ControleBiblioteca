@@ -1693,9 +1693,12 @@ class MinhaGibitecaApplicationTest {
         editionRepository.save(foreign);
         var owned = new java.util.ArrayList<Edition>();
         for (int i = 0; i < 30; i++) {
-            var edition = Edition.create(owner.getId(), null, null, "Minha história " + i, Integer.toString(i), null, null, 2026, "Capa dura", null);
+            var title = i == 29 ? "A extraordinária jornada dos guardiões da biblioteca através dos universos dos quadrinhos ".repeat(2).strip() : "Minha história " + i;
+            var edition = Edition.create(owner.getId(), null, null, title, Integer.toString(i), null, null, 2026, "Capa dura", null);
             edition.updatePricingAndMedia(i % 2 == 0 ? br.com.minhagibiteca.catalog.domain.MediaType.PHYSICAL : br.com.minhagibiteca.catalog.domain.MediaType.DIGITAL, null, i == 0 ? new BigDecimal("25.50") : null);
             edition.markRead(i % 3 == 0);
+            if (i == 0) edition.updatePages(100, 100);
+            if (i == 1) edition.updatePages(200, 40);
             owned.add(editionRepository.save(edition));
         }
         var jdbc = new org.springframework.jdbc.core.JdbcTemplate(dataSource);
@@ -1715,6 +1718,9 @@ class MinhaGibitecaApplicationTest {
             assertThat(bannerSummary.unpricedEditions()).isEqualTo(29);
             assertThat(bannerReading.total()).isEqualTo(30);
             assertThat(bannerReading.read()).isEqualTo(10);
+            assertThat(bannerReading.totalPages()).isEqualTo(300);
+            assertThat(bannerReading.pagesRead()).isEqualTo(140);
+            assertThat(bannerReading.knownPageEditions()).isEqualTo(2);
             assertThat(showcase.featured().id()).isEqualTo(owned.get(29).getId());
             assertThat(showcase.featured().hasCover()).isTrue();
             assertThat(showcase.shelves()).hasSize(5);
@@ -1774,5 +1780,79 @@ class MinhaGibitecaApplicationTest {
             }
             java.nio.file.Files.writeString(root.resolve("index.html"), index.append("</ul></html>").toString());
         }
+    }
+
+    @Test
+    void registersPartialPageReadingWithValidationOwnershipAndUpdatedTotals() throws Exception {
+        var owner = userAccountRepository.save(UserAccount.create("pages@example.com", "hash", UserRole.USER));
+        var other = userAccountRepository.save(UserAccount.create("pages-other@example.com", "hash", UserRole.USER));
+        var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
+        var series = comicSeriesRepository.save(ComicSeries.create(owner.getId(), null, "Páginas", null, null, null, null));
+        mockMvc.perform(post("/edicoes").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                .param("title", "Leitura parcial").param("seriesId", series.getId().toString()).param("totalPages", "120").param("pagesRead", "30"))
+                .andExpect(status().is3xxRedirection());
+        var edition = editionRepository.findByOwnerUserIdAndNormalizedTitleContaining(owner.getId(), "leitura parcial", org.springframework.data.domain.Pageable.unpaged()).getContent().getFirst();
+        assertThat(edition.getTotalPages()).isEqualTo(120); assertThat(edition.getPagesRead()).isEqualTo(30); assertThat(edition.isRead()).isFalse();
+        var id = edition.getId();
+        for (var input : List.of(new String[]{"10", "11"}, new String[]{"", "1"}, new String[]{"0", "0"}, new String[]{"100001", "0"}, new String[]{"100", "-1"}, new String[]{"100", "1.5"})) {
+            mockMvc.perform(post("/edicoes").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                    .param("title", "Inválida").param("totalPages", input[0]).param("pagesRead", input[1])).andExpect(view().name("edicoes/form"));
+        }
+        assertThat(editionRepository.count()).isEqualTo(1);
+        mockMvc.perform(get("/edicoes/{id}/editar", id).with(auth)).andExpect(content().string(org.hamcrest.Matchers.containsString("value=\"120\"")));
+        mockMvc.perform(post("/edicoes/{id}/paginas", id).with(auth).param("pagesRead", "60")).andExpect(status().isForbidden());
+        mockMvc.perform(post("/edicoes/{id}/paginas", id).with(SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(other))).with(SecurityMockMvcRequestPostProcessors.csrf()).param("pagesRead", "60")).andExpect(status().isNotFound());
+        for (var value : List.of("121", "-1", "", "1.5", "abc")) {
+            mockMvc.perform(post("/edicoes/{id}/paginas", id).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("pagesRead", value))
+                    .andExpect(redirectedUrl("/edicoes/" + id)).andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash().attributeExists("errorMessage"));
+        }
+        assertThat(editionService.viewOwned(id, owner.getId()).pagesRead()).isEqualTo(30);
+        mockMvc.perform(post("/edicoes/{id}/paginas", id).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("pagesRead", "60").param("returnTo", "https://example.com"))
+                .andExpect(redirectedUrl("/edicoes/" + id));
+        assertThat(readingService.overall(owner.getId()).pagePercentageLabel()).isEqualTo("50,0%");
+        assertThat(readingService.series(series.getId(), owner.getId()).pagesRead()).isEqualTo(60);
+        assertThat(readingService.overall(other.getId()).totalPages()).isZero();
+        var pagesDetail = mockMvc.perform(get("/edicoes/{id}", id).with(auth)).andExpect(content().string(org.hamcrest.Matchers.containsString("Salvar páginas lidas"))).andReturn().getResponse().getContentAsString();
+        if (Boolean.getBoolean("ui.review.export")) {
+            var root = java.nio.file.Path.of("target", "ui-showcase");
+            java.nio.file.Files.createDirectories(root);
+            for (var asset : List.of("css/main.css", "css/dashboard.css", "css/home-showcase.css", "js/sidebar.js", "js/home-banner.js")) {
+                java.nio.file.Files.createDirectories(root.resolve(asset).getParent());
+                java.nio.file.Files.copy(java.nio.file.Path.of("src/main/resources/static").resolve(asset), root.resolve(asset), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            }
+            java.nio.file.Files.writeString(root.resolve("hq-paginas.html"), pagesDetail);
+            java.nio.file.Files.writeString(root.resolve("hq-editar.html"), mockMvc.perform(get("/edicoes/{id}/editar", id).with(auth)).andReturn().getResponse().getContentAsString());
+        }
+        mockMvc.perform(post("/edicoes/{id}/paginas", id).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("pagesRead", "120")).andExpect(status().is3xxRedirection());
+        assertThat(editionService.viewOwned(id, owner.getId()).read()).isTrue();
+        readingService.mark(id, owner.getId(), false); assertThat(readingService.overall(owner.getId()).pagesRead()).isZero();
+        readingService.mark(id, owner.getId(), true); assertThat(readingService.overall(owner.getId()).pagesRead()).isEqualTo(120);
+        mockMvc.perform(post("/edicoes/{id}/editar", id).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("title", "Leitura parcial").param("totalPages", "150").param("pagesRead", "120"))
+                .andExpect(status().is3xxRedirection());
+        assertThat(readingService.overall(owner.getId()).pagePercentageLabel()).isEqualTo("80,0%");
+        assertThat(editionService.viewOwned(id, owner.getId()).read()).isFalse();
+        mockMvc.perform(get("/dashboard").with(auth)).andExpect(content().string(org.hamcrest.Matchers.containsString("80,0%")));
+        mockMvc.perform(get("/visao-geral").with(auth)).andExpect(content().string(org.hamcrest.Matchers.containsString("80,0%")));
+        editionService.delete(id, owner.getId()); assertThat(readingService.overall(owner.getId()).totalPages()).isZero();
+    }
+
+    @Test
+    void upgradesLegacyPageReadingWithoutInventingCountsAndEnforcesDatabaseConstraints() throws Exception {
+        var schema = "page_reading_upgrade";
+        org.flywaydb.core.Flyway.configure().dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
+                .schemas(schema).defaultSchema(schema).target("16").load().migrate();
+        var jdbc = new org.springframework.jdbc.core.JdbcTemplate(dataSource);
+        var owner = java.util.UUID.randomUUID(); var edition = java.util.UUID.randomUUID();
+        jdbc.update("insert into page_reading_upgrade.users (id,email,password_hash,role) values (?,?,?,'USER')", owner, "legacy-pages@example.com", "hash");
+        jdbc.update("insert into page_reading_upgrade.editions (id,owner_user_id,title,normalized_title,is_read) values (?,?,?, ?,true)", edition, owner, "Legado", "legado");
+        org.flywaydb.core.Flyway.configure().dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
+                .schemas(schema).defaultSchema(schema).load().migrate();
+        var row = jdbc.queryForMap("select total_pages,pages_read,is_read from page_reading_upgrade.editions where id = ?", edition);
+        assertThat(row.get("total_pages")).isNull(); assertThat(row.get("pages_read")).isEqualTo(0); assertThat(row.get("is_read")).isEqualTo(true);
+        for (var sql : List.of("pages_read=1", "total_pages=0", "total_pages=100001", "total_pages=10,pages_read=11", "total_pages=10,pages_read=-1", "total_pages=10,pages_read=0,is_read=true")) {
+            assertThatThrownBy(() -> jdbc.update("update page_reading_upgrade.editions set " + sql + " where id = ?", edition))
+                    .isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class);
+        }
+        jdbc.update("update page_reading_upgrade.editions set total_pages=10,pages_read=10,is_read=true where id = ?", edition);
     }
 }

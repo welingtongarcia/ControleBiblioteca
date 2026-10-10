@@ -52,6 +52,15 @@
                 <a th:href="${metadataApplied.sourceUrl()}" th:text="${'Consultar na ' + metadataApplied.sourceName()}" target="_blank" rel="noopener noreferrer"></a>
             </section>
         </fieldset>
+        <fieldset class="edition-form-section">
+            <legend>Páginas e leitura</legend>
+            <p id="page-reading-help" class="help-text">Total opcional. Com o total informado, registrar todas as páginas marca a edição como lida; um valor menor indica leitura não concluída. Sem total, mantenha zero páginas lidas e use o interruptor nos detalhes.</p>
+            <div class="edition-form-grid">
+                <div class="field"><label for="totalPages">Total de páginas</label><input id="totalPages" th:field="*{totalPages}" type="number" min="1" max="100000" step="1" aria-describedby="page-reading-help totalPages-error"><p id="totalPages-error" class="field-error" th:if="${#fields.hasErrors('totalPages')}" th:errors="*{totalPages}"></p></div>
+                <div class="field"><label for="pagesRead">Páginas já lidas</label><input id="pagesRead" th:field="*{pagesRead}" type="number" min="0" max="100000" step="1" required aria-describedby="page-reading-help pagesRead-error"><p id="pagesRead-error" class="field-error" th:if="${#fields.hasErrors('pagesRead')}" th:errors="*{pagesRead}"></p></div>
+            </div>
+            <p id="pageReadingValid" tabindex="-1" class="field-error" th:if="${#fields.hasErrors('pageReadingValid')}" th:errors="*{pageReadingValid}"></p>
+        </fieldset>
         <fieldset class="edition-form-section edition-isbn-section">
             <legend>ISBN <span class="edition-optional">opcional</span></legend>
             <p class="help-text" th:if="${editionId == null}">Tem o ISBN? Você pode buscar sugestões antes de preencher. Não tem? Continue manualmente.</p>

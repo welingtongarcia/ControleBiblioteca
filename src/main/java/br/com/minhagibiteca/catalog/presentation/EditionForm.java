@@ -10,6 +10,12 @@ public class EditionForm { private UUID publisherId,seriesId; private List<UUID>
  public boolean isPurchaseDateValid(){return purchaseDate==null || !purchaseDate.isBefore(java.time.LocalDate.of(1900,1,1));}
  public java.time.LocalDate getPurchaseDate(){return purchaseDate;} public void setPurchaseDate(java.time.LocalDate value){purchaseDate=value;}
  private MediaType mediaType = MediaType.PHYSICAL;
+ @Min(value=1,message="Informe pelo menos uma página.") @Max(value=100000,message="O total máximo é 100.000 páginas.") private Integer totalPages;
+ @NotNull(message="Informe as páginas lidas, ou zero.") @Min(value=0,message="As páginas lidas não podem ser negativas.") @Max(value=100000,message="O máximo é 100.000 páginas.") private Integer pagesRead = 0;
+ @AssertTrue(message="As páginas lidas não podem ultrapassar o total. Sem total informado, use zero páginas lidas.")
+ public boolean isPageReadingValid(){return pagesRead==null || (totalPages==null ? pagesRead==0 : pagesRead<=totalPages);}
+ public Integer getTotalPages(){return totalPages;} public void setTotalPages(Integer value){totalPages=value;}
+ public Integer getPagesRead(){return pagesRead;} public void setPagesRead(Integer value){pagesRead=value;}
  @DecimalMin(value="0.00",message="O preço de capa não pode ser negativo.") @Digits(integer=10,fraction=2,message="Informe até 10 dígitos inteiros e 2 casas decimais.") private BigDecimal coverPrice;
  @DecimalMin(value="0.00",message="O valor pago não pode ser negativo.") @Digits(integer=10,fraction=2,message="Informe até 10 dígitos inteiros e 2 casas decimais.") private BigDecimal referencePaidPrice;
  public MediaType getMediaType(){return mediaType;} public void setMediaType(MediaType value){mediaType=value;}

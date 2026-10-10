@@ -56,6 +56,7 @@
                 <p class="showcase-eyebrow">Cada leitura é uma nova aventura</p>
                 <h2 id="banner-reading-title">Sua jornada de leitura</h2>
                 <p class="showcase-feature-description"><strong th:text="${bannerReading.read}">0</strong> de <strong th:text="${bannerReading.total}">0</strong> edições marcadas como lidas.</p>
+                <div th:replace="~{fragments/reading :: pages(${bannerReading})}"></div>
                 <p class="showcase-feature-description" th:if="${bannerReading.total == 0}">Cadastre suas histórias para começar a acompanhar sua leitura.</p>
                 <p class="showcase-feature-description" th:if="${bannerReading.total > 0}" th:text="${bannerReading.read == bannerReading.total ? 'Todas as edições estão marcadas como lidas. Que tal revisitar uma favorita?' : 'Marque suas leituras no catálogo e acompanhe seu progresso na Visão geral.'}"></p>
                 <div class="showcase-feature-actions"><a class="button-link" th:href="@{/edicoes}">Escolher uma história</a><a class="showcase-secondary" th:href="@{/visao-geral}">Acompanhar progresso</a></div>

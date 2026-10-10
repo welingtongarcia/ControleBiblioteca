@@ -20,6 +20,8 @@ public class Edition {
  @Column(name="reference_paid_price",precision=12,scale=2) private BigDecimal referencePaidPrice;
  @Column(name="purchase_date") private LocalDate purchaseDate;
  @Column(name="is_read",nullable=false) private boolean read;
+ @Column(name="total_pages") private Integer totalPages;
+ @Column(name="pages_read",nullable=false) private int pagesRead;
  @Column(name="cover_file_name",length=255) private String coverFileName; @Column(name="cover_content_type",length=100) private String coverContentType; @Column(name="cover_updated_at") private Instant coverUpdatedAt;
  @Column(name="created_at",nullable=false,updatable=false) private Instant createdAt; @Column(name="updated_at",nullable=false) private Instant updatedAt;
  protected Edition() { }
@@ -43,7 +45,17 @@ public class Edition {
  public LocalDate getPurchaseDate(){return purchaseDate;}
  public MediaType getMediaType() { return mediaType; }
  public boolean isRead() { return read; }
- public void markRead(boolean read) { this.read = read; this.updatedAt = Instant.now(); }
+ public void markRead(boolean read) { this.read = read; this.pagesRead = read && totalPages != null ? totalPages : 0; this.updatedAt = Instant.now(); }
+ public void updatePages(Integer total, int completed) {
+     if (completed < 0 || (total == null && completed != 0) || (total != null && (total < 1 || total > 100000 || completed > total))) {
+         throw new IllegalArgumentException("Informe um total de 1 a 100.000 páginas e páginas lidas entre zero e o total. Sem total, use zero páginas lidas.");
+     }
+     totalPages = total; pagesRead = completed;
+     if (total != null) read = completed == total;
+     updatedAt = Instant.now();
+ }
+ public Integer getTotalPages() { return totalPages; }
+ public int getPagesRead() { return pagesRead; }
  public BigDecimal getCoverPrice() { return coverPrice; }
  public BigDecimal getReferencePaidPrice() { return referencePaidPrice; }
  private static String blank(String s){return s==null||s.isBlank()?null:s.trim();}

@@ -21,6 +21,16 @@
         <h2 id="edition-reading-title">Minha leitura</h2>
         <div th:replace="~{fragments/reading :: status(${edition}, false)}"></div>
         <p>Marcação por edição, independente das suas cópias físicas ou digitais.</p>
+        <div th:if="${edition.totalPages != null}">
+            <p><strong th:text="${edition.pagesRead}">0</strong> de <strong th:text="${edition.totalPages}">0</strong> páginas lidas.</p>
+            <progress th:max="${edition.totalPages}" th:value="${edition.pagesRead}" th:aria-label="|${edition.pagesRead} de ${edition.totalPages} páginas lidas|">Páginas lidas</progress>
+            <form class="stack" method="post" th:action="@{/edicoes/{id}/paginas(id=${edition.id})}">
+                <input type="hidden" name="returnTo" th:value="${navigation.pageReturnUrl}">
+                <div class="field"><label for="reading-pages">Páginas já lidas</label><input id="reading-pages" type="number" name="pagesRead" min="0" th:max="${edition.totalPages}" step="1" th:value="${edition.pagesRead}" required aria-describedby="reading-pages-help"><p id="reading-pages-help" class="help-text">Ao chegar ao total, a edição fica lida. Desligar o interruptor reinicia em zero; ligar preenche todas as páginas.</p></div>
+                <button type="submit">Salvar páginas lidas</button>
+            </form>
+        </div>
+        <p th:if="${edition.totalPages == null}">Total de páginas não informado. Use Editar edição para acompanhar sua leitura parcial.</p>
     </section>
     <section class="cover-section" aria-labelledby="cover-title">
         <h2 id="cover-title">Capa</h2>

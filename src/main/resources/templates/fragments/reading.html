@@ -3,6 +3,12 @@
     <p><strong th:text="${progress.label()}">0,0% — 0 de 0 edições lidas</strong></p>
     <progress max="100" th:value="${progress.percentage()}" th:aria-label="${progress.label()}">Progresso de leitura</progress>
     <p th:if="${progress.total == 0}">Sem edições cadastradas.</p>
+    <div th:replace="~{fragments/reading :: pages(${progress})}"></div>
+</div>
+<div th:fragment="pages(progress)" class="reading-pages-summary">
+    <p th:if="${progress.knownPageEditions > 0}"><strong th:text="${progress.pagesRead}">0</strong> de <strong th:text="${progress.totalPages}">0</strong> páginas lidas · <strong th:text="${progress.pagePercentageLabel()}">0,0%</strong> das páginas conhecidas.</p>
+    <p th:if="${progress.knownPageEditions == 0}">Ainda não há totais de páginas informados.</p>
+    <p class="help-text">Total de páginas informado em <strong th:text="${progress.knownPageEditions}">0</strong> de <strong th:text="${progress.total}">0</strong> edições. Edições sem total não entram no percentual por páginas.</p>
 </div>
 <div th:fragment="status(edition, fromCatalog)" class="reading-status">
     <form method="post" th:action="@{/edicoes/{id}/leitura(id=${edition.id})}">
@@ -11,8 +17,9 @@
         <input type="hidden" name="returnTo" th:value="${navigation.pageReturnUrl}">
         <button class="reading-switch" type="submit" role="switch" th:aria-checked="${edition.read}" th:aria-label="|Edição lida: ${edition.title}|">
             <span class="reading-switch-track" aria-hidden="true"><span class="reading-switch-thumb"></span></span>
-            <span class="reading-switch-state" aria-hidden="true" th:text="${edition.read ? 'Já li' : 'Não li'}">Não li</span>
+            <span class="reading-switch-state" aria-hidden="true" th:text="${edition.read ? 'Já li' : (edition.pagesRead > 0 ? 'Em leitura' : 'Não li')}">Não li</span>
         </button>
     </form>
+    <p class="help-text" th:if="${fromCatalog and edition.totalPages != null}" th:text="|${edition.pagesRead} de ${edition.totalPages} páginas lidas|"></p>
 </div>
 </body></html>

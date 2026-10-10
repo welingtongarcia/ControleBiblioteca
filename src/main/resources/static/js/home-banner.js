@@ -26,7 +26,11 @@
     };
     const show = (index, manual) => {
         current = (index + slides.length) % slides.length;
-        slides.forEach((slide, i) => { slide.hidden = i !== current; });
+        slides.forEach((slide, i) => {
+            slide.hidden = i !== current;
+            slide.inert = i !== current;
+            slide.setAttribute('aria-hidden', String(i !== current));
+        });
         selectors.forEach((selector, i) => {
             if (i === current) selector.setAttribute('aria-current', 'true');
             else selector.removeAttribute('aria-current');

@@ -49,6 +49,7 @@
                     <h3 id="reading-title">Leitura da coleção geral</h3><p class="home-value" th:text="${readingProgress.percentageLabel()}">0,0%</p>
                     <progress max="100" th:value="${readingProgress.percentage()}" th:aria-label="${readingProgress.label()}">Progresso de leitura</progress>
                     <p class="home-caption"><strong th:text="${readingProgress.read}">0</strong> de <strong th:text="${readingProgress.total}">0</strong> edições lidas.</p>
+                    <div th:replace="~{fragments/reading :: pages(${readingProgress})}"></div>
                     <a class="home-metric-link" th:href="@{/edicoes}">Atualizar leituras <span aria-hidden="true">→</span></a>
                 </section>
             </div>
