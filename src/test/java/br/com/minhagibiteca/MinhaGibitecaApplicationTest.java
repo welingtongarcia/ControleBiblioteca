@@ -378,9 +378,11 @@ class MinhaGibitecaApplicationTest {
         var preview = java.nio.file.Path.of("target/ui-edition-form");
         java.nio.file.Files.createDirectories(preview.resolve("css"));
         java.nio.file.Files.writeString(preview.resolve(name), html);
-        for (String css : List.of("main.css", "dashboard.css"))
+        for (String css : List.of("main.css", "dashboard.css", "home-showcase.css"))
             java.nio.file.Files.copy(java.nio.file.Path.of("src/main/resources/static/css", css),
                     preview.resolve("css").resolve(css), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        java.nio.file.Files.createDirectories(preview.resolve("js"));
+        java.nio.file.Files.copy(java.nio.file.Path.of("src/main/resources/static/js/sidebar.js"), preview.resolve("js/sidebar.js"), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
     }
 
     @Test

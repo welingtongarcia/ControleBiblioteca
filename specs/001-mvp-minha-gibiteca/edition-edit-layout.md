@@ -22,3 +22,8 @@ Hoje Páginas e leitura precede o título e ISBN. Template atende cadastro/ediç
 - QA das prévias `target/ui-edition-form`: edição, cadastro vazio/preenchido e erros em 320/390/768/1024/1440 px (20 combinações), sem overflow ou campos fora da viewport. Capturas desktop/móvel inspecionadas. Atalho Leitura posiciona fieldset a 24,08 px do topo; Tab do total de páginas foca páginas lidas com outline 3 px. Botão superior referencia edition-entry-form, toolbar grid confirmado. Sem submissão na prévia estática.
 - Cache anterior dos recursos da prévia identificado e validação final feita em nova origem local com os CSS/JS atuais. Servidores temporários encerrados e viewport restaurado. `git diff --check`: sem erros. Planejamento registrado em `b94dea2` antes do código.
 - Sem deploy/reinicialização do IntelliJ, mudanças de domínio/esquema ou dados reais; `data/` preservado. Recarregar recursos/reiniciar a aplicação se necessário. Sem pendência funcional identificada no escopo.
+
+### Complemento da verificação das prévias
+
+- Corrigida a exportação de `home-showcase.css` e `sidebar.js` no helper de prévias do formulário (antes faltavam nesses arquivos estáticos de teste). Três testes direcionados de formulário, vínculos e validação executados após o ajuste, saída 0.
+- Repetidas as 20 combinações responsivas com todos os CSS/JS carregados (HTTP 200/304), sem overflow horizontal ou campos fora da viewport. Menu lateral carregado; servidor temporário encerrado, aba de teste fechada e viewport restaurado.
