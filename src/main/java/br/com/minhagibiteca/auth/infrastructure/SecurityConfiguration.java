@@ -19,7 +19,7 @@ public class SecurityConfiguration {
                         .requestMatchers("/login", "/css/**", "/js/**", "/images/**").permitAll()
                         .requestMatchers(EndpointRequest.to("health")).permitAll()
                         .anyRequest().authenticated())
-                .formLogin(form -> form.loginPage("/login").permitAll())
+                .formLogin(form -> form.loginPage("/login").defaultSuccessUrl("/dashboard", true).permitAll())
                 .logout(Customizer.withDefaults())
                 .build();
     }

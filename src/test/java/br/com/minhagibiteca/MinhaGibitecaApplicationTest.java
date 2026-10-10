@@ -813,7 +813,32 @@ class MinhaGibitecaApplicationTest {
                         .param("username", "COLECIONADOR@EXAMPLE.COM")
                         .param("password", "senha-segura-123"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/"));
+                .andExpect(redirectedUrl("/dashboard"));
+    }
+
+    @Test
+    void alwaysOpensHomeAfterLoginInsteadOfSavedPrivatePage() throws Exception {
+        userAccountRepository.save(UserAccount.create(
+                "login-home@example.com", passwordEncoder.encode("senha-de-teste-123"), UserRole.USER));
+        for (String destination : List.of("/edicoes?q=Batman", "/financeiro", "/visao-geral")) {
+            var session = new org.springframework.mock.web.MockHttpSession();
+            mockMvc.perform(get(destination).session(session))
+                    .andExpect(status().is3xxRedirection()).andExpect(redirectedUrlPattern("**/login"));
+            assertThat(session.getAttribute("SPRING_SECURITY_SAVED_REQUEST")).isNotNull();
+            mockMvc.perform(post("/login").session(session)
+                            .with(SecurityMockMvcRequestPostProcessors.csrf())
+                            .param("username", "login-home@example.com").param("password", "senha-de-teste-123"))
+                    .andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/dashboard"));
+            assertThat(session.getAttribute("SPRING_SECURITY_SAVED_REQUEST")).isNull();
+            mockMvc.perform(get("/dashboard").session(session)).andExpect(status().isOk())
+                    .andExpect(content().string(org.hamcrest.Matchers.containsString("Seu universo de histórias")));
+            mockMvc.perform(get(destination).session(session)).andExpect(status().isOk());
+        }
+        mockMvc.perform(post("/login").with(SecurityMockMvcRequestPostProcessors.csrf())
+                        .param("username", "login-home@example.com").param("password", "senha-incorreta"))
+                .andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/login?error"));
+        mockMvc.perform(post("/login").param("username", "login-home@example.com").param("password", "senha-de-teste-123"))
+                .andExpect(status().isForbidden());
     }
 
     @Test
