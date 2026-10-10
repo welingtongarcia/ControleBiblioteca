@@ -181,6 +181,18 @@
 .finance-metrics { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,13rem),1fr)); gap:1rem; }
 .finance-metrics article { background:var(--surface); border:1px solid #414954; border-radius:.85rem; padding:1rem; min-width:0; overflow-wrap:anywhere; }
 .finance-metrics h3 { font-size:.9rem; color:var(--muted); margin:0 0 .75rem; }
+.report-page { min-width:0; overflow-wrap:anywhere; }
+.report-page section { margin-bottom:1.75rem; }
+.report-page .page-heading h2,.report-page .page-heading h3 { margin-top:0; }
+.report-filter-summary { padding-left:1.25rem; line-height:1.7; }
+.report-entries { list-style:none; padding:0; display:grid; gap:1rem; }
+.report-entries article { padding:1.25rem; border:1px solid #414954; border-radius:.85rem; background:var(--surface); }
+.report-entries h3 { font-size:1.1rem; margin:0; }
+.report-reading { padding:.4rem .75rem; border:1px solid #657084; border-radius:1rem; white-space:nowrap; }
+.report-entry-data { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr)); gap:1rem; }
+.report-entry-data div { min-width:0; }
+.report-entry-data dt { font-size:.85rem; color:var(--muted); }
+.report-entry-data dd { margin:.35rem 0 0; line-height:1.5; }
 .finance-metrics strong { color:var(--accent); font-size:1.5rem; }
 .finance-metrics p { color:var(--muted); font-size:.85rem; line-height:1.5; }
 .finance-data-warning { background:#252b35; border-color:var(--accent); line-height:1.5; }

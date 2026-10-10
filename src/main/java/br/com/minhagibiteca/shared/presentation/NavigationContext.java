@@ -10,8 +10,10 @@ import org.springframework.web.util.UriComponentsBuilder;
 /** Contexto de apresentação, sem acesso a dados privados nem confiança em Referer. */
 public record NavigationContext(String key, String label, String listUrl, String returnUrl, String pageReturnUrl) {
     private static final String UUID_PATTERN = "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}";
-    private static final Map<String, String> LABELS = Map.of("edicoes", "Catálogo de edições", "series", "Séries e checklist",
-            "localizacoes", "Localizações", "editoras", "Editoras", "obras", "Obras", "criadores", "Criadores", "dashboard", "Início", "financeiro", "Financeiro", "personagens", "Personagens", "visao-geral", "Visão geral");
+    private static final Map<String, String> LABELS = Map.ofEntries(Map.entry("edicoes", "Catálogo de edições"), Map.entry("series", "Séries e checklist"),
+            Map.entry("localizacoes", "Localizações"), Map.entry("editoras", "Editoras"), Map.entry("obras", "Obras"), Map.entry("criadores", "Criadores"),
+            Map.entry("dashboard", "Início"), Map.entry("financeiro", "Financeiro"), Map.entry("personagens", "Personagens"),
+            Map.entry("visao-geral", "Visão geral"), Map.entry("relatorios", "Relatórios"));
 
     public static NavigationContext from(HttpServletRequest request) {
         String path = request.getServletPath();
@@ -27,6 +29,7 @@ public record NavigationContext(String key, String label, String listUrl, String
         if (back == null && key.equals("edicoes")) back = canonical(request.getParameter("returnTo"), "financeiro");
         if (back == null && key.equals("edicoes")) back = canonical(request.getParameter("returnTo"), "dashboard");
         if (back == null && key.equals("edicoes")) back = canonical(request.getParameter("returnTo"), "visao-geral");
+        if (back == null && key.equals("edicoes")) back = canonical(request.getParameter("returnTo"), "relatorios");
         if (back == null) back = list;
         String page = back;
         if (request.getMethod().equals("GET") && allowedPath(path, key)) {
@@ -46,6 +49,7 @@ public record NavigationContext(String key, String label, String listUrl, String
     private static List<String> parameters(String path) {
         if (path.equals("/edicoes")) return List.of("q", "publisherId", "seriesId", "format", "mediaType", "order", "page");
         if (path.equals("/financeiro")) return List.of("start", "end", "seriesId", "creatorId", "characterId", "publisherId", "mediaType", "ranking", "page");
+        if (path.equals("/relatorios")) return List.of("q", "start", "end", "seriesId", "creatorId", "creatorFunction", "characterId", "publisherId", "mediaType", "reading", "type", "page");
         if (path.matches("/series/" + UUID_PATTERN + "/(checklist|faltantes)")) return List.of("page");
         return List.of("q", "page");
     }
@@ -65,7 +69,10 @@ public record NavigationContext(String key, String label, String listUrl, String
                 if (Set.of("publisherId","seriesId","creatorId","characterId").contains(name) && !value.matches(UUID_PATTERN)) continue;
                 if (name.equals("ranking") && !Set.of("AMOUNT","QUANTITY").contains(value)) continue;
                 if (name.equals("start") || name.equals("end")) java.time.LocalDate.parse(value);
-                if (name.equals("mediaType") && !Set.of("PHYSICAL", "DIGITAL").contains(value) && !(key.equals("financeiro") && value.equals("UNSPECIFIED"))) continue;
+                if (name.equals("mediaType") && !Set.of("PHYSICAL", "DIGITAL").contains(value) && !(Set.of("financeiro","relatorios").contains(key) && value.equals("UNSPECIFIED")) && !(key.equals("relatorios") && value.equals("ALL"))) continue;
+                if (name.equals("reading") && !Set.of("ALL","READ","UNREAD").contains(value)) continue;
+                if (name.equals("type") && !Set.of("SUMMARY","CATALOG").contains(value)) continue;
+                if (name.equals("creatorFunction")) br.com.minhagibiteca.catalog.domain.CreatorFunction.valueOf(value);
                 if (name.equals("order") && !Set.of("TITLE_ASC", "TITLE_DESC", "NEWEST", "OLDEST").contains(value)) continue;
                 builder.queryParam(name, value);
             }
@@ -78,6 +85,7 @@ public record NavigationContext(String key, String label, String listUrl, String
             case "/financeiro" -> "Financeiro";
             case "/dashboard" -> "Início";
             case "/visao-geral" -> "Visão geral";
+            case "/relatorios" -> "Relatórios";
             default -> label;
         };
     }
@@ -94,7 +102,7 @@ public record NavigationContext(String key, String label, String listUrl, String
         if (returnUrl.equals(listUrl)) return destination;
         String targetPath = URI.create(destination).getPath();
         String backPath = URI.create(returnUrl).getPath();
-        if (key.equals("edicoes") && Set.of("/financeiro", "/dashboard", "/visao-geral").contains(backPath) && (targetPath.equals("/edicoes") || targetPath.matches("/edicoes/" + UUID_PATTERN))) return returnUrl;
+        if (key.equals("edicoes") && Set.of("/financeiro", "/dashboard", "/visao-geral", "/relatorios").contains(backPath) && (targetPath.equals("/edicoes") || targetPath.matches("/edicoes/" + UUID_PATTERN))) return returnUrl;
         if (targetPath.equals(listUrl) && backPath.equals(listUrl)) return returnUrl;
         if (targetPath.matches("/series/" + UUID_PATTERN + "/checklist") && backPath.matches("/series/" + UUID_PATTERN + "/(checklist|faltantes)")
                 && targetPath.split("/")[2].equals(backPath.split("/")[2])) return returnUrl;

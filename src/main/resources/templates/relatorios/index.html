@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Relatórios')}"><title>Relatórios</title></head>
+<body class="dashboard-page">
+<a class="skip-link" href="#main-content">Pular para o conteúdo</a>
+<div class="dashboard-layout">
+<aside th:replace="~{fragments/navigation :: sidebar}"></aside>
+<main id="main-content" tabindex="-1" class="content page-content report-page" aria-labelledby="page-title">
+    <div th:replace="~{fragments/navigation :: breadcrumbs('Relatórios', null, null)}"></div>
+    <header class="page-heading"><div><p class="eyebrow">Sua coleção documentada</p><h1 id="page-title">Relatórios</h1><p class="muted">Escolha o recorte do seu acervo e emita um arquivo para consultar, compartilhar ou imprimir.</p></div></header>
+    <form method="get" th:action="@{/relatorios}" th:object="${reportForm}" class="finance-filter-panel" aria-label="Filtros dos relatórios">
+        <h2>Prepare seu relatório</h2>
+        <div class="finance-filter-grid">
+            <div class="field"><label for="type">Tipo de relatório</label><select id="type" th:field="*{type}"><option value="SUMMARY">Resumo da coleção</option><option value="CATALOG">Catálogo do acervo</option></select></div>
+            <div class="field"><label for="q">Título, ISBN ou número</label><input id="q" th:field="*{q}" type="search" maxlength="180" placeholder="Buscar no acervo"></div>
+            <div class="field"><label for="seriesId">Coleção / série</label><select id="seriesId" th:field="*{seriesId}"><option value="">Todas as coleções</option><option th:each="item : ${seriesOptions}" th:value="${item.id}" th:text="${item.name}"></option></select></div>
+            <div class="field"><label for="publisherId">Editora</label><select id="publisherId" th:field="*{publisherId}"><option value="">Todas as editoras</option><option th:each="item : ${publisherOptions}" th:value="${item.id}" th:text="${item.name}"></option></select></div>
+            <div class="field"><label for="creatorId">Criador</label><select id="creatorId" th:field="*{creatorId}"><option value="">Todos os criadores</option><option th:each="item : ${creatorOptions}" th:value="${item.id}" th:text="${item.name}"></option></select></div>
+            <div class="field"><label for="creatorFunction">Função geral do criador</label><select id="creatorFunction" th:field="*{creatorFunction}" aria-describedby="function-help"><option value="">Todas as funções</option><option th:each="item : ${creatorFunctions}" th:value="${item}" th:text="${item.label}"></option></select></div>
+            <div class="field"><label for="characterId">Personagem</label><select id="characterId" th:field="*{characterId}"><option value="">Todos os personagens</option><option th:each="item : ${characterOptions}" th:value="${item.id}" th:text="${item.name}"></option></select></div>
+            <div class="field"><label for="mediaType">Suporte</label><select id="mediaType" th:field="*{mediaType}"><option value="ALL">Todos os suportes</option><option value="PHYSICAL">Físico</option><option value="DIGITAL">Digital</option><option value="UNSPECIFIED">Não informado</option></select></div>
+            <div class="field"><label for="reading">Situação de leitura</label><select id="reading" th:field="*{reading}"><option value="ALL">Todas as edições</option><option value="READ">Lida</option><option value="UNREAD">Não lida</option></select></div>
+            <div class="field"><label for="start">Compra a partir de</label><input id="start" type="date" th:field="*{start}" min="1900-01-01" aria-describedby="period-help"></div>
+            <div class="field"><label for="end">Compra até</label><input id="end" type="date" th:field="*{end}" min="1900-01-01" aria-describedby="period-help"></div>
+        </div>
+        <p id="period-help" class="help-text">Informe as duas datas ou deixe ambas vazias. O período usa a data da compra da HQ; edições sem data ficam de fora quando há período.</p>
+        <p id="function-help" class="help-text">Funções são áreas de atuação do criador, não créditos por edição. Ao combinar criador e função, ambos devem corresponder à mesma pessoa.</p>
+        <div class="form-actions"><button type="submit">Gerar prévia</button><a th:href="@{/relatorios}">Limpar filtros</a></div>
+    </form>
+    <section class="finance-panel" aria-labelledby="report-emission">
+        <div class="page-heading"><div><h2 id="report-emission" th:text="${reportForm.catalog() ? 'Catálogo do acervo' : 'Resumo da coleção'}"></h2><p class="help-text" th:text="|Prévia consultada em ${report.emissionLabel()}.|"></p></div>
+            <div class="form-actions"><a class="button-link" th:href="@{${links.pdf()}}">Baixar PDF</a><a class="button-link" th:href="@{${links.csv()}}">Baixar CSV</a></div>
+        </div>
+        <ul class="report-filter-summary"><li th:each="filter : ${report.filters}" th:text="${filter}"></li></ul>
+        <p class="help-text">Os arquivos refletem os dados no momento da emissão e incluem todo o recorte, não só a página abaixo. Catálogo: até 10.000 edições por arquivo. PDF para impressão; CSV para planilhas. Não são backups completos.</p>
+    </section>
+    <section aria-labelledby="report-summary"><h2 id="report-summary">Resumo da seleção</h2>
+        <div class="finance-metrics" th:with="s=${report.summary}">
+            <article><h3>Edições selecionadas</h3><strong th:text="${s.editions}"></strong><p th:text="|Físicas: ${s.physical} · Digitais: ${s.digital} · Não informado: ${s.unknownMedia}|"></p></article>
+            <article><h3>Exemplares físicos</h3><strong th:text="${s.copies}"></strong><p>Cópias vinculadas às edições selecionadas. Uma edição física pode não ter exemplar cadastrado.</p></article>
+            <article><h3>Total gasto registrado</h3><strong th:text="${s.paidLabel()}"></strong><p th:text="|Preço pago informado em ${s.priced} de ${s.editions} edições.|"></p></article>
+            <article><h3>Edições lidas</h3><strong th:text="|${s.read} de ${s.editions}|"></strong><p>Situação de leitura atual do cadastro.</p></article>
+            <article><h3>Páginas informadas</h3><strong th:text="${s.totalPages}"></strong><p>Somente edições com total de páginas preenchido.</p></article>
+            <article><h3>Páginas lidas / restantes</h3><strong th:text="|${s.pagesRead} / ${s.pagesUnread()}|"></strong><p>Não estimamos páginas de edições com quantidade desconhecida.</p></article>
+        </div>
+        <p class="help-text">Total gasto usa somente o preço pago registrado nas HQs, como no Financeiro. Valores de exemplares não são somados novamente. Não representa valor de mercado.</p>
+        <p class="alert finance-data-warning" role="status" th:if="${report.summary.unpriced() > 0}" th:text="|${report.summary.unpriced()} edição(ões) sem preço pago. O gasto registrado pode estar incompleto. Zero informado significa gratuita; vazio significa desconhecido.|"></p>
+        <p class="alert finance-data-warning" role="status" th:if="${report.summary.unpaged() > 0}" th:text="|${report.summary.unpaged()} edição(ões) sem quantidade de páginas. Os totais de páginas não incluem essas edições.|"></p>
+    </section>
+    <section aria-labelledby="report-catalog"><h2 id="report-catalog">Edições do recorte</h2>
+        <div class="empty-state" th:if="${report.entries.empty}"><h3>Nenhuma edição nesta seleção</h3><p>Revise os filtros ou cadastre sua primeira HQ.</p><a class="button-link" th:href="@{/edicoes/nova}">Cadastrar edição</a></div>
+        <ul class="report-entries" th:unless="${report.entries.empty}">
+            <li th:each="entry : ${report.entries}"><article>
+                <div class="page-heading"><div><h3><a th:href="@{/edicoes/{id}(id=${entry.id},returnTo=${navigation.pageReturnUrl})}" th:text="${entry.title}"></a></h3><p class="muted" th:text="|${entry.series} · ${entry.publisher}|"></p></div><span class="report-reading" th:text="${entry.readingLabel()}"></span></div>
+                <dl class="report-entry-data">
+                    <div><dt>Número / ISBN</dt><dd th:text="|${entry.number ?: 'Não informado'} / ${entry.isbn ?: 'Não informado'}|"></dd></div>
+                    <div><dt>Suporte</dt><dd th:text="${entry.media}"></dd></div>
+                    <div><dt>Preço pago / compra</dt><dd th:text="|${entry.paidLabel()} / ${entry.dateLabel()}|"></dd></div>
+                    <div><dt>Páginas</dt><dd th:text="${entry.pagesLabel()}"></dd></div>
+                    <div><dt>Exemplares físicos</dt><dd th:text="${entry.copies}"></dd></div>
+                    <div><dt>Localizações</dt><dd th:text="${entry.locations}"></dd></div>
+                    <div><dt>Criadores e funções gerais</dt><dd th:text="${entry.creators}"></dd></div>
+                    <div><dt>Personagens</dt><dd th:text="${entry.characters}"></dd></div>
+                </dl>
+            </article></li>
+        </ul>
+        <nav class="pagination" th:if="${report.entries.totalPages > 1}" aria-label="Páginas do relatório"><a th:if="${report.entries.hasPrevious()}" th:href="@{${links.page(report.entries.number - 1)}}">Anterior</a><span th:text="|Página ${report.entries.number + 1} de ${report.entries.totalPages}|"></span><a th:if="${report.entries.hasNext()}" th:href="@{${links.page(report.entries.number + 1)}}">Próxima</a></nav>
+    </section>
+</main></div></body></html>

@@ -13,13 +13,22 @@ Constituição v1 mantida. Pedido aprovado: resumo e catálogo do acervo com fil
 
 ## Plan → tasks → analyze
 
-- [ ] REL-T1 Criar módulo reports com filtros/DTOs/serviço e consultas JDBC, contagens/agregados sem N+1. Usar índices existentes por proprietário/título/série/editora/data e vínculos; Flyway V19 para índice creator_functions(function, creator_id), usado pelo filtro de atuação.
-- [ ] REL-T2 Tela, navegação/retorno e links de emissão com filtros intactos. Sem frontend novo.
-- [ ] REL-T3 Emissores Java CSV e PDF (Apache PDFBox 3.0.8, conforme documentação oficial), fonte DejaVu Sans embutida com licença, sem dependência do sistema operacional em runtime.
-- [ ] REL-T4 JUnit/Mockito, PostgreSQL Testcontainers/MockMvc, snapshots de arquivos sintéticos, renderização Poppler do PDF e QA desktop/móvel; suíte verify; registrar resultados e commit.
+- [x] REL-T1 Criar módulo reports com filtros/DTOs/serviço e consultas JDBC, contagens/agregados sem N+1. Usar índices existentes por proprietário/título/série/editora/data e vínculos; Flyway V19 para índice creator_functions(function, creator_id), usado pelo filtro de atuação.
+- [x] REL-T2 Tela, navegação/retorno e links de emissão com filtros intactos. Sem frontend novo.
+- [x] REL-T3 Emissores Java CSV e PDF (Apache PDFBox 3.0.8, conforme documentação oficial), fonte DejaVu Sans embutida com licença, sem dependência do sistema operacional em runtime.
+- [x] REL-T4 JUnit/Mockito, PostgreSQL Testcontainers/MockMvc, snapshots de arquivos sintéticos, renderização Poppler do PDF e QA desktop/móvel; suíte verify; registrar resultados e commit.
 
 Riscos tratados: dupla contagem evitada por EXISTS/agregados, dados ausentes explícitos, CSV injection neutralizada, exportação limitada, grafismos sem uso de cores como única informação. PDF usa texto selecionável, mas não será declarado PDF/UA. Fonte sem glifo será sinalizada/substituída sem derrubar emissão; original permanece no CSV. Não alterar DB real ou reiniciar IntelliJ na verificação. `data/` preexistente preservado.
 
 ## Verificação do planejamento
 
 Lidos AGENTS.md, constituição, consultas do painel/Financeiro, esquema de edições/exemplares e navegação. Financeiro usa preço/data da HQ; distinção de exemplares mantida. PDFBox dependency confirmada em https://pdfbox.apache.org/3.0/getting-started.html. `git diff --check` antes do commit de planejamento.
+
+## Implement → verificação (2026-10-10)
+
+- Planejamento commitado em `4ed544a` antes do comportamento. Arquivos: módulo `reports` (filtro, DTOs, serviço read-only repeatable-read, queries JDBC, form/links/controller e emissores), templates `relatorios`, sidebar/NavigationContext/CSS, Maven PDFBox/fontes/licença e V19. Não há entidades JPA nos novos controllers/forms. Downloads em memória autenticados, no-store, CSV protegido e consulta parametrizada; sem arquivos privados persistidos no servidor.
+- `ReportExportTest`, `ReportIntegrationTest` e `NavigationContextTest`: totais sem multiplicação por vínculos repetidos/exemplares, valor da HQ sem somar preços de cópias, zero versus ausência, páginas desconhecidas, filtros combinados/inclusivos/ausência de data, criador+função na mesma pessoa, busca literal de %, tipo/suporte/função inválidos, propriedade/tela/downloads, autenticação, 25 edições com prévia de 20 e exportação completa, limite sem truncamento e retorno local com filtros. Seis prefixos de fórmula testados no CSV; escaping, BOM e CRLF. PDF parseado com PDFBox, acentos e última edição de múltiplas páginas verificados.
+- `./mvnw -q -DskipTests compile`: saída 0. Testes direcionados iniciais: saída 0. `./mvnw verify -q` e, após ampliar testes/revisar paginação, **`./mvnw clean verify -q`: saída 0; 180 testes, zero erros/falhas/ignorados**. Flyway V19 validado/aplicado nos PostgreSQL Testcontainers. Excluído commons-logging transitivo de PDFBox em favor de spring-jcl já presente; sem aviso de conflito na suíte final.
+- Prévia `target/ui-reports`: preenchida/filtrada/vazia em 320/390/768/1024/1440 px (15 combinações), sem overflow horizontal ou campos fora da viewport. URLs dos dois downloads mantêm todos os filtros; screenshot desktop e móvel inspecionado. Tab de Baixar PDF para Baixar CSV apresenta outline de 3 px. Nenhum download/submissão foi feito na prévia estática; emissões reais são testadas via MockMvc. Aba e servidor temporários encerrados, viewport restaurado.
+- Skill PDF orientou renderização e revisão: `pdftoppm -scale-to 1100 -png` dos arquivos sintéticos `target/report-preview/resumo.pdf` (1 página) e `catalogo.pdf` (8 páginas), todas as páginas inspecionadas. Fonte embutida, cabeçalhos/rodapés e blocos de edições com quebra dinâmica, sem cortes/sobreposição. Os exemplos são artefatos de QA, não relatórios dos dados reais do usuário.
+- `git diff --check` sem erros. Não realizado deploy, reinício do IntelliJ, alteração de dados reais ou benchmark de 10.000 edições. `data/` preservado. Reiniciar aplicação para carregar recursos e aplicar o índice V19. PDF não declarado PDF/UA; glifos não suportados são sinalizados/substituídos e o CSV preserva os originais. Relatórios detalhados de financeiro/leitura/checklist continuam etapas futuras, fora desta primeira entrega.

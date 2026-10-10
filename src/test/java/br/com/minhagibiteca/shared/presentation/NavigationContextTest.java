@@ -8,6 +8,15 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 class NavigationContextTest {
+    @Test void preservesReportFiltersWhenReturningFromAnEditionAndRejectsExternalTargets() {
+        String target="/relatorios?q=HQ&creatorFunction=DESENHISTA&reading=UNREAD&mediaType=UNSPECIFIED&type=CATALOG&page=2";
+        var context=context("/edicoes/11111111-1111-1111-1111-111111111111/editar",target);
+        assertThat(context.returnUrl()).isEqualTo(target);
+        assertThat(context.getReturnLabel()).isEqualTo("Relatórios");
+        assertThat(context.redirect("/edicoes")).isEqualTo(target);
+        assertThat(context("/edicoes/nova","https://example.com"+target).returnUrl()).isEqualTo("/edicoes");
+        assertThat(context("/edicoes/nova","/relatorios/pdf").returnUrl()).isEqualTo("/edicoes");
+    }
     private static final String SERIES = "11111111-1111-1111-1111-111111111111";
     @ParameterizedTest @ValueSource(strings = {"/dashboard", "/visao-geral"})
     void separatesHomeOverviewAndReturnsOnlyToLocalLanding(String path) {
