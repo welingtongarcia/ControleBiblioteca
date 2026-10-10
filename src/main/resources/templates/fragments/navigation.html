@@ -1,5 +1,9 @@
 <!DOCTYPE html><html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"><body>
-<aside th:fragment="sidebar" class="dashboard-sidebar" aria-label="Menu principal">
+<th:block th:fragment="sidebar">
+<div id="sidebar-controls" class="sidebar-controls" hidden>
+    <button id="sidebar-toggle" class="sidebar-toggle" type="button" aria-controls="main-sidebar" aria-expanded="true">Ocultar menu</button>
+</div>
+<aside id="main-sidebar" class="dashboard-sidebar" aria-label="Menu principal">
     <a class="dashboard-brand" th:href="@{/dashboard}" aria-label="Minha Gibiteca — início"><span class="brand-mark" aria-hidden="true">MG</span><span>Minha<br> Gibiteca<span class="brand-caption">Seu universo em quadrinhos</span></span></a>
     <nav class="dashboard-navigation" aria-label="Navegação principal">
         <details class="nav-group" id="nav-collection" th:open="${#lists.contains({'dashboard','edicoes','series','localizacoes','financeiro'}, navigation.key)}">
@@ -23,6 +27,7 @@
     <form class="navigation-logout dashboard-logout" th:action="@{/logout}" method="post"><button type="submit">Sair</button></form>
     <div class="sidebar-note"><strong>Cada quadrinho tem uma história.</strong><p>A sua coleção também.</p></div>
 </aside>
+</th:block>
 <div th:fragment="breadcrumbs(currentLabel, parentLabel, parentUrl)" class="navigation-context">
     <nav aria-label="Você está aqui"><ol class="breadcrumbs">
         <li><a th:href="@{/dashboard}">Início</a></li>

@@ -23,6 +23,10 @@ O projeto carrega automaticamente o arquivo local `.env` ao executar `MinhaGibit
 
 ## Consulta por ISBN
 
+### Visibilidade do menu lateral
+
+Nas páginas privadas, **Ocultar menu** esconde toda a barra lateral e libera espaço para o conteúdo. O botão muda para **Mostrar menu** e permanece disponível fora da barra. A escolha é lembrada neste navegador entre páginas e recarregamentos. Sem JavaScript, o menu permanece visível; se o armazenamento local estiver bloqueado, o botão funciona, mas a escolha não persiste. Os grupos Sua coleção e Dados do catálogo continuam recolhíveis independentemente.
+
 ### Busca gratuita pelo título
 
 Na tela **Nova edição**, use **Buscar dados pelo título** quando não tiver ISBN ou a consulta por ISBN não encontrar a HQ. Digite o título no campo específico, escolha Open Library ou Google Books e clique em **Pesquisar pelo título**. A pesquisa exibe até cinco candidatos; consulte o link da fonte e confira idioma, editora e ano. Clique em **Aplicar dados desta edição** para preencher somente campos vazios; **Salvar edição** continua sendo necessário.

@@ -671,10 +671,19 @@ class MinhaGibitecaApplicationTest {
                 "/localizacoes", "/localizacoes/nova", "/localizacoes/" + location + "/editar", "/localizacoes/" + location + "/excluir", "/financeiro", "/personagens");
         var preview = java.nio.file.Path.of("target/ui-navigation");
         java.nio.file.Files.createDirectories(preview.resolve("css"));
+        java.nio.file.Files.createDirectories(preview.resolve("js"));
+        java.nio.file.Files.copy(java.nio.file.Path.of("src/main/resources/static/js/sidebar.js"), preview.resolve("js/sidebar.js"), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
         for (String css : List.of("main.css", "dashboard.css")) java.nio.file.Files.copy(java.nio.file.Path.of("src/main/resources/static/css", css), preview.resolve("css").resolve(css), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
         for (String path : paths) {
             String html = mockMvc.perform(get(path).with(auth)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
             assertThat(html).contains("Navegação principal", "Pular para o conteúdo", "action=\"/logout\" method=\"post\"", "name=\"_csrf\"");
+            assertThat(html).contains("id=\"sidebar-toggle\"", "type=\"button\" aria-controls=\"main-sidebar\" aria-expanded=\"true\">Ocultar menu",
+                    "id=\"sidebar-controls\" class=\"sidebar-controls\" hidden", "src=\"/js/sidebar.js\"");
+            assertThat(java.util.regex.Pattern.compile("<script[^>]*\\bdefer\\b[^>]*>").matcher(html).find()).isTrue();
+            assertThat(html.split("id=\"main-sidebar\"", -1)).hasSize(2);
+            assertThat(html.split("id=\"sidebar-toggle\"", -1)).hasSize(2);
+            assertThat(html.indexOf("id=\"sidebar-controls\"")).isLessThan(html.indexOf("<aside id=\"main-sidebar\""));
+            assertThat(html).contains("<aside id=\"main-sidebar\" class=\"dashboard-sidebar\" aria-label=\"Menu principal\">");
             assertThat(html.split("class=\"nav-current\"", -1)).hasSize(2);
             var collectionGroup = java.util.regex.Pattern.compile("<details[^>]*id=\"nav-collection\"[^>]*>").matcher(html);
             var catalogGroup = java.util.regex.Pattern.compile("<details[^>]*id=\"nav-catalog\"[^>]*>").matcher(html);
@@ -691,6 +700,9 @@ class MinhaGibitecaApplicationTest {
         mockMvc.perform(get("/edicoes/{id}/editar", edition.getId()).with(auth)).andExpect(content().string(org.hamcrest.Matchers.containsString("href=\"/edicoes/" + edition.getId() + "\">Cancelar")));
         mockMvc.perform(get("/exemplares/{id}/editar", copy).with(auth)).andExpect(content().string(org.hamcrest.Matchers.containsString("href=\"/edicoes/" + edition.getId() + "\">Cancelar")));
         mockMvc.perform(get("/login")).andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Navegação principal"))));
+        mockMvc.perform(get("/js/sidebar.js")).andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("toggle.setAttribute('aria-expanded'")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("localStorage.setItem")));
     }
 
     @Test
