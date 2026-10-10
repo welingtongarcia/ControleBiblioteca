@@ -4,19 +4,24 @@
 <div th:replace="~{fragments/navigation :: breadcrumbs(${pageTitle + ': ' + series.name}, ${missingOnly ? 'Checklist de ' + series.name : null}, ${missingOnly ? '/series/' + series.id + '/checklist' : null})}"></div>
 
 
-    <h1 id="page-title" th:text="${pageTitle}"></h1><h2 th:text="${series.name}"></h2>
-    <section aria-label="Leitura da série">
-        <h3>Leitura desta série</h3>
+    <header class="series-page-header checklist-heading"><div><p class="eyebrow" th:text="${pageTitle}"></p><h1 id="page-title" th:text="${series.name}"></h1><p class="help-text">Organize os números conhecidos e veja o que ainda falta na sua coleção.</p></div>
+        <div class="form-actions"><a class="button-link" th:href="${missingOnly ? navigation.parentUrl('/series/' + series.id + '/checklist') + '#new-item-title' : '#new-item-title'}">Adicionar item</a><a th:href="@{/series/{id}/editar(id=${series.id},returnTo=${navigation.pageReturnUrl})}">Editar série</a></div>
+    </header>
+    <section class="series-panel checklist-reading" aria-label="Leitura da série">
+        <div><h2>Leitura desta série</h2><p class="help-text">Considera somente as edições cadastradas nesta série, não os itens do checklist.</p><a th:href="@{/edicoes(seriesId=${series.id})}">Consultar edições e marcar leituras →</a></div>
+        <div>
         <div th:replace="~{fragments/reading :: progress(${readingProgress})}"></div>
-        <p>Considera somente as edições cadastradas nesta série, não os itens do checklist.</p>
-        <a th:href="@{/edicoes(seriesId=${series.id})}">Consultar edições e marcar leituras →</a>
+        </div>
     </section>
     <nav class="form-actions section-tabs" aria-label="Consulta da série"><a th:href="@{/series/{id}/checklist(id=${series.id},returnTo=${navigation.pageReturnUrl})}" th:attr="aria-current=${!missingOnly ? 'page' : null}">Checklist completo</a><a th:href="@{/series/{id}/faltantes(id=${series.id},returnTo=${navigation.pageReturnUrl})}" th:attr="aria-current=${missingOnly ? 'page' : null}">Quadrinhos faltantes</a></nav>
     <p class="alert alert-success" th:if="${successMessage}" role="status" th:text="${successMessage}"></p>
+    <div class="checklist-workspace" th:classappend="${missingOnly} ? 'checklist-workspace-single'">
+    <section class="checklist-results" aria-labelledby="checklist-results-title">
+    <div class="checklist-results-heading"><h2 id="checklist-results-title" th:text="${missingOnly ? 'Itens que você não possui' : 'Itens do checklist'}"></h2><p class="help-text" th:text="|Itens nesta consulta: ${items.totalElements}|"></p></div>
     <p class="help-text">Somente números cadastrados por você são listados. Exemplares não alteram este checklist automaticamente.</p>
-    <p class="empty-state" th:if="${items.empty}" th:text="${missingOnly ? 'Nenhum item marcado como Não possuo nesta página. Cadastre os números conhecidos no checklist completo.' : 'Nenhum item nesta página. Cadastre os números editoriais conhecidos abaixo.'}"></p>
+    <section class="empty-state" th:if="${items.empty}"><h3 th:text="${missingOnly ? 'Nenhum faltante nesta página' : 'Comece seu checklist'}"></h3><p th:text="${missingOnly ? 'Não há itens marcados como Não possuo nesta página. Confira os números registrados no checklist completo.' : 'Cadastre os números editoriais conhecidos no formulário. Você pode incluir números especiais, sem gerar uma sequência.'}"></p></section>
     <ul class="resource-list checklist-list" th:unless="${items.empty}"><li th:each="item : ${items}">
-        <div><strong th:text="${item.editorialNumber}"></strong><span th:text="${item.label}"></span><p th:text="${item.ownedLabel}"></p><p th:if="${item.notes}" th:text="${item.notes}"></p></div>
+        <div class="checklist-item-content"><p class="eyebrow">Número editorial</p><strong class="checklist-number" th:text="${item.editorialNumber}"></strong><p th:if="${item.label}" th:text="${item.label}"></p><p class="checklist-possession" th:classappend="${item.owned ? 'checklist-owned' : 'checklist-missing'}" th:text="${item.ownedLabel}"></p><p class="help-text" th:if="${item.notes}" th:text="${item.notes}"></p></div>
         <div class="resource-actions"><a th:href="@{/checklist/itens/{id}/editar(id=${item.id},returnTo=${navigation.pageReturnUrl})}" th:attr="aria-label=|Editar item ${item.editorialNumber}|">Editar</a><a th:href="@{/checklist/itens/{id}/excluir(id=${item.id},returnTo=${navigation.pageReturnUrl})}" th:attr="aria-label=|Excluir item ${item.editorialNumber}|">Excluir</a></div>
     </li></ul>
     <nav class="pagination" th:if="${items.totalPages > 1}" aria-label="Paginação do checklist">
@@ -24,7 +29,9 @@
         <span th:text="|Página ${items.number + 1} de ${items.totalPages}|"></span>
         <a th:if="${items.hasNext()}" th:href="@{${listPath}(page=${items.number + 1},returnTo=${navigation.pageReturnUrl})}">Próxima</a>
     </nav>
-    <section class="details-section form-content" th:unless="${missingOnly}" aria-labelledby="new-item-title">
-        <h2 id="new-item-title">Adicionar item</h2><form th:replace="~{checklist/form :: entryForm}"></form>
     </section>
+    <section class="checklist-add-panel" th:unless="${missingOnly}" aria-labelledby="new-item-title">
+        <h2 id="new-item-title">Adicionar item</h2><p class="help-text">Inclua um quadrinho conhecido nesta série.</p><form th:replace="~{checklist/form :: entryForm}"></form>
+    </section>
+    </div>
 </main></div></body></html>

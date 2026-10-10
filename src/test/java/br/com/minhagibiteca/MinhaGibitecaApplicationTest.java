@@ -1444,6 +1444,46 @@ class MinhaGibitecaApplicationTest {
     }
 
     @Test
+    void presentsGroupedSeriesAndChecklistFormsWithClearPossessionAndValidation() throws Exception {
+        var owner = userAccountRepository.save(UserAccount.create("series-ux@example.com", "hash", UserRole.USER));
+        var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
+        var series = comicSeriesRepository.save(ComicSeries.create(owner.getId(), null, "Batman <script> — série editorial", null, null, null, null));
+        var previews = new java.util.LinkedHashMap<String, String>();
+        String create = mockMvc.perform(get("/series/nova").with(auth)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+        assertThat(create).contains("<legend>Identificação</legend>", "<legend>Publicação</legend>", "<legend>Observações</legend>", "Salvar série", "name=\"_csrf\"");
+        previews.put("serie-nova", create);
+        previews.put("serie-editar", mockMvc.perform(get("/series/{id}/editar", series.getId()).with(auth)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8));
+        String invalidSeries = mockMvc.perform(post("/series").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                        .param("name", "Rascunho preservado").param("startYear", "2020").param("endYear", "2019"))
+                .andExpect(status().isOk()).andExpect(view().name("series/form")).andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+        assertThat(invalidSeries).contains("O ano final não pode ser anterior ao ano inicial.", "id=\"period-error\"", "aria-invalid=\"true\"", "Rascunho preservado");
+        previews.put("serie-erros", invalidSeries);
+        previews.put("checklist-vazio", mockMvc.perform(get("/series/{id}/checklist", series.getId()).with(auth)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8));
+        var item = checklistService.create(series.getId(), owner.getId(), new br.com.minhagibiteca.collection.application.ChecklistService.Command("1A", "Descrição <script>", false, "Observações de um número especial"));
+        checklistService.create(series.getId(), owner.getId(), new br.com.minhagibiteca.collection.application.ChecklistService.Command("Especial", "Edição comemorativa", true, null));
+        String complete = mockMvc.perform(get("/series/{id}/checklist", series.getId()).with(auth)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+        assertThat(complete).contains("Itens nesta consulta: 2", "checklist-owned", "checklist-missing", "Identifique o quadrinho", "Estado na coleção", "Não indica se você já leu a edição.", "Descrição &lt;script&gt;", "Batman &lt;script&gt;")
+                .doesNotContain("Descrição <script>", "Batman <script>");
+        previews.put("checklist-completo", complete);
+        String missing = mockMvc.perform(get("/series/{id}/faltantes", series.getId()).with(auth)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+        assertThat(missing).contains("Itens nesta consulta: 1", "Itens que você não possui", "#new-item-title", "checklist-missing").doesNotContain("checklist-owned", "class=\"stack checklist-entry-form\"");
+        previews.put("checklist-faltantes", missing);
+        previews.put("item-editar", mockMvc.perform(get("/checklist/itens/{id}/editar", item).with(auth)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8));
+        String invalidItem = mockMvc.perform(post("/series/{id}/checklist", series.getId()).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                        .param("editorialNumber", "").param("label", "Rascunho do item").param("owned", "true"))
+                .andExpect(status().isOk()).andExpect(view().name("checklist/list")).andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+        assertThat(invalidItem).contains("id=\"number-error\"", "aria-invalid=\"true\"", "Rascunho do item");
+        previews.put("checklist-erros", invalidItem);
+        var root = java.nio.file.Path.of("target/ui-series-checklist");
+        java.nio.file.Files.createDirectories(root);
+        for (String asset : List.of("css/main.css", "css/dashboard.css", "js/sidebar.js")) {
+            java.nio.file.Files.createDirectories(root.resolve(asset).getParent());
+            java.nio.file.Files.copy(java.nio.file.Path.of("src/main/resources/static").resolve(asset), root.resolve(asset), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        }
+        for (var entry : previews.entrySet()) java.nio.file.Files.writeString(root.resolve(entry.getKey() + ".html"), entry.getValue(), java.nio.charset.StandardCharsets.UTF_8);
+    }
+
+    @Test
     void managesExplicitChecklistWithoutInferringOrSynchronizingNumbers() throws Exception {
         var owner = userAccountRepository.save(UserAccount.create("checklist@example.com", "hash", UserRole.USER));
         var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
