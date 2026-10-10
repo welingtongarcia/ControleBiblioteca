@@ -71,6 +71,7 @@ public class ComicSeriesController {
     @PostMapping("/series/{id}/excluir") String delete(@PathVariable UUID id, RedirectAttributes redirect) {
         try { seriesService.delete(id, currentUser.id()); redirect.addFlashAttribute("successMessage", "Série excluída com sucesso."); }
         catch (ComicSeriesService.ReferencedSeriesException error) { redirect.addFlashAttribute("errorMessage", error.getMessage()); }
+        catch (org.springframework.dao.DataIntegrityViolationException error) { redirect.addFlashAttribute("errorMessage", "Não foi possível excluir esta série por um conflito com dados vinculados. Revise as edições e o checklist e tente novamente."); }
         return "redirect:/series";
     }
 

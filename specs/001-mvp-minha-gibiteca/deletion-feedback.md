@@ -11,10 +11,21 @@
 
 ## Plan / tasks
 
-- [ ] DEL-T1 Consultas exists de referências nos repositórios; serviços verificam ownership antes de vínculo, lançam exceção de domínio/aplicação e executam flush na exclusão.
-- [ ] DEL-T2 Controllers convertem vínculo e conflito de integridade na fronteira transacional em mensagens pt-BR/PRG; listas exibem erro. Não capturar falhas de integridade globalmente em operações de cadastro/edição.
-- [ ] DEL-T3 JUnit/Mockito e MockMvc/PostgreSQL: vinculados permanecem intactos, desvinculados excluem, séries/edições e associações não são apagadas, CSRF/ownership, flash HTML e conflito simulado; clean verify.
+- [x] DEL-T1 Consultas exists de referências nos repositórios; serviços verificam ownership antes de vínculo, lançam exceção de domínio/aplicação e executam flush na exclusão.
+- [x] DEL-T2 Controllers convertem vínculo e conflito de integridade na fronteira transacional em mensagens pt-BR/PRG; listas exibem erro. Não capturar falhas de integridade globalmente em operações de cadastro/edição.
+- [x] DEL-T3 JUnit/Mockito e MockMvc/PostgreSQL: vinculados permanecem intactos, desvinculados excluem, séries/edições e associações não são apagadas, CSRF/ownership, flash HTML e conflito simulado; clean verify.
 
 ## Analyze
 
 FKs existentes preservam integridade, mesmo em corrida entre pré-checagem e delete. Capturar DataIntegrityViolationException fora do serviço transacional (controllers) permite rollback completo; não engolir dentro da transação. Flush antecipa o erro antes de retorno normal. Não criar dependência circular PublisherService/ComicSeriesService. Repositórios com SQL parametrizado exists, sem carregamento N+1. Mensagem de integridade na exclusão é conservadora, sem afirmar sucesso ou remover relacionados. Artefatos SDD equivalentes; Spec Kit não executado nesta revisão.
+
+## Implement / verificação — 2026-10-09
+
+- DEL-001/002: `PublisherRepository`, `WorkRepository`, `CreatorRepository` e respectivos serviços consultam referências; `ReferencedCatalogException` bloqueia exclusão. Nenhuma cascata ou alteração de vínculos adicionada.
+- DEL-003: controllers de editoras/obras/criadores tratam bloqueio e conflito de integridade; templates das três listas renderizam flash com `role="alert"`. Controllers de edições/séries/personagens/localizações também tratam conflito de integridade na exclusão, mantendo regras anteriores.
+- DEL-002/004: `MinhaGibitecaApplicationTest` reproduz editora Mythos com edição, obra/criador associados e editora vinculada somente a série em PostgreSQL isolado. Confirma preservação dos registros, 403 sem CSRF, 404 para outro proprietário, mensagens no HTML e exclusão após desvinculação explícita sem apagar edição/série.
+- `CatalogDeletionTest`: Mockito verifica ordem ownership → referência → exclusão/flush e mensagens seguras para conflito simulado nos três controllers.
+- Primeira execução específica falhou na compilação por ambiguidade AssertJ/FlashMap; corrigida nos testes. `./mvnw -q -Dtest=CatalogDeletionTest,MinhaGibitecaApplicationTest#explainsReferencedCatalogDeletionAndPreservesEditions+blocksPublisherReferencedOnlyBySeriesAndEnforcesDeletionSecurity test`: saída 0, 4 testes aprovados.
+- `./mvnw clean verify -q`: saída 0; relatórios Surefire totalizam **148 testes, 0 falhas, 0 erros, 0 ignorados**, incluindo nova cobertura de CSRF/ownership nos três cadastros. `git diff --check`: saída 0.
+- Sem migrations novas, sem escrita no banco real e sem alteração de `data/`. Testes usam PostgreSQL em Testcontainers; aplicação do IntelliJ não foi reiniciada.
+- Pendência operacional: reiniciar a aplicação para carregar a correção. Mythos continuará protegida enquanto houver edição/série vinculada. Concorrência coberta por conflito simulado; não foi realizado teste de carga/corrida real nem validação visual em navegador nesta fase.

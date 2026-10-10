@@ -11,6 +11,7 @@
         <a class="button-link" th:href="@{/editoras/nova(returnTo=${navigation.pageReturnUrl})}">Nova editora</a>
     </div>
     <p class="alert alert-success" th:if="${successMessage}" role="status" th:text="${successMessage}"></p>
+    <p class="alert alert-error" th:if="${errorMessage}" role="alert" th:text="${errorMessage}"></p>
     <form class="search-form" method="get" th:action="@{/editoras}">
         <label for="q">Buscar editora</label>
         <input id="q" name="q" th:value="${query}" type="search" maxlength="160">

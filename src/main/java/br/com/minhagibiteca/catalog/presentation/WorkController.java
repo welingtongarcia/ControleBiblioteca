@@ -36,7 +36,12 @@ public class WorkController {
         try { works.update(id, user.id(), command(form)); } catch (WorkService.DuplicateWorkException e) { result.rejectValue("title", "duplicate", "Já existe uma obra com este título."); return form(model, "Editar obra", "/obras/" + id + "/editar"); }
         attributes.addFlashAttribute("successMessage", "Obra atualizada com sucesso."); return "redirect:/obras";
     }
-    @PostMapping("/obras/{id}/excluir") String delete(@PathVariable UUID id, RedirectAttributes attributes) { works.delete(id, user.id()); attributes.addFlashAttribute("successMessage", "Obra excluída com sucesso."); return "redirect:/obras"; }
+    @PostMapping("/obras/{id}/excluir") String delete(@PathVariable UUID id, RedirectAttributes attributes) {
+        try { works.delete(id, user.id()); attributes.addFlashAttribute("successMessage", "Obra excluída com sucesso."); }
+        catch (br.com.minhagibiteca.catalog.application.ReferencedCatalogException error) { attributes.addFlashAttribute("errorMessage", error.getMessage()); }
+        catch (org.springframework.dao.DataIntegrityViolationException error) { attributes.addFlashAttribute("errorMessage", "Não foi possível excluir esta obra por um conflito com dados vinculados. Revise os vínculos nas edições e tente novamente. Nenhuma HQ foi apagada."); }
+        return "redirect:/obras";
+    }
     private String form(Model model, String title, String action) { model.addAttribute("pageTitle", title); model.addAttribute("formAction", action); return "obras/form"; }
     private WorkService.Command command(WorkForm form) { return new WorkService.Command(form.getTitle(), form.getOriginalYear(), form.getSummary()); }
 }

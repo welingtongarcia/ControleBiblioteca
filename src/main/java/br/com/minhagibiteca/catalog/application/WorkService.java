@@ -36,7 +36,11 @@ public class WorkService {
         work.update(command.title(), command.originalYear(), command.summary());
     }
     @Transactional
-    public void delete(UUID id, UUID ownerId) { works.delete(findOwned(id, ownerId)); }
+    public void delete(UUID id, UUID ownerId) {
+        var work = findOwned(id, ownerId);
+        if (works.hasReferences(id, ownerId)) throw new ReferencedCatalogException("Esta obra está vinculada a edições. Edite as edições para desvincular a obra antes de excluí-la. Nenhuma HQ foi apagada.");
+        works.delete(work); works.flush();
+    }
     private void ensureUnique(UUID ownerId, String title) {
         if (works.existsByOwnerUserIdAndNormalizedTitle(ownerId, Work.normalizeTitle(title))) throw new DuplicateWorkException();
     }

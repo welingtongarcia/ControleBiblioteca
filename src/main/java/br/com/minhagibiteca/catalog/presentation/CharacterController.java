@@ -22,7 +22,7 @@ public class CharacterController {
  @GetMapping("/personagens/{id}/excluir")String deleteForm(@PathVariable UUID id,Model m){m.addAttribute("character",service.find(user.id(),id));return "personagens/delete";}
  @PostMapping("/personagens/{id}/excluir")String delete(@PathVariable UUID id,@RequestParam(defaultValue="false")boolean confirmed,RedirectAttributes a){
   service.find(user.id(),id);if(!confirmed){a.addFlashAttribute("errorMessage","Confirme a exclusão do personagem.");return "redirect:/personagens/"+id+"/excluir";}
-  try{service.delete(user.id(),id);a.addFlashAttribute("successMessage","Personagem excluído.");}catch(CharacterService.CharacterRule e){a.addFlashAttribute("errorMessage",e.getMessage());}return "redirect:/personagens";
+  try{service.delete(user.id(),id);a.addFlashAttribute("successMessage","Personagem excluído.");}catch(CharacterService.CharacterRule e){a.addFlashAttribute("errorMessage",e.getMessage());}catch(org.springframework.dao.DataIntegrityViolationException error){a.addFlashAttribute("errorMessage","Não foi possível excluir este personagem por um conflito com dados vinculados. Revise os vínculos nas edições e tente novamente.");}return "redirect:/personagens";
  }
  private String form(Model m,String title,String action){m.addAttribute("pageTitle",title);m.addAttribute("formAction",action);return "personagens/form";}
 }

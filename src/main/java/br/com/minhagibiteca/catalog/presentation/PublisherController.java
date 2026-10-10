@@ -95,8 +95,14 @@ public class PublisherController {
 
     @PostMapping("/editoras/{id}/excluir")
     String delete(@PathVariable UUID id, RedirectAttributes redirectAttributes) {
-        publisherService.delete(id, currentAuthenticatedUser.id());
-        redirectAttributes.addFlashAttribute("successMessage", "Editora excluída com sucesso.");
+        try {
+            publisherService.delete(id, currentAuthenticatedUser.id());
+            redirectAttributes.addFlashAttribute("successMessage", "Editora excluída com sucesso.");
+        } catch (br.com.minhagibiteca.catalog.application.ReferencedCatalogException error) {
+            redirectAttributes.addFlashAttribute("errorMessage", error.getMessage());
+        } catch (org.springframework.dao.DataIntegrityViolationException error) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Não foi possível excluir esta editora por um conflito com dados vinculados. Revise os vínculos das edições e séries e tente novamente. Nenhuma HQ foi apagada.");
+        }
         return "redirect:/editoras";
     }
 

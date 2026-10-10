@@ -1534,4 +1534,70 @@ class MinhaGibitecaApplicationTest {
             assertThatThrownBy(sql::executeUpdate).isInstanceOf(java.sql.SQLException.class);
         }
     }
+
+    @Test
+    void explainsReferencedCatalogDeletionAndPreservesEditions() throws Exception {
+        var owner = userAccountRepository.save(UserAccount.create("delete-links@example.com", "hash", UserRole.USER));
+        var other = userAccountRepository.save(UserAccount.create("delete-links-other@example.com", "hash", UserRole.USER));
+        var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
+        var publisher = publisherRepository.save(Publisher.create(owner.getId(), "Mythos", null, null));
+        var edition = editionService.create(owner.getId(), new EditionService.Command(publisher.getId(), null, "HQ preservada", null, null, null, null, null, null));
+        var work = workService.create(owner.getId(), new WorkService.Command("Obra preservada", null, null));
+        var creator = creatorService.create(owner.getId(), new CreatorService.Command("Criador preservado", null));
+        editionAssociationService.replace(edition.getId(), owner.getId(), List.of(work.getId()), List.of(creator.getId()));
+        var paths = List.of("/editoras", "/obras", "/criadores");
+        var ids = List.of(publisher.getId(), work.getId(), creator.getId());
+        for (int i = 0; i < paths.size(); i++) {
+            mockMvc.perform(post(paths.get(i) + "/{id}/excluir", ids.get(i)).with(auth)).andExpect(status().isForbidden());
+            mockMvc.perform(post(paths.get(i) + "/{id}/excluir", ids.get(i))
+                    .with(SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(other)))
+                    .with(SecurityMockMvcRequestPostProcessors.csrf())).andExpect(status().isNotFound());
+            var result = mockMvc.perform(post(paths.get(i) + "/{id}/excluir", ids.get(i)).with(auth)
+                    .with(SecurityMockMvcRequestPostProcessors.csrf()))
+                    .andExpect(status().is3xxRedirection()).andExpect(redirectedUrl(paths.get(i))).andReturn();
+            assertThat(result.getFlashMap().get("errorMessage").toString()).contains("vinculad", "Nenhuma HQ foi apagada");
+            mockMvc.perform(get(paths.get(i)).with(auth).flashAttrs(result.getFlashMap()))
+                    .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("role=\"alert\"")))
+                    .andExpect(content().string(org.hamcrest.Matchers.containsString("Nenhuma HQ foi apagada")));
+        }
+        assertThat(editionRepository.existsById(edition.getId())).isTrue();
+        assertThat(publisherRepository.existsById(publisher.getId())).isTrue();
+        assertThat(workRepository.existsById(work.getId())).isTrue();
+        assertThat(creatorRepository.existsById(creator.getId())).isTrue();
+        editionAssociationService.replace(edition.getId(), owner.getId(), List.of(), List.of());
+        editionService.update(edition.getId(), owner.getId(), new EditionService.Command(null, null, "HQ preservada", null, null, null, null, null, null));
+        for (int i = 0; i < paths.size(); i++) {
+            var result = mockMvc.perform(post(paths.get(i) + "/{id}/excluir", ids.get(i)).with(auth)
+                    .with(SecurityMockMvcRequestPostProcessors.csrf())).andExpect(redirectedUrl(paths.get(i))).andReturn();
+            assertThat(result.getFlashMap().containsKey("successMessage")).isTrue();
+            assertThat(result.getFlashMap().containsKey("errorMessage")).isFalse();
+        }
+        assertThat(publisherRepository.existsById(publisher.getId())).isFalse();
+        assertThat(workRepository.existsById(work.getId())).isFalse();
+        assertThat(creatorRepository.existsById(creator.getId())).isFalse();
+        assertThat(editionRepository.existsById(edition.getId())).isTrue();
+    }
+
+    @Test
+    void blocksPublisherReferencedOnlyBySeriesAndEnforcesDeletionSecurity() throws Exception {
+        var owner = userAccountRepository.save(UserAccount.create("delete-series@example.com", "hash", UserRole.USER));
+        var other = userAccountRepository.save(UserAccount.create("delete-other@example.com", "hash", UserRole.USER));
+        var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
+        var publisher = publisherRepository.save(Publisher.create(owner.getId(), "Editora da série", null, null));
+        var series = comicSeriesRepository.save(ComicSeries.create(owner.getId(), publisher.getId(), "Série preservada", null, null, null, null));
+        mockMvc.perform(post("/editoras/{id}/excluir", publisher.getId()).with(auth)).andExpect(status().isForbidden());
+        mockMvc.perform(post("/editoras/{id}/excluir", publisher.getId())
+                .with(SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(other)))
+                .with(SecurityMockMvcRequestPostProcessors.csrf())).andExpect(status().isNotFound());
+        var result = mockMvc.perform(post("/editoras/{id}/excluir", publisher.getId()).with(auth)
+                .with(SecurityMockMvcRequestPostProcessors.csrf())).andExpect(redirectedUrl("/editoras")).andReturn();
+        assertThat(result.getFlashMap().containsKey("errorMessage")).isTrue();
+        assertThat(comicSeriesRepository.existsById(series.getId())).isTrue();
+        assertThat(publisherRepository.existsById(publisher.getId())).isTrue();
+        seriesService.update(series.getId(), owner.getId(), new br.com.minhagibiteca.catalog.application.ComicSeriesService.Command(null, "Série preservada", null, null, null, null));
+        mockMvc.perform(post("/editoras/{id}/excluir", publisher.getId()).with(auth)
+                .with(SecurityMockMvcRequestPostProcessors.csrf())).andExpect(redirectedUrl("/editoras"));
+        assertThat(publisherRepository.existsById(publisher.getId())).isFalse();
+        assertThat(comicSeriesRepository.existsById(series.getId())).isTrue();
+    }
 }

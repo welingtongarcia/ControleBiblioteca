@@ -5,7 +5,6 @@ import br.com.minhagibiteca.catalog.infrastructure.PublisherRepository;
 import br.com.minhagibiteca.shared.application.ResourceNotFoundException;
 import java.util.UUID;
 import java.util.List;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -56,7 +55,11 @@ public class PublisherService {
 
     @Transactional
     public void delete(UUID id, UUID ownerUserId) {
-        publisherRepository.delete(findOwned(id, ownerUserId));
+        var publisher = findOwned(id, ownerUserId);
+        if (publisherRepository.hasReferences(id, ownerUserId))
+            throw new ReferencedCatalogException("Esta editora está vinculada a edições ou séries. Edite esses cadastros para remover ou trocar a editora antes de excluí-la. Nenhuma HQ foi apagada.");
+        publisherRepository.delete(publisher);
+        publisherRepository.flush();
     }
 
     private void ensureNameIsAvailable(UUID ownerUserId, String name) {

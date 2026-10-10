@@ -52,6 +52,7 @@ public class LocationController {
         if (!confirmed) return "redirect:/localizacoes/" + id + "/excluir";
         try { locations.delete(id, user.id()); flash.addFlashAttribute("successMessage", "Localização excluída com sucesso."); }
         catch (LocationService.RuleViolation error) { flash.addFlashAttribute("errorMessage", error.getMessage()); }
+        catch (org.springframework.dao.DataIntegrityViolationException error) { flash.addFlashAttribute("errorMessage", "Não foi possível excluir esta localização por um conflito com dados vinculados. Revise as localizações internas e os exemplares e tente novamente."); }
         return "redirect:/localizacoes";
     }
     private String form(Model model, UUID id) {

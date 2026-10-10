@@ -36,7 +36,11 @@ public class CreatorService {
         creator.update(command.name(), command.sortName());
     }
     @Transactional
-    public void delete(UUID id, UUID ownerId) { creators.delete(findOwned(id, ownerId)); }
+    public void delete(UUID id, UUID ownerId) {
+        var creator = findOwned(id, ownerId);
+        if (creators.hasReferences(id, ownerId)) throw new ReferencedCatalogException("Este criador está vinculado a edições. Edite as edições para desvincular o criador antes de excluí-lo. Nenhuma HQ foi apagada.");
+        creators.delete(creator); creators.flush();
+    }
     private void ensureUnique(UUID ownerId, String name) {
         if (creators.existsByOwnerUserIdAndNormalizedName(ownerId, Creator.normalizeName(name))) throw new DuplicateCreatorException();
     }
