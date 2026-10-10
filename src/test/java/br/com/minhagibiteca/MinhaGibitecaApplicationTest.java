@@ -1262,6 +1262,50 @@ class MinhaGibitecaApplicationTest {
     }
 
     @Test
+    void groupsCatalogByTitleAndOrdersNumbersWithinEachGroupAcrossPages() throws Exception {
+        var owner = userAccountRepository.save(UserAccount.create("title-number@example.com", "hash", UserRole.USER));
+        var other = userAccountRepository.save(UserAccount.create("title-number-private@example.com", "hash", UserRole.USER));
+        var publisher = publisherRepository.save(Publisher.create(owner.getId(), "Editora dos grupos", null, null));
+        // Inserção intercalada: o banco deve formar os grupos antes da paginação.
+        for (int number = 22; number >= 1; number--) {
+            editionService.create(owner.getId(), new EditionService.Command(publisher.getId(), null,
+                    number == 1 ? "BATMAN" : "Batman", "" + number, null, null, null, null, null));
+            if (number <= 2) editionService.create(owner.getId(), new EditionService.Command(publisher.getId(), null,
+                    "Superman", "" + number, null, null, null, null, null));
+        }
+        editionService.create(owner.getId(), new EditionService.Command(publisher.getId(), null, "Batman", null, null, null, null, null, null));
+        editionService.create(other.getId(), new EditionService.Command(null, null, "Batman", "0", null, null, null, null, null));
+        editionService.create(owner.getId(), new EditionService.Command(null, null, "Batman", "0", null, null, null, null, null));
+        var filter = new br.com.minhagibiteca.catalog.application.CatalogFilter("man", publisher.getId(), null, null, null);
+        for (var order : java.util.List.of(br.com.minhagibiteca.catalog.application.CatalogOrder.TITLE_NUMBER_ASC,
+                br.com.minhagibiteca.catalog.application.CatalogOrder.TITLE_NUMBER_DESC)) {
+            var first = editionService.search(owner.getId(), filter, order, 0);
+            var second = editionService.search(owner.getId(), filter, order, 1);
+            assertThat(first.getTotalElements()).isEqualTo(25);
+            assertThat(first.getContent()).hasSize(20);
+            assertThat(second.getContent()).hasSize(5);
+            var all = java.util.stream.Stream.concat(first.stream(), second.stream()).toList();
+            var expected = new java.util.ArrayList<String>();
+            var batman = java.util.stream.IntStream.rangeClosed(1, 22).boxed().toList();
+            var superman = java.util.List.of(1, 2);
+            if (order.isDescending()) { batman = batman.reversed(); superman = superman.reversed(); }
+            batman.forEach(n -> expected.add("batman:" + n));
+            expected.add("batman:null");
+            superman.forEach(n -> expected.add("superman:" + n));
+            assertThat(all).extracting(v -> v.title().toLowerCase(java.util.Locale.ROOT) + ":" + v.editorialNumber())
+                    .containsExactlyElementsOf(expected);
+            assertThat(all).extracting(br.com.minhagibiteca.catalog.application.EditionView::id).doesNotHaveDuplicates();
+            String html = mockMvc.perform(get("/edicoes").with(SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner)))
+                    .param("q", "man").param("publisherId", publisher.getId().toString()).param("order", order.name()))
+                    .andExpect(status().isOk())
+                    .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.model().attribute("selectedOrder", order))
+                    .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+            assertThat(html).contains("Título A–Z + número crescente", "Título A–Z + número decrescente",
+                    "order=" + order.name(), "page=1", "q=man", "publisherId=" + publisher.getId());
+        }
+    }
+
+    @Test
     void rendersCatalogCardsWithMetadataPricesReadingAndSafeActions() throws Exception {
         var owner = userAccountRepository.save(UserAccount.create("catalog-layout@example.com", "hash", UserRole.USER));
         var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));

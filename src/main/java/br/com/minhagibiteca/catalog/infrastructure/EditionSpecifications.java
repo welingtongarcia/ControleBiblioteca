@@ -26,9 +26,14 @@ public final class EditionSpecifications {
                 var numeric = cb.function("to_number", BigDecimal.class, prefix, cb.literal("9".repeat(60)));
                 var suffix = cb.lower(cb.function("regexp_replace", String.class, number,
                         cb.literal("^[0-9]+"), cb.literal("")));
-                query.orderBy(cb.asc(group), order.isDescending() ? cb.desc(numeric) : cb.asc(numeric),
-                        order.isDescending() ? cb.desc(suffix) : cb.asc(suffix),
-                        cb.asc(root.get("normalizedTitle")), cb.asc(root.get("id")));
+                var ordering = new ArrayList<jakarta.persistence.criteria.Order>();
+                if (order.groupsByTitle()) ordering.add(cb.asc(root.get("normalizedTitle")));
+                ordering.add(cb.asc(group));
+                ordering.add(order.isDescending() ? cb.desc(numeric) : cb.asc(numeric));
+                ordering.add(order.isDescending() ? cb.desc(suffix) : cb.asc(suffix));
+                if (!order.groupsByTitle()) ordering.add(cb.asc(root.get("normalizedTitle")));
+                ordering.add(cb.asc(root.get("id")));
+                query.orderBy(ordering);
             }
             return predicate;
         };

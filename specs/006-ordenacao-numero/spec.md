@@ -28,7 +28,11 @@ Risco: campo editorial é textual; números com prefixo textual (ex. “Especial
 
 ## Extensão: agrupamento por título → plano e tarefas
 
-- [ ] T4 Reutilizar ordenação numérica no banco, acrescentando título como primeiro critério apenas nas duas novas opções. Preservar opções anteriores e desempate estável.
-- [ ] T5 Cobrir títulos intercalados, caixa, número ausente, ordem nos dois sentidos, filtros e continuidade de grupos/paginação. Conferir seletor e links via MockMvc; executar clean verify e registrar resultados.
+- [x] T4 Reutilizar ordenação numérica no banco, acrescentando título como primeiro critério apenas nas duas novas opções. Preservar opções anteriores e desempate estável.
+- [x] T5 Cobrir títulos intercalados, caixa, número ausente, ordem nos dois sentidos, filtros e continuidade de grupos/paginação. Conferir seletor e links via MockMvc; executar clean verify e registrar resultados.
 
 Análise: o agrupamento deve ocorrer antes do LIMIT/OFFSET para não intercalar títulos entre páginas. Não exige esquema novo, listas em memória ou nova camada de apresentação. Se títulos foram cadastrados com números embutidos, são títulos diferentes e não serão deduzidos como iguais.
+
+Implementação NUM-004: `CatalogOrder` inclui TITLE_NUMBER_ASC/TITLE_NUMBER_DESC e identifica agrupamento por título; `EditionSpecifications` antepõe normalizedTitle aos critérios numéricos somente nesses modos. Seletor existente lista os rótulos automaticamente. Novo teste `groupsCatalogByTitleAndOrdersNumbersWithinEachGroupAcrossPages` cobre Batman/BATMAN e Superman intercalados, 25 edições em duas páginas, ausência de número dentro do título, filtros de pesquisa/editora, registros de outro proprietário excluídos, ordem selecionada e parâmetros de paginação via MockMvc. Sem mudanças de templates, CSS, esquema ou dados reais.
+
+Verificação da extensão: `./mvnw -q clean verify`, exit 0, 206 testes, 0 falhas, 0 erros, 0 ignorados. `git diff --check`, exit 0. NUM-004 atendido, ordens NUM-001/002/003 preservadas. Não houve reinicialização da aplicação real ou benchmark do sort; grupos são definidos pelo título cadastrado, não por identificação automática de coleção.
