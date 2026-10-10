@@ -6,23 +6,27 @@
 <aside id="main-sidebar" class="dashboard-sidebar" aria-label="Menu principal">
     <a class="dashboard-brand" th:href="@{/dashboard}" aria-label="Minha Gibiteca — início"><span class="brand-mark" aria-hidden="true">MG</span><span>Minha<br> Gibiteca<span class="brand-caption">Seu universo em quadrinhos</span></span></a>
     <nav class="dashboard-navigation" aria-label="Navegação principal">
-        <details class="nav-group" id="nav-collection" th:open="${#lists.contains({'dashboard','visao-geral','edicoes','series','localizacoes','financeiro'}, navigation.key)}">
-        <summary class="nav-group-toggle">Sua coleção</summary>
+        <details class="nav-group" id="nav-overview" th:open="${#lists.contains({'dashboard','visao-geral','financeiro'}, navigation.key)}">
+        <summary class="nav-group-toggle">Painéis e análises</summary>
         <div class="nav-group-links">
         <a th:href="@{/dashboard}" th:classappend="${navigation.key == 'dashboard'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'dashboard' ? 'page' : null}"><span aria-hidden="true">⌂</span>Início</a>
         <a th:href="@{/visao-geral}" th:classappend="${navigation.key == 'visao-geral'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'visao-geral' ? 'page' : null}"><span aria-hidden="true">◫</span>Visão geral</a>
+        <a th:href="@{/financeiro}" th:classappend="${navigation.key == 'financeiro'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'financeiro' ? 'page' : null}"><span aria-hidden="true">R$</span>Financeiro</a>
+        </div></details>
+        <details class="nav-group" id="nav-collection" th:open="${#lists.contains({'edicoes','series','localizacoes'}, navigation.key)}">
+        <summary class="nav-group-toggle">Minha coleção</summary>
+        <div class="nav-group-links">
         <a th:href="@{/edicoes}" th:classappend="${navigation.key == 'edicoes'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'edicoes' ? 'page' : null}"><span aria-hidden="true">▤</span>Catálogo de edições</a>
         <a th:href="@{/series}" th:classappend="${navigation.key == 'series'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'series' ? 'page' : null}"><span aria-hidden="true">✓</span>Séries e checklist</a>
         <a th:href="@{/localizacoes}" th:classappend="${navigation.key == 'localizacoes'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'localizacoes' ? 'page' : null}"><span aria-hidden="true">▦</span>Localizações</a>
-        <a th:href="@{/financeiro}" th:classappend="${navigation.key == 'financeiro'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'financeiro' ? 'page' : null}"><span aria-hidden="true">R$</span>Financeiro</a>
         </div></details>
         <details class="nav-group" id="nav-catalog" th:open="${#lists.contains({'editoras','obras','criadores','personagens'}, navigation.key)}">
-        <summary class="nav-group-toggle">Dados do catálogo</summary>
+        <summary class="nav-group-toggle">Cadastros de apoio</summary>
         <div class="nav-group-links">
-        <a th:href="@{/editoras}" th:classappend="${navigation.key == 'editoras'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'editoras' ? 'page' : null}"><span aria-hidden="true">◇</span>Editoras</a>
         <a th:href="@{/obras}" th:classappend="${navigation.key == 'obras'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'obras' ? 'page' : null}"><span aria-hidden="true">▧</span>Obras</a>
         <a th:href="@{/criadores}" th:classappend="${navigation.key == 'criadores'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'criadores' ? 'page' : null}"><span aria-hidden="true">✎</span>Criadores</a>
         <a th:href="@{/personagens}" th:classappend="${navigation.key == 'personagens'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'personagens' ? 'page' : null}"><span aria-hidden="true">☆</span>Personagens</a>
+        <a th:href="@{/editoras}" th:classappend="${navigation.key == 'editoras'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'editoras' ? 'page' : null}"><span aria-hidden="true">◇</span>Editoras</a>
         </div></details>
     </nav>
     <form class="navigation-logout dashboard-logout" th:action="@{/logout}" method="post"><button type="submit">Sair</button></form>

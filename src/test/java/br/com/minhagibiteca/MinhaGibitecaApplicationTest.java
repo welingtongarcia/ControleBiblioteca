@@ -667,7 +667,7 @@ class MinhaGibitecaApplicationTest {
         var location = locationService.create(owner.getId(), new br.com.minhagibiteca.inventory.application.LocationService.Command(null, br.com.minhagibiteca.inventory.domain.LocationLevel.BOX, "Caixa de navegação", null));
         var copy = copyService.create(edition.getId(), owner.getId(), new CopyService.Command(location, CopyCondition.GOOD, null, null, null, null, null));
         var item = checklistService.create(series.getId(), owner.getId(), new br.com.minhagibiteca.collection.application.ChecklistService.Command("1A", null, false, null));
-        var paths = List.of("/dashboard", "/edicoes", "/edicoes/nova", "/edicoes/" + edition.getId(), "/edicoes/" + edition.getId() + "/editar",
+        var paths = List.of("/dashboard", "/visao-geral", "/edicoes", "/edicoes/nova", "/edicoes/" + edition.getId(), "/edicoes/" + edition.getId() + "/editar",
                 "/edicoes/" + edition.getId() + "/exemplares/novo", "/exemplares/" + copy + "/editar", "/exemplares/" + copy + "/excluir",
                 "/series", "/series/nova", "/series/" + series.getId() + "/editar", "/series/" + series.getId() + "/checklist", "/series/" + series.getId() + "/faltantes",
                 "/checklist/itens/" + item + "/editar", "/checklist/itens/" + item + "/excluir", "/editoras", "/editoras/nova", "/editoras/" + publisher.getId() + "/editar",
@@ -676,8 +676,8 @@ class MinhaGibitecaApplicationTest {
         var preview = java.nio.file.Path.of("target/ui-navigation");
         java.nio.file.Files.createDirectories(preview.resolve("css"));
         java.nio.file.Files.createDirectories(preview.resolve("js"));
-        java.nio.file.Files.copy(java.nio.file.Path.of("src/main/resources/static/js/sidebar.js"), preview.resolve("js/sidebar.js"), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-        for (String css : List.of("main.css", "dashboard.css")) java.nio.file.Files.copy(java.nio.file.Path.of("src/main/resources/static/css", css), preview.resolve("css").resolve(css), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        for (String js : List.of("sidebar.js", "home-banner.js")) java.nio.file.Files.copy(java.nio.file.Path.of("src/main/resources/static/js", js), preview.resolve("js").resolve(js), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        for (String css : List.of("main.css", "dashboard.css", "home-showcase.css")) java.nio.file.Files.copy(java.nio.file.Path.of("src/main/resources/static/css", css), preview.resolve("css").resolve(css), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
         for (String path : paths) {
             String html = mockMvc.perform(get(path).with(auth)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
             assertThat(html).contains("Navegação principal", "Pular para o conteúdo", "action=\"/logout\" method=\"post\"", "name=\"_csrf\"");
@@ -689,15 +689,31 @@ class MinhaGibitecaApplicationTest {
             assertThat(html.indexOf("id=\"sidebar-controls\"")).isLessThan(html.indexOf("<aside id=\"main-sidebar\""));
             assertThat(html).contains("<aside id=\"main-sidebar\" class=\"dashboard-sidebar\" aria-label=\"Menu principal\">");
             assertThat(html.split("class=\"nav-current\"", -1)).hasSize(2);
-            var collectionGroup = java.util.regex.Pattern.compile("<details[^>]*id=\"nav-collection\"[^>]*>").matcher(html);
-            var catalogGroup = java.util.regex.Pattern.compile("<details[^>]*id=\"nav-catalog\"[^>]*>").matcher(html);
-            assertThat(collectionGroup.find()).isTrue(); assertThat(catalogGroup.find()).isTrue();
             boolean inCatalog = List.of("/editoras", "/obras", "/criadores", "/personagens").stream().anyMatch(path::startsWith);
-            assertThat(collectionGroup.group().contains("open=\"open\"")).isEqualTo(!inCatalog);
-            assertThat(catalogGroup.group().contains("open=\"open\"")).isEqualTo(inCatalog);
-            assertThat(html).contains("<summary class=\"nav-group-toggle\">Sua coleção</summary>", "<summary class=\"nav-group-toggle\">Dados do catálogo</summary>");
-            for (String module : List.of("dashboard", "edicoes", "series", "editoras", "obras", "criadores", "localizacoes")) assertThat(html).contains("href=\"/" + module + "\"");
-            if (!path.equals("/dashboard")) assertThat(html).contains("Você está aqui", "navigation-back");
+            boolean inOverview = List.of("/dashboard", "/visao-geral", "/financeiro").contains(path);
+            var groups = List.of("nav-overview", "nav-collection", "nav-catalog");
+            var labels = List.of("Painéis e análises", "Minha coleção", "Cadastros de apoio");
+            var destinations = List.of(List.of("dashboard", "visao-geral", "financeiro"), List.of("edicoes", "series", "localizacoes"), List.of("obras", "criadores", "personagens", "editoras"));
+            var navigation = java.util.regex.Pattern.compile("<nav class=\"dashboard-navigation\".*?</nav>", java.util.regex.Pattern.DOTALL).matcher(html);
+            assertThat(navigation.find()).isTrue();
+            assertThat(navigation.group().split("aria-current=\"page\"", -1)).hasSize(2);
+            int previousGroup = -1;
+            for (int i = 0; i < groups.size(); i++) {
+                var group = java.util.regex.Pattern.compile("<details[^>]*id=\"" + groups.get(i) + "\"[^>]*>.*?</details>", java.util.regex.Pattern.DOTALL).matcher(navigation.group());
+                assertThat(group.find()).as("%s em %s", groups.get(i), path).isTrue();
+                assertThat(group.start()).isGreaterThan(previousGroup);
+                previousGroup = group.start();
+                assertThat(group.group().contains("open=\"open\"")).isEqualTo(i == 0 ? inOverview : i == 1 ? !inCatalog && !inOverview : inCatalog);
+                assertThat(group.group()).contains("<summary class=\"nav-group-toggle\">" + labels.get(i) + "</summary>");
+                int previousLink = -1;
+                for (String destination : destinations.get(i)) {
+                    String href = "href=\"/" + destination + "\"";
+                    assertThat(navigation.group().split(java.util.regex.Pattern.quote(href), -1)).hasSize(2);
+                    assertThat(group.group().indexOf(href)).isGreaterThan(previousLink);
+                    previousLink = group.group().indexOf(href);
+                }
+            }
+            if (!path.equals("/dashboard") && !path.equals("/visao-geral")) assertThat(html).contains("Você está aqui", "navigation-back");
             var directory = preview.resolve(path.substring(1)); java.nio.file.Files.createDirectories(directory);
             java.nio.file.Files.writeString(directory.resolve("index.html"), html, java.nio.charset.StandardCharsets.UTF_8);
         }
