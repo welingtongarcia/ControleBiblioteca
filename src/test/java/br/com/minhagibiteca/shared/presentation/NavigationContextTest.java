@@ -9,6 +9,20 @@ import org.springframework.mock.web.MockHttpServletRequest;
 
 class NavigationContextTest {
     private static final String SERIES = "11111111-1111-1111-1111-111111111111";
+    @ParameterizedTest @ValueSource(strings = {"/dashboard", "/visao-geral"})
+    void separatesHomeOverviewAndReturnsOnlyToLocalLanding(String path) {
+        var landing = context(path, null);
+        assertThat(landing.key()).isEqualTo(path.substring(1));
+        assertThat(landing.label()).isEqualTo(path.equals("/dashboard") ? "Início" : "Visão geral");
+        var edition = context("/edicoes/" + SERIES + "/editar", path);
+        assertThat(edition.returnUrl()).isEqualTo(path);
+        assertThat(edition.getReturnLabel()).isEqualTo(landing.label());
+        assertThat(edition.redirect("/edicoes/" + SERIES)).isEqualTo(path);
+        assertThat(edition.redirect("/edicoes")).isEqualTo(path);
+        assertThat(context("/edicoes/nova", "https://example.com" + path).returnUrl()).isEqualTo("/edicoes");
+        assertThat(context("/edicoes/nova", path + "/evil").returnUrl()).isEqualTo("/edicoes");
+        assertThat(context("/editoras/nova", path).returnUrl()).isEqualTo("/editoras");
+    }
     @Test void editionCanReturnOnlyToValidatedFinancePanel() {
         String finance="/financeiro?start=2026-06-01&end=2026-06-10&mediaType=UNSPECIFIED&ranking=QUANTITY&page=2";
         var c=context("/edicoes/"+SERIES+"/editar",finance);

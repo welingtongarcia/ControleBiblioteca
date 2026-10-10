@@ -11,7 +11,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 public record NavigationContext(String key, String label, String listUrl, String returnUrl, String pageReturnUrl) {
     private static final String UUID_PATTERN = "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}";
     private static final Map<String, String> LABELS = Map.of("edicoes", "Catálogo de edições", "series", "Séries e checklist",
-            "localizacoes", "Localizações", "editoras", "Editoras", "obras", "Obras", "criadores", "Criadores", "dashboard", "Início", "financeiro", "Financeiro", "personagens", "Personagens");
+            "localizacoes", "Localizações", "editoras", "Editoras", "obras", "Obras", "criadores", "Criadores", "dashboard", "Início", "financeiro", "Financeiro", "personagens", "Personagens", "visao-geral", "Visão geral");
 
     public static NavigationContext from(HttpServletRequest request) {
         String path = request.getServletPath();
@@ -25,6 +25,8 @@ public record NavigationContext(String key, String label, String listUrl, String
         String back = canonical(request.getParameter("returnTo"), key);
         // O Financeiro edita os próprios dados da HQ; aceita só o painel local validado.
         if (back == null && key.equals("edicoes")) back = canonical(request.getParameter("returnTo"), "financeiro");
+        if (back == null && key.equals("edicoes")) back = canonical(request.getParameter("returnTo"), "dashboard");
+        if (back == null && key.equals("edicoes")) back = canonical(request.getParameter("returnTo"), "visao-geral");
         if (back == null) back = list;
         String page = back;
         if (request.getMethod().equals("GET") && allowedPath(path, key)) {
@@ -71,7 +73,14 @@ public record NavigationContext(String key, String label, String listUrl, String
         } catch (IllegalArgumentException | java.time.DateTimeException error) { return null; }
     }
     public String getListReturnUrl() { return URI.create(returnUrl).getPath().equals(listUrl) ? returnUrl : listUrl; }
-    public String getReturnLabel() { return URI.create(returnUrl).getPath().equals("/financeiro") ? "Financeiro" : label; }
+    public String getReturnLabel() {
+        return switch (URI.create(returnUrl).getPath()) {
+            case "/financeiro" -> "Financeiro";
+            case "/dashboard" -> "Início";
+            case "/visao-geral" -> "Visão geral";
+            default -> label;
+        };
+    }
     public String parentUrl(String fallback) {
         String path = URI.create(returnUrl).getPath();
         if (fallback.matches("/series/" + UUID_PATTERN + "/checklist") && path.matches("/series/" + UUID_PATTERN + "/(checklist|faltantes)")
@@ -85,7 +94,7 @@ public record NavigationContext(String key, String label, String listUrl, String
         if (returnUrl.equals(listUrl)) return destination;
         String targetPath = URI.create(destination).getPath();
         String backPath = URI.create(returnUrl).getPath();
-        if (key.equals("edicoes") && backPath.equals("/financeiro") && (targetPath.equals("/edicoes") || targetPath.matches("/edicoes/" + UUID_PATTERN))) return returnUrl;
+        if (key.equals("edicoes") && Set.of("/financeiro", "/dashboard", "/visao-geral").contains(backPath) && (targetPath.equals("/edicoes") || targetPath.matches("/edicoes/" + UUID_PATTERN))) return returnUrl;
         if (targetPath.equals(listUrl) && backPath.equals(listUrl)) return returnUrl;
         if (targetPath.matches("/series/" + UUID_PATTERN + "/checklist") && backPath.matches("/series/" + UUID_PATTERN + "/(checklist|faltantes)")
                 && targetPath.split("/")[2].equals(backPath.split("/")[2])) return returnUrl;

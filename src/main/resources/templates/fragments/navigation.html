@@ -6,10 +6,11 @@
 <aside id="main-sidebar" class="dashboard-sidebar" aria-label="Menu principal">
     <a class="dashboard-brand" th:href="@{/dashboard}" aria-label="Minha Gibiteca — início"><span class="brand-mark" aria-hidden="true">MG</span><span>Minha<br> Gibiteca<span class="brand-caption">Seu universo em quadrinhos</span></span></a>
     <nav class="dashboard-navigation" aria-label="Navegação principal">
-        <details class="nav-group" id="nav-collection" th:open="${#lists.contains({'dashboard','edicoes','series','localizacoes','financeiro'}, navigation.key)}">
+        <details class="nav-group" id="nav-collection" th:open="${#lists.contains({'dashboard','visao-geral','edicoes','series','localizacoes','financeiro'}, navigation.key)}">
         <summary class="nav-group-toggle">Sua coleção</summary>
         <div class="nav-group-links">
         <a th:href="@{/dashboard}" th:classappend="${navigation.key == 'dashboard'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'dashboard' ? 'page' : null}"><span aria-hidden="true">⌂</span>Início</a>
+        <a th:href="@{/visao-geral}" th:classappend="${navigation.key == 'visao-geral'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'visao-geral' ? 'page' : null}"><span aria-hidden="true">◫</span>Visão geral</a>
         <a th:href="@{/edicoes}" th:classappend="${navigation.key == 'edicoes'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'edicoes' ? 'page' : null}"><span aria-hidden="true">▤</span>Catálogo de edições</a>
         <a th:href="@{/series}" th:classappend="${navigation.key == 'series'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'series' ? 'page' : null}"><span aria-hidden="true">✓</span>Séries e checklist</a>
         <a th:href="@{/localizacoes}" th:classappend="${navigation.key == 'localizacoes'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'localizacoes' ? 'page' : null}"><span aria-hidden="true">▦</span>Localizações</a>

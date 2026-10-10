@@ -1,22 +1,25 @@
 <!DOCTYPE html>
 <html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/head :: head('Início')}"><title>Início | Minha Gibiteca</title></head>
+<head th:replace="~{fragments/head :: head('Visão geral')}"><title>Visão geral | Minha Gibiteca</title></head>
 <body class="dashboard-page">
 <a class="skip-link" href="#main-content">Pular para o conteúdo</a>
 <div class="dashboard-layout">
     <aside th:replace="~{fragments/navigation :: sidebar}"></aside>
     <main id="main-content" class="dashboard-main home-page" aria-labelledby="page-title" tabindex="-1">
         <header class="home-header">
-            <div><p class="dashboard-kicker">Minha Gibiteca · Início</p><h1 id="page-title">Visão geral da coleção</h1><p class="home-intro">Acompanhe seu acervo e escolha sua próxima leitura.</p></div>
+            <div><p class="dashboard-kicker">Minha Gibiteca · Visão geral</p><h1 id="page-title">Visão geral da coleção</h1><p class="home-intro">Acompanhe seu acervo e escolha sua próxima leitura.</p></div>
             <form class="dashboard-search" method="get" th:action="@{/edicoes}" role="search" aria-label="Pesquisar no catálogo">
                 <label class="visually-hidden" for="dashboard-query">Buscar por título, ISBN ou número editorial</label>
                 <input id="dashboard-query" name="q" type="search" maxlength="240" placeholder="Título, ISBN ou número…"><button type="submit">Buscar</button>
             </form>
         </header>
         <nav id="home-actions" class="home-actions" aria-label="Ações principais">
-            <a class="button-link" th:href="@{/edicoes/nova}"><span aria-hidden="true">＋</span> Cadastrar edição</a>
+            <a class="button-link" th:href="@{/edicoes/nova(returnTo='/visao-geral')}"><span aria-hidden="true">＋</span> Cadastrar edição</a>
             <a class="home-secondary" th:href="@{/edicoes}">Ver catálogo <span aria-hidden="true">→</span></a>
+            <a class="home-secondary" th:href="@{/dashboard}">Explorar histórias <span aria-hidden="true">→</span></a>
         </nav>
+        <p class="alert alert-success" role="status" th:if="${successMessage}" th:text="${successMessage}"></p>
+        <p class="alert alert-error" role="alert" th:if="${errorMessage}" th:text="${errorMessage}"></p>
         <section class="home-empty" th:if="${summary.editions == 0}" aria-labelledby="home-empty-title">
             <h2 id="home-empty-title">Sua coleção começa com a primeira edição</h2>
             <p>Use “Cadastrar edição” acima para registrar seus quadrinhos. Depois, acompanhe valores, exemplares e leituras aqui.</p>

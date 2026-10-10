@@ -497,7 +497,7 @@ class MinhaGibitecaApplicationTest {
         var owner = userAccountRepository.save(UserAccount.create("summary@example.com", "hash", UserRole.USER));
         var other = userAccountRepository.save(UserAccount.create("other-summary@example.com", "hash", UserRole.USER));
         var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
-        var empty = (br.com.minhagibiteca.dashboard.application.CollectionSummary) mockMvc.perform(get("/dashboard").with(auth))
+        var empty = (br.com.minhagibiteca.dashboard.application.CollectionSummary) mockMvc.perform(get("/visao-geral").with(auth))
                 .andExpect(status().isOk()).andReturn().getModelAndView().getModel().get("summary");
         assertThat(empty.copies()).isZero(); assertThat(empty.editions()).isZero();
         assertThat(empty.totalPaidLabel()).contains("0,00");
@@ -509,7 +509,7 @@ class MinhaGibitecaApplicationTest {
         digital.updatePricingAndMedia(br.com.minhagibiteca.catalog.domain.MediaType.DIGITAL, null, new java.math.BigDecimal("500.00"));
         editionRepository.save(digital);
         editionRepository.save(Edition.create(owner.getId(), null, null, "Sem suporte e preço", null, null, null, null, null, null));
-        var catalogOnly = (br.com.minhagibiteca.dashboard.application.CollectionSummary) mockMvc.perform(get("/dashboard").with(auth))
+        var catalogOnly = (br.com.minhagibiteca.dashboard.application.CollectionSummary) mockMvc.perform(get("/visao-geral").with(auth))
                 .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("1.499,00")))
                 .andReturn().getModelAndView().getModel().get("summary");
         assertThat(catalogOnly.copies()).isZero(); assertThat(catalogOnly.physicalEditions()).isEqualTo(1);
@@ -518,14 +518,14 @@ class MinhaGibitecaApplicationTest {
         var foreign = editionRepository.save(Edition.create(other.getId(), null, null, "Privado", null, null, null, null, null, null));
         copyService.create(foreign.getId(), other.getId(), new CopyService.Command(null, CopyCondition.GOOD, null, null, null, new java.math.BigDecimal("1000.00"), null));
         var unknown = copyService.create(edition.getId(), owner.getId(), new CopyService.Command(null, CopyCondition.GOOD, null, null, null, null, null));
-        var allUnknown = (br.com.minhagibiteca.dashboard.application.CollectionSummary) mockMvc.perform(get("/").with(auth))
+        var allUnknown = (br.com.minhagibiteca.dashboard.application.CollectionSummary) mockMvc.perform(get("/visao-geral").with(auth))
                 .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("Não informado")))
                 .andReturn().getModelAndView().getModel().get("summary");
         assertThat(allUnknown.totalPaid()).isNull(); assertThat(allUnknown.unpricedCopies()).isEqualTo(1);
         var paid = copyService.create(edition.getId(), owner.getId(), new CopyService.Command(null, CopyCondition.GOOD, null, null, null, new java.math.BigDecimal("10.10"), null));
         copyService.create(edition.getId(), owner.getId(), new CopyService.Command(null, CopyCondition.GOOD, null, null, null, new java.math.BigDecimal("20.20"), null));
         copyService.create(edition.getId(), owner.getId(), new CopyService.Command(null, CopyCondition.GOOD, null, null, null, java.math.BigDecimal.ZERO, null));
-        var result = mockMvc.perform(get("/dashboard").with(auth)).andExpect(status().isOk())
+        var result = mockMvc.perform(get("/visao-geral").with(auth)).andExpect(status().isOk())
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("30,30")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("pode estar incompleto"))).andReturn();
         var summary = (br.com.minhagibiteca.dashboard.application.CollectionSummary) result.getModelAndView().getModel().get("summary");
@@ -545,12 +545,12 @@ class MinhaGibitecaApplicationTest {
         for (String css : List.of("main.css", "dashboard.css")) java.nio.file.Files.copy(java.nio.file.Path.of("src/main/resources/static/css", css), preview.resolve("css").resolve(css), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
         copyService.update(paid, owner.getId(), new CopyService.Command(null, CopyCondition.GOOD, null, null, null, new java.math.BigDecimal("15.15"), null));
         copyService.delete(unknown, owner.getId());
-        var refreshed = (br.com.minhagibiteca.dashboard.application.CollectionSummary) mockMvc.perform(get("/dashboard").with(auth))
+        var refreshed = (br.com.minhagibiteca.dashboard.application.CollectionSummary) mockMvc.perform(get("/visao-geral").with(auth))
                 .andExpect(status().isOk()).andReturn().getModelAndView().getModel().get("summary");
         assertThat(refreshed.copies()).isEqualTo(3); assertThat(refreshed.unpricedCopies()).isZero();
         assertThat(refreshed.totalPaid()).isEqualByComparingTo("35.35");
         assertThat(refreshed.registeredPaid()).isEqualByComparingTo("1499.00");
-        mockMvc.perform(get("/dashboard")).andExpect(status().is3xxRedirection());
+        mockMvc.perform(get("/visao-geral")).andExpect(status().is3xxRedirection());
     }
 
     @Test
@@ -561,7 +561,7 @@ class MinhaGibitecaApplicationTest {
                         .param("title", "HQ financeira").param("mediaType", "PHYSICAL").param("referencePaidPrice", "29,90").param("coverPrice", "99,00"))
                 .andExpect(status().is3xxRedirection());
         var id = editionRepository.findAll().getFirst().getId();
-        var initial = (br.com.minhagibiteca.dashboard.application.CollectionSummary) mockMvc.perform(get("/dashboard").with(auth))
+        var initial = (br.com.minhagibiteca.dashboard.application.CollectionSummary) mockMvc.perform(get("/visao-geral").with(auth))
                 .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("29,90")))
                 .andReturn().getModelAndView().getModel().get("summary");
         assertThat(initial.physicalEditions()).isEqualTo(1); assertThat(initial.digitalEditions()).isZero();
@@ -569,14 +569,14 @@ class MinhaGibitecaApplicationTest {
         mockMvc.perform(post("/edicoes/{id}/editar", id).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
                         .param("title", "HQ financeira").param("mediaType", "DIGITAL").param("referencePaidPrice", "0,00"))
                 .andExpect(redirectedUrl("/edicoes/" + id));
-        var digital = (br.com.minhagibiteca.dashboard.application.CollectionSummary) mockMvc.perform(get("/").with(auth))
+        var digital = (br.com.minhagibiteca.dashboard.application.CollectionSummary) mockMvc.perform(get("/visao-geral").with(auth))
                 .andExpect(status().isOk()).andReturn().getModelAndView().getModel().get("summary");
         assertThat(digital.physicalEditions()).isZero(); assertThat(digital.digitalEditions()).isEqualTo(1);
         assertThat(digital.pricedEditions()).isEqualTo(1); assertThat(digital.registeredPaid()).isEqualByComparingTo("0");
         mockMvc.perform(post("/edicoes/{id}/editar", id).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
                         .param("title", "HQ financeira").param("mediaType", "DIGITAL").param("referencePaidPrice", ""))
                 .andExpect(redirectedUrl("/edicoes/" + id));
-        var unknown = (br.com.minhagibiteca.dashboard.application.CollectionSummary) mockMvc.perform(get("/dashboard").with(auth))
+        var unknown = (br.com.minhagibiteca.dashboard.application.CollectionSummary) mockMvc.perform(get("/visao-geral").with(auth))
                 .andExpect(status().isOk()).andReturn().getModelAndView().getModel().get("summary");
         assertThat(unknown.registeredPaid()).isNull(); assertThat(unknown.registeredPaidLabel()).isEqualTo("Não informado");
         assertThat(unknown.unpricedEditions()).isEqualTo(1);
@@ -591,7 +591,7 @@ class MinhaGibitecaApplicationTest {
             mockMvc.perform(post("/edicoes/{id}/exemplares", edition.getId()).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
                             .param("condition", "GOOD").param("acquisitionPrice", "10,50"))
                     .andExpect(redirectedUrl("/edicoes/" + edition.getId()));
-            var summary = (br.com.minhagibiteca.dashboard.application.CollectionSummary) mockMvc.perform(get("/dashboard").with(auth))
+            var summary = (br.com.minhagibiteca.dashboard.application.CollectionSummary) mockMvc.perform(get("/visao-geral").with(auth))
                     .andExpect(status().isOk()).andReturn().getModelAndView().getModel().get("summary");
             assertThat(summary.copies()).isEqualTo(i);
             assertThat(summary.pricedCopies()).isEqualTo(i);
@@ -602,31 +602,31 @@ class MinhaGibitecaApplicationTest {
         mockMvc.perform(post("/exemplares/{id}/editar", id).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
                         .param("condition", "GOOD").param("acquisitionPrice", "25,75"))
                 .andExpect(redirectedUrl("/edicoes/" + edition.getId()));
-        var updated = (br.com.minhagibiteca.dashboard.application.CollectionSummary) mockMvc.perform(get("/").with(auth))
+        var updated = (br.com.minhagibiteca.dashboard.application.CollectionSummary) mockMvc.perform(get("/visao-geral").with(auth))
                 .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("36,25")))
                 .andReturn().getModelAndView().getModel().get("summary");
         assertThat(updated.copies()).isEqualTo(2); assertThat(updated.totalPaid()).isEqualByComparingTo("36.25");
         mockMvc.perform(post("/exemplares/{id}/editar", id).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
                         .param("condition", "GOOD").param("acquisitionPrice", "-1,00"))
                 .andExpect(status().isOk()).andExpect(view().name("exemplares/form"));
-        var unchanged = (br.com.minhagibiteca.dashboard.application.CollectionSummary) mockMvc.perform(get("/dashboard").with(auth))
+        var unchanged = (br.com.minhagibiteca.dashboard.application.CollectionSummary) mockMvc.perform(get("/visao-geral").with(auth))
                 .andExpect(status().isOk()).andReturn().getModelAndView().getModel().get("summary");
         assertThat(unchanged).isEqualTo(updated);
         mockMvc.perform(post("/exemplares/{id}/editar", id).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
                         .param("condition", "GOOD").param("acquisitionPrice", ""))
                 .andExpect(redirectedUrl("/edicoes/" + edition.getId()));
-        var removedPrice = (br.com.minhagibiteca.dashboard.application.CollectionSummary) mockMvc.perform(get("/dashboard").with(auth))
+        var removedPrice = (br.com.minhagibiteca.dashboard.application.CollectionSummary) mockMvc.perform(get("/visao-geral").with(auth))
                 .andExpect(status().isOk()).andReturn().getModelAndView().getModel().get("summary");
         assertThat(removedPrice.copies()).isEqualTo(2); assertThat(removedPrice.pricedCopies()).isEqualTo(1);
         assertThat(removedPrice.unpricedCopies()).isEqualTo(1); assertThat(removedPrice.totalPaid()).isEqualByComparingTo("10.50");
     }
 
     @Test
-    void rendersImprovedHomeWithSearchModuleLinksAndSecureLogout() throws Exception {
+    void rendersOverviewWithSearchModuleLinksAndSecureLogout() throws Exception {
         var owner = userAccountRepository.save(UserAccount.create("home-preview@example.com", "hash", UserRole.USER));
         var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
         String html = null;
-        for (String path : List.of("/", "/dashboard")) {
+        for (String path : List.of("/visao-geral")) {
             html = mockMvc.perform(get(path).with(auth)).andExpect(status().isOk()).andExpect(view().name("dashboard/index"))
                     .andExpect(content().string(org.hamcrest.Matchers.containsString("/css/dashboard.css")))
                     .andExpect(content().string(org.hamcrest.Matchers.containsString("Pular para o conteúdo")))
@@ -635,8 +635,9 @@ class MinhaGibitecaApplicationTest {
                     .andExpect(content().string(org.hamcrest.Matchers.containsString("name=\"_csrf\"")))
                     .andExpect(content().string(org.hamcrest.Matchers.containsString("name=\"q\"")))
                     .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
-            for (String destination : List.of("edicoes", "edicoes/nova", "series", "localizacoes", "editoras", "obras", "criadores"))
+            for (String destination : List.of("edicoes", "dashboard", "series", "localizacoes", "editoras", "obras", "criadores"))
                 assertThat(html).contains("href=\"/" + destination + "\"");
+            assertThat(html).contains("href=\"/edicoes/nova?returnTo=/visao-geral\"");
             assertThat(html).contains("Sua coleção começa com a primeira edição", "Entenda os números e os valores", "Cadastros de apoio")
                     .doesNotContain("collection-hero", "hero-art", "pode estar incompleto");
             assertThat(html.indexOf("id=\"home-actions\"")).isLessThan(html.indexOf("id=\"home-overview\""));
@@ -644,7 +645,7 @@ class MinhaGibitecaApplicationTest {
             assertThat(html.indexOf("id=\"home-collection\"")).isLessThan(html.indexOf("id=\"home-support\""));
             assertThat(html).contains("<details id=\"home-calculation\"", "<progress max=\"100\" value=\"0.0\"");
         }
-        mockMvc.perform(get("/")).andExpect(status().is3xxRedirection()).andExpect(redirectedUrlPattern("**/login"));
+        mockMvc.perform(get("/visao-geral")).andExpect(status().is3xxRedirection()).andExpect(redirectedUrlPattern("**/login"));
         mockMvc.perform(post("/logout").with(auth)).andExpect(status().isForbidden());
         mockMvc.perform(post("/logout").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())).andExpect(redirectedUrl("/login?logout"));
         // Prévia local do HTML realmente renderizado; só contém conteúdo estático e sessão de teste.
@@ -1610,7 +1611,7 @@ class MinhaGibitecaApplicationTest {
         var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
         var pages = new java.util.LinkedHashMap<String, String>();
         // Include empty states before seeding fixtures. Never use the running application's database.
-        for (var path : List.of("/", "/edicoes", "/editoras", "/series", "/obras", "/criadores", "/personagens", "/localizacoes", "/financeiro")) {
+        for (var path : List.of("/", "/visao-geral", "/edicoes", "/editoras", "/series", "/obras", "/criadores", "/personagens", "/localizacoes", "/financeiro")) {
             pages.put((path.equals("/") ? "inicio" : path.substring(1)) + "-vazio", mockMvc.perform(get(path).with(auth)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
         }
         var longName = "Coleção de aventuras brasileiras — edição especial de colecionador com descrição extensa";
@@ -1627,6 +1628,7 @@ class MinhaGibitecaApplicationTest {
         var item = checklistService.create(series.getId(), owner.getId(), new br.com.minhagibiteca.collection.application.ChecklistService.Command("1A", longName, false, "Observações do checklist"));
         var routes = new java.util.LinkedHashMap<String, String>();
         routes.put("inicio", "/");
+        routes.put("visao-geral", "/visao-geral");
         routes.put("login", "/login");
         routes.put("login-erro", "/login?error");
         for (var entry : java.util.Map.of("edicoes", "nova", "editoras", "nova", "series", "nova", "obras", "nova", "criadores", "novo", "personagens", "novo", "localizacoes", "nova").entrySet()) {
@@ -1657,13 +1659,96 @@ class MinhaGibitecaApplicationTest {
         if (Boolean.getBoolean("ui.review.export")) {
             var root = java.nio.file.Path.of("target", "ui-review");
             java.nio.file.Files.createDirectories(root);
-            for (var asset : List.of("css/main.css", "css/dashboard.css", "js/sidebar.js")) {
+            for (var asset : List.of("css/main.css", "css/dashboard.css", "css/home-showcase.css", "js/sidebar.js")) {
                 var target = root.resolve(asset);
                 java.nio.file.Files.createDirectories(target.getParent());
                 java.nio.file.Files.copy(java.nio.file.Path.of("src/main/resources/static").resolve(asset), target, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
             }
             var index = new StringBuilder("<!doctype html><html lang=\"pt-BR\"><meta charset=\"UTF-8\"><title>Revisão isolada da interface</title><h1>Páginas renderizadas com dados fictícios</h1><ul>");
             for (var entry : pages.entrySet()) {
+                java.nio.file.Files.writeString(root.resolve(entry.getKey() + ".html"), entry.getValue());
+                index.append("<li><a href=\"").append(entry.getKey()).append(".html\">").append(entry.getKey()).append("</a></li>");
+            }
+            java.nio.file.Files.writeString(root.resolve("index.html"), index.append("</ul></html>").toString());
+        }
+    }
+
+    @Test
+    void separatesVisualHomeFromOverviewAndShowsOnlyBoundedOwnedShelves() throws Exception {
+        var owner = userAccountRepository.save(UserAccount.create("visual-home@example.com", "hash", UserRole.USER));
+        var other = userAccountRepository.save(UserAccount.create("foreign-home@example.com", "hash", UserRole.USER));
+        var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
+        for (var path : List.of("/", "/dashboard", "/visao-geral")) {
+            mockMvc.perform(get(path)).andExpect(status().is3xxRedirection()).andExpect(redirectedUrlPattern("**/login"));
+        }
+        var empty = mockMvc.perform(get("/").with(auth)).andExpect(view().name("dashboard/home")).andReturn();
+        var previews = new java.util.LinkedHashMap<String, String>();
+        previews.put("inicio-vazio", empty.getResponse().getContentAsString());
+        assertThat(empty.getResponse().getContentAsString()).contains("Toda grande coleção começa com uma história.", "Visão geral").doesNotContain("id=\"home-overview\"", "class=\"showcase-rail\"");
+        editionRepository.save(Edition.create(other.getId(), null, null, "SEGREDO OUTRO USUÁRIO", null, null, null, null, null, null));
+        var owned = new java.util.ArrayList<Edition>();
+        for (int i = 0; i < 30; i++) {
+            var edition = Edition.create(owner.getId(), null, null, "Minha história " + i, Integer.toString(i), null, null, 2026, "Capa dura", null);
+            edition.updatePricingAndMedia(i % 2 == 0 ? br.com.minhagibiteca.catalog.domain.MediaType.PHYSICAL : br.com.minhagibiteca.catalog.domain.MediaType.DIGITAL, null, null);
+            edition.markRead(i % 3 == 0);
+            owned.add(editionRepository.save(edition));
+        }
+        var jdbc = new org.springframework.jdbc.core.JdbcTemplate(dataSource);
+        for (int i = 0; i < owned.size(); i++) jdbc.update("update editions set created_at = ? where id = ?", java.sql.Timestamp.from(java.time.Instant.parse("2026-01-01T00:00:00Z").plusSeconds(i)), owned.get(i).getId());
+        var coverBytes = Base64.getDecoder().decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=");
+        editionCoverService.replace(owned.get(29).getId(), owner.getId(), new MockMultipartFile("cover", "capa.png", "image/png", coverBytes));
+        for (var path : List.of("/", "/dashboard")) {
+            var result = mockMvc.perform(get(path).with(auth)).andExpect(status().isOk()).andExpect(view().name("dashboard/home")).andReturn();
+            var showcase = (br.com.minhagibiteca.dashboard.application.HomeShowcase) result.getModelAndView().getModel().get("showcase");
+            assertThat(result.getModelAndView().getModel()).doesNotContainKeys("summary", "readingProgress");
+            assertThat(showcase.featured().id()).isEqualTo(owned.get(29).getId());
+            assertThat(showcase.featured().hasCover()).isTrue();
+            assertThat(showcase.shelves()).hasSize(5);
+            assertThat(showcase.shelves().getFirst().editions()).extracting(e -> e.id()).containsExactlyElementsOf(owned.subList(18, 30).reversed().stream().map(Edition::getId).toList());
+            for (var shelf : showcase.shelves()) {
+                assertThat(shelf.editions()).hasSizeLessThanOrEqualTo(12);
+                assertThat(shelf.editions()).extracting(e -> e.id()).isSubsetOf(owned.stream().map(Edition::getId).toList());
+                if (shelf.category() == br.com.minhagibiteca.dashboard.application.HomeShelf.UNREAD) assertThat(shelf.editions()).allMatch(e -> !e.read());
+                if (shelf.category() == br.com.minhagibiteca.dashboard.application.HomeShelf.READ) assertThat(shelf.editions()).allMatch(e -> e.read());
+                if (shelf.category() == br.com.minhagibiteca.dashboard.application.HomeShelf.PHYSICAL) assertThat(shelf.editions()).allMatch(e -> e.media() == br.com.minhagibiteca.catalog.domain.MediaType.PHYSICAL);
+                if (shelf.category() == br.com.minhagibiteca.dashboard.application.HomeShelf.DIGITAL) assertThat(shelf.editions()).allMatch(e -> e.media() == br.com.minhagibiteca.catalog.domain.MediaType.DIGITAL);
+            }
+            var html = result.getResponse().getContentAsString();
+            previews.put("inicio-com-capa", html);
+            assertThat(html).contains("Seu universo de histórias", "Adicionados recentemente", "Sua próxima leitura", "Biblioteca digital", "Já lidos para revisitar", "tabindex=\"0\"", "loading=\"lazy\"", "returnTo=/dashboard", "/css/home-showcase.css", "/edicoes/" + owned.get(29).getId() + "/capa").doesNotContain("SEGREDO OUTRO USUÁRIO", "Sua coleção em números", "cover_file_name");
+        }
+        var overview = mockMvc.perform(get("/visao-geral").with(auth)).andExpect(view().name("dashboard/index")).andReturn();
+        var summary = (br.com.minhagibiteca.dashboard.application.CollectionSummary) overview.getModelAndView().getModel().get("summary");
+        assertThat(summary.editions()).isEqualTo(30);
+        assertThat(overview.getResponse().getContentAsString()).contains("Visão geral da coleção", "Sua coleção em números", "Entenda os números e os valores");
+        previews.put("visao-geral", overview.getResponse().getContentAsString());
+        mockMvc.perform(get("/edicoes/{id}/capa", owned.get(29).getId()).with(SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(other)))).andExpect(status().isNotFound());
+        mockMvc.perform(get("/edicoes/{id}/capa", owned.get(29).getId()).with(auth)).andExpect(status().isOk());
+        readingService.mark(owned.get(29).getId(), owner.getId(), true);
+        var afterReading = (br.com.minhagibiteca.dashboard.application.HomeShowcase) mockMvc.perform(get("/dashboard").with(auth)).andReturn().getModelAndView().getModel().get("showcase");
+        assertThat(afterReading.featured().id()).isEqualTo(owned.get(28).getId());
+        assertThat(afterReading.shelves().stream().filter(s -> s.category() == br.com.minhagibiteca.dashboard.application.HomeShelf.UNREAD).findFirst().orElseThrow().editions()).noneMatch(e -> e.id().equals(owned.get(29).getId()));
+        readingService.mark(owned.get(29).getId(), owner.getId(), false);
+        var detail = mockMvc.perform(get("/edicoes/{id}?returnTo=/dashboard", owned.get(29).getId()).with(auth)).andExpect(status().isOk()).andReturn();
+        assertThat(detail.getResponse().getContentAsString()).contains("← Voltar para Início");
+        mockMvc.perform(post("/edicoes").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("title", "Nova história <script>").param("returnTo", "/dashboard")).andExpect(redirectedUrl("/dashboard"));
+        var refreshed = mockMvc.perform(get("/dashboard").with(auth)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertThat(refreshed).contains("Nova história &lt;script&gt;").doesNotContain("Nova história <script>");
+        previews.put("inicio-sem-capa", refreshed);
+        var refreshedSummary = (br.com.minhagibiteca.dashboard.application.CollectionSummary) mockMvc.perform(get("/visao-geral").with(auth)).andReturn().getModelAndView().getModel().get("summary");
+        assertThat(refreshedSummary.editions()).isEqualTo(31);
+        if (Boolean.getBoolean("ui.review.export")) {
+            var root = java.nio.file.Path.of("target", "ui-showcase");
+            java.nio.file.Files.createDirectories(root);
+            for (var asset : List.of("css/main.css", "css/dashboard.css", "css/home-showcase.css", "js/sidebar.js")) {
+                java.nio.file.Files.createDirectories(root.resolve(asset).getParent());
+                java.nio.file.Files.copy(java.nio.file.Path.of("src/main/resources/static").resolve(asset), root.resolve(asset), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            }
+            var cover = root.resolve("edicoes/" + owned.get(29).getId() + "/capa");
+            java.nio.file.Files.createDirectories(cover.getParent());
+            java.nio.file.Files.write(cover, coverBytes);
+            var index = new StringBuilder("<!doctype html><html lang=\"pt-BR\"><meta charset=\"UTF-8\"><title>Prévia da vitrine</title><h1>Vitrine com dados fictícios</h1><ul>");
+            for (var entry : previews.entrySet()) {
                 java.nio.file.Files.writeString(root.resolve(entry.getKey() + ".html"), entry.getValue());
                 index.append("<li><a href=\"").append(entry.getKey()).append(".html\">").append(entry.getKey()).append("</a></li>");
             }

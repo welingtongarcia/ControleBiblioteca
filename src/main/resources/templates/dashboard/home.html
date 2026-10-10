@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Início')}"><title>Início | Minha Gibiteca</title></head>
+<body class="dashboard-page showcase-page">
+<a class="skip-link" href="#main-content">Pular para o conteúdo</a>
+<div class="dashboard-layout">
+    <aside th:replace="~{fragments/navigation :: sidebar}"></aside>
+    <main id="main-content" class="dashboard-main showcase-main" aria-labelledby="page-title" tabindex="-1">
+        <header class="showcase-header">
+            <div><p class="dashboard-kicker">Minha Gibiteca · Início</p><h1 id="page-title">Seu universo de histórias</h1></div>
+            <form class="dashboard-search" method="get" th:action="@{/edicoes}" role="search" aria-label="Pesquisar no catálogo">
+                <label class="visually-hidden" for="home-query">Buscar por título, ISBN ou número editorial</label>
+                <input id="home-query" name="q" type="search" maxlength="240" placeholder="Encontre uma história…"><button type="submit">Buscar</button>
+            </form>
+        </header>
+        <nav class="showcase-quicklinks" aria-label="Explorar a coleção">
+            <a class="showcase-nav-current" href="#home-shelves" th:if="${showcase.featured != null}">Explorar histórias</a>
+            <a th:href="@{/visao-geral}">Visão geral <span aria-hidden="true">↗</span></a>
+            <a th:href="@{/edicoes/nova(returnTo='/dashboard')}">Cadastrar edição <span aria-hidden="true">＋</span></a>
+        </nav>
+        <p class="alert alert-success" role="status" th:if="${successMessage}" th:text="${successMessage}"></p>
+        <p class="alert alert-error" role="alert" th:if="${errorMessage}" th:text="${errorMessage}"></p>
+        <section class="showcase-feature" th:if="${showcase.featured != null}" th:with="edition=${showcase.featured}" aria-labelledby="featured-title">
+            <div class="showcase-feature-copy">
+                <p class="showcase-eyebrow"><span aria-hidden="true">✦</span> Em destaque na sua coleção</p>
+                <p class="showcase-feature-kicker" th:text="${edition.read ? 'Uma história para revisitar' : 'Sua próxima história começa aqui'}"></p>
+                <h2 id="featured-title" th:text="${edition.title}">Título da edição</h2>
+                <div class="showcase-feature-meta">
+                    <span class="showcase-reading" th:text="${edition.readingLabel()}"></span>
+                    <span th:text="${edition.mediaLabel()}"></span>
+                    <span th:if="${edition.year != null}" th:text="${edition.year}"></span>
+                    <span th:if="${edition.number != null}" th:text="|Nº ${edition.number}|"></span>
+                </div>
+                <p class="showcase-feature-description" th:if="${edition.series != null}" th:text="${edition.series}"></p>
+                <p class="showcase-feature-description" th:if="${edition.publisher != null}" th:text="${edition.publisher}"></p>
+                <div class="showcase-feature-actions">
+                    <a class="button-link" th:href="@{/edicoes/{id}(id=${edition.id},returnTo='/dashboard')}"><span aria-hidden="true">▤</span> Ver edição</a>
+                    <a class="showcase-secondary" th:href="@{/edicoes}">Explorar catálogo <span aria-hidden="true">→</span></a>
+                </div>
+            </div>
+            <div class="showcase-feature-art" aria-hidden="true">
+                <img th:if="${edition.hasCover}" th:src="@{/edicoes/{id}/capa(id=${edition.id})}" alt="" width="300" height="420" fetchpriority="high">
+                <div class="showcase-cover-placeholder showcase-feature-placeholder" th:unless="${edition.hasCover}">
+                    <span class="showcase-cover-brand">MINHA GIBITECA</span><span class="showcase-cover-monogram">MG</span><strong th:text="${edition.title}"></strong><span class="showcase-cover-note">Capa não cadastrada</span>
+                </div>
+            </div>
+        </section>
+        <section class="showcase-empty" th:if="${showcase.featured == null}" aria-labelledby="empty-title">
+            <div><p class="showcase-eyebrow">O próximo capítulo é seu</p><h2 id="empty-title">Toda grande coleção começa com uma história.</h2><p>Cadastre seu primeiro quadrinho e veja suas capas ganharem espaço aqui. Seus números e valores continuam na Visão geral.</p>
+            <div class="showcase-feature-actions"><a class="button-link" th:href="@{/edicoes/nova(returnTo='/dashboard')}">Cadastrar minha primeira edição</a><a class="showcase-secondary" th:href="@{/edicoes}">Abrir catálogo</a></div></div>
+            <div class="showcase-empty-art" aria-hidden="true"><span>MG</span><span>Uma coleção.<br>Infinitas histórias.</span></div>
+        </section>
+        <div id="home-shelves" class="showcase-shelves" th:if="${!showcase.shelves.empty}">
+            <p class="showcase-scroll-help">Explore as fileiras com o toque, a barra de rolagem ou as setas do teclado ao focar uma fileira. Até 12 edições por seleção.</p>
+            <section class="showcase-shelf" th:each="shelf : ${showcase.shelves}" th:attr="aria-labelledby=|shelf-${shelf.category.key()}|">
+                <header class="showcase-shelf-heading"><div><h2 th:id="|shelf-${shelf.category.key()}|" th:text="${shelf.category.title()}"></h2><p th:text="${shelf.category.description()}"></p></div><a th:href="@{${shelf.category.catalogUrl()}}">Ver catálogo <span aria-hidden="true">→</span></a></header>
+                <ul class="showcase-rail" tabindex="0" th:attr="aria-labelledby=|shelf-${shelf.category.key()}|">
+                    <li class="showcase-tile" th:each="edition : ${shelf.editions}">
+                        <a class="showcase-edition" th:href="@{/edicoes/{id}(id=${edition.id},returnTo='/dashboard')}" th:attr="aria-label=|Ver ${edition.title} — ${edition.readingLabel()}|">
+                            <div class="showcase-poster">
+                                <img th:if="${edition.hasCover}" th:src="@{/edicoes/{id}/capa(id=${edition.id})}" alt="" width="200" height="280" loading="lazy" decoding="async">
+                                <div class="showcase-cover-placeholder" th:unless="${edition.hasCover}" aria-hidden="true"><span class="showcase-cover-brand">MINHA GIBITECA</span><span class="showcase-cover-monogram">MG</span><strong th:text="${edition.title}"></strong><span class="showcase-cover-note">Capa não cadastrada</span></div>
+                                <span class="showcase-tile-status" th:classappend="${edition.read} ? 'showcase-tile-read'" th:text="${edition.readingLabel()}"></span>
+                            </div>
+                            <h3 th:text="${edition.title}"></h3><p class="showcase-tile-meta"><span th:text="${edition.mediaLabel()}"></span><span th:if="${edition.number != null}" th:text="| · Nº ${edition.number}|"></span></p>
+                        </a>
+                    </li>
+                </ul>
+            </section>
+        </div>
+        <footer class="showcase-footer"><p>Suas capas. Suas histórias. Sua Gibiteca.</p><a th:href="@{/visao-geral}">Ver os números da coleção <span aria-hidden="true">→</span></a></footer>
+    </main>
+</div>
+</body></html>
