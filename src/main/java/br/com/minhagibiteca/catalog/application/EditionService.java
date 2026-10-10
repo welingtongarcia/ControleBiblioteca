@@ -15,7 +15,7 @@ import br.com.minhagibiteca.catalog.domain.Edition; import br.com.minhagibiteca.
  @Transactional(readOnly=true) public Page<EditionView> search(UUID owner,CatalogFilter filter,CatalogOrder order,int page){
      if(filter.publisherId()!=null)publishers.findOwned(filter.publisherId(),owner);
      if(filter.seriesId()!=null)series.findOwned(filter.seriesId(),owner);
-     return repo.findAll(br.com.minhagibiteca.catalog.infrastructure.EditionSpecifications.ownedCatalog(owner,filter),PageRequest.of(Math.max(0,page),20,order.sort())).map(EditionView::from);
+     return repo.findAll(br.com.minhagibiteca.catalog.infrastructure.EditionSpecifications.orderedCatalog(owner,filter,order),PageRequest.of(Math.max(0,page),20,order.sort())).map(EditionView::from);
  }
  @Transactional(readOnly=true) public List<String> formats(UUID owner){return repo.formats(owner);}
  private void validate(UUID o,Command c){if(c.publisherId()!=null)publishers.findOwned(c.publisherId(),o);if(c.seriesId()!=null)series.findOwned(c.seriesId(),o);}

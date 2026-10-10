@@ -1213,6 +1213,55 @@ class MinhaGibitecaApplicationTest {
     }
 
     @Test
+    void sortsCatalogByEditorialNumberNaturallyInBothDirections() {
+        var owner = userAccountRepository.save(UserAccount.create("number-order@example.com", "hash", UserRole.USER));
+        var filter = new br.com.minhagibiteca.catalog.application.CatalogFilter(null, null, null, null, null);
+        String huge = "9".repeat(60);
+        for (String number : java.util.Arrays.asList("10", "2", "1B", "01", "1", "1a", "Especial", null, huge)) {
+            editionService.create(owner.getId(), new EditionService.Command(null, null, "HQ " + number,
+                    number, null, null, null, null, null));
+        }
+        var ascending = editionService.search(owner.getId(), filter, br.com.minhagibiteca.catalog.application.CatalogOrder.NUMBER_ASC, 0);
+        assertThat(ascending.getContent()).extracting(br.com.minhagibiteca.catalog.application.EditionView::editorialNumber)
+                .containsExactly("01", "1", "1a", "1B", "2", "10", huge, "Especial", null);
+        var descending = editionService.search(owner.getId(), filter, br.com.minhagibiteca.catalog.application.CatalogOrder.NUMBER_DESC, 0);
+        assertThat(descending.getContent()).extracting(br.com.minhagibiteca.catalog.application.EditionView::editorialNumber)
+                .containsExactly(huge, "10", "2", "1B", "1a", "01", "1", "Especial", null);
+    }
+
+    @Test
+    void numberOrderIsAppliedBeforePaginationAndPreservesCatalogFilters() throws Exception {
+        var owner = userAccountRepository.save(UserAccount.create("number-pages@example.com", "hash", UserRole.USER));
+        var other = userAccountRepository.save(UserAccount.create("number-private@example.com", "hash", UserRole.USER));
+        var publisher = publisherRepository.save(Publisher.create(owner.getId(), "Editora numérica", null, null));
+        for (int number = 25; number >= 1; number--) {
+            editionService.create(owner.getId(), new EditionService.Command(publisher.getId(), null, "HQ teste", "" + number,
+                    null, null, null, "Revista", null, br.com.minhagibiteca.catalog.domain.MediaType.DIGITAL, null, null));
+        }
+        editionService.create(other.getId(), new EditionService.Command(null, null, "HQ privada", "0", null, null, null, null, null));
+        editionService.create(owner.getId(), new EditionService.Command(null, null, "Outro título", "0", null, null, null, null, null));
+        var filter = new br.com.minhagibiteca.catalog.application.CatalogFilter("HQ", publisher.getId(), null, "Revista", br.com.minhagibiteca.catalog.domain.MediaType.DIGITAL);
+        for (var order : java.util.List.of(br.com.minhagibiteca.catalog.application.CatalogOrder.NUMBER_ASC,
+                br.com.minhagibiteca.catalog.application.CatalogOrder.NUMBER_DESC)) {
+            var first = editionService.search(owner.getId(), filter, order, 0);
+            var second = editionService.search(owner.getId(), filter, order, 1);
+            assertThat(first.getTotalElements()).isEqualTo(25);
+            var all = java.util.stream.Stream.concat(first.stream(), second.stream()).toList();
+            var expected = java.util.stream.IntStream.rangeClosed(1, 25).boxed().toList();
+            if (order.isDescending()) expected = expected.reversed();
+            assertThat(all).extracting(v -> Integer.parseInt(v.editorialNumber())).containsExactlyElementsOf(expected);
+            assertThat(all).extracting(br.com.minhagibiteca.catalog.application.EditionView::id).doesNotHaveDuplicates();
+            String html = mockMvc.perform(get("/edicoes").with(SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner)))
+                    .param("q", "HQ").param("publisherId", publisher.getId().toString()).param("format", "Revista")
+                    .param("mediaType", "DIGITAL").param("order", order.name())).andExpect(status().isOk())
+                    .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.model().attribute("selectedOrder", order))
+                    .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+            assertThat(html).contains("Número da edição: crescente", "Número da edição: decrescente",
+                    "order=" + order.name(), "page=1", "publisherId=" + publisher.getId(), "format=Revista", "mediaType=DIGITAL");
+        }
+    }
+
+    @Test
     void rendersCatalogCardsWithMetadataPricesReadingAndSafeActions() throws Exception {
         var owner = userAccountRepository.save(UserAccount.create("catalog-layout@example.com", "hash", UserRole.USER));
         var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
