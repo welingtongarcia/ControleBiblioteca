@@ -1476,7 +1476,7 @@ class MinhaGibitecaApplicationTest {
         previews.put("checklist-erros", invalidItem);
         var root = java.nio.file.Path.of("target/ui-series-checklist");
         java.nio.file.Files.createDirectories(root);
-        for (String asset : List.of("css/main.css", "css/dashboard.css", "js/sidebar.js")) {
+        for (String asset : List.of("css/main.css", "css/dashboard.css", "css/home-showcase.css", "js/sidebar.js")) {
             java.nio.file.Files.createDirectories(root.resolve(asset).getParent());
             java.nio.file.Files.copy(java.nio.file.Path.of("src/main/resources/static").resolve(asset), root.resolve(asset), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
         }
