@@ -2,12 +2,13 @@
 
 ## Constitution → specify → clarify
 
-Constituição preservada. Acrescentar opções sem mudar o padrão A–Z nem dados do acervo.
+Constituição preservada. Acrescentar opções sem alterar dados do acervo; o padrão passa a ser título A–Z com número crescente conforme NUM-005.
 
 - NUM-001: seletor existente oferece “Número da edição: crescente” e “Número da edição: decrescente”, além das ordens atuais.
 - NUM-002: ordenar no PostgreSQL antes da paginação, pelo inteiro inicial (1, 2, 10; não 1, 10, 2). Sufixos são comparados sem distinção de caixa: 1, 1A, 1B, 2. Zeros à esquerda não mudam o valor. Decrescente inverte número e sufixo. Números somente textuais vêm depois dos numerados; ausência de número fica por último nos dois sentidos. Empates usam título A–Z e UUID para estabilidade. Não inferir decimais/volumes a partir de sufixos.
-- NUM-003: preservar filtros, autorização por proprietário, paginação de 20 itens, links de retorno e comportamento para ordem inválida (A–Z).
+- NUM-003: preservar filtros, autorização por proprietário, paginação de 20 itens e links de retorno. Ordem inválida usa o padrão definido em NUM-005.
 - NUM-004 (extensão): acrescentar “Título A–Z + número crescente” e “Título A–Z + número decrescente”. Agrupar por título normalizado (sem distinção de caixa), primeiro títulos A–Z e depois ordenação natural dentro de cada título. Não agrupar por série, remover números do título, fundir títulos diferentes nem alterar os cadastros. Trata-se de manter cartões contíguos na lista existente, não seções/contagens novas. Um grupo pode continuar na página seguinte. Ausência de número por último dentro do próprio título.
+- NUM-005: abrir o catálogo por padrão em “Título A–Z + número crescente” (TITLE_NUMBER_ASC), inclusive quando o parâmetro de ordem estiver ausente, vazio ou inválido. Preservar escolhas explícitas das demais ordens e propagar a ordem selecionada nos links de paginação.
 
 ## Plan → tasks → analyze
 
@@ -36,3 +37,10 @@ Análise: o agrupamento deve ocorrer antes do LIMIT/OFFSET para não intercalar 
 Implementação NUM-004: `CatalogOrder` inclui TITLE_NUMBER_ASC/TITLE_NUMBER_DESC e identifica agrupamento por título; `EditionSpecifications` antepõe normalizedTitle aos critérios numéricos somente nesses modos. Seletor existente lista os rótulos automaticamente. Novo teste `groupsCatalogByTitleAndOrdersNumbersWithinEachGroupAcrossPages` cobre Batman/BATMAN e Superman intercalados, 25 edições em duas páginas, ausência de número dentro do título, filtros de pesquisa/editora, registros de outro proprietário excluídos, ordem selecionada e parâmetros de paginação via MockMvc. Sem mudanças de templates, CSS, esquema ou dados reais.
 
 Verificação da extensão: `./mvnw -q clean verify`, exit 0, 206 testes, 0 falhas, 0 erros, 0 ignorados. `git diff --check`, exit 0. NUM-004 atendido, ordens NUM-001/002/003 preservadas. Não houve reinicialização da aplicação real ou benchmark do sort; grupos são definidos pelo título cadastrado, não por identificação automática de coleção.
+
+## Extensão: ordenação padrão → plano e tarefas
+
+- [ ] T6 Centralizar o fallback em CatalogOrder.parse e remover o padrão antigo do controller; reutilizar a ordenação SQL existente, sem mudanças de esquema ou dados.
+- [ ] T7 Testar via MockMvc ordem ausente, vazia e inválida, títulos A–Z e números 1/2/10 crescentes, escolha explícita preservada e paginação; executar a suíte e registrar resultados.
+
+Análise NUM-005: apenas a seleção inicial muda. Os critérios naturais e o agrupamento já implementados continuam aplicados antes da paginação no PostgreSQL. O seletor existente acompanha selectedOrder automaticamente; não requer mudanças de interface, dependências ou migração.
