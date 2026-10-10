@@ -125,15 +125,9 @@
             <div class="edition-form-grid">
                 <div class="field"><label for="publisherId">Editora</label><select id="publisherId" th:field="*{publisherId}" th:attr="aria-invalid=${#fields.hasErrors('publisherId') ? 'true' : null},aria-describedby=${#fields.hasErrors('publisherId') ? 'publisherId-error' : null}"><option value="">Não informada</option><option th:each="item : ${publishers}" th:value="${item.id}" th:text="${item.name}"></option></select><p id="publisherId-error" class="field-error" th:if="${#fields.hasErrors('publisherId')}" th:errors="*{publisherId}"></p></div>
                 <div class="field"><label for="seriesId">Série</label><select id="seriesId" th:field="*{seriesId}" th:attr="aria-invalid=${#fields.hasErrors('seriesId') ? 'true' : null},aria-describedby=${#fields.hasErrors('seriesId') ? 'seriesId-error' : null}"><option value="">Não informada</option><option th:each="item : ${seriesPage.content}" th:value="${item.id}" th:text="${item.name}"></option></select><p id="seriesId-error" class="field-error" th:if="${#fields.hasErrors('seriesId')}" th:errors="*{seriesId}"></p></div>
-                <fieldset id="workIds" tabindex="-1" class="edition-choice-group" th:attr="aria-invalid=${#fields.hasErrors('workIds') ? 'true' : null},aria-describedby=${'workIds-help' + (#fields.hasErrors('workIds') ? ' workIds-error' : '')}"><legend>Obras desta edição</legend><p id="workIds-help" class="help-text">Marque uma ou mais opções. Deixe todas desmarcadas se não quiser vincular.</p><div class="edition-choice-list" th:unless="${works.empty}"><label class="edition-choice" th:each="item : ${works}"><input type="checkbox" th:field="*{workIds}" th:value="${item.id}"><span th:text="${item.title}"></span></label></div><p class="edition-choice-empty" th:if="${works.empty}">Nenhuma obra cadastrada. Você pode salvar sem vincular obras.</p><p id="workIds-error" class="field-error" th:if="${#fields.hasErrors('workIds')}" th:errors="*{workIds}"></p></fieldset>
-                <fieldset id="creatorIds" tabindex="-1" class="edition-choice-group" th:attr="aria-invalid=${#fields.hasErrors('creatorIds') ? 'true' : null},aria-describedby=${'creatorIds-help' + (#fields.hasErrors('creatorIds') ? ' creatorIds-error' : '')}"><legend>Criadores desta edição</legend><p id="creatorIds-help" class="help-text">Marque uma ou mais opções. Deixe todas desmarcadas se não quiser vincular.</p><div class="edition-choice-list" th:unless="${creators.empty}"><label class="edition-choice" th:each="item : ${creators}"><input type="checkbox" th:field="*{creatorIds}" th:value="${item.id}"><span><span th:text="${item.name}"></span><small class="help-text" th:text="${item.functionsDescription}"></small></span></label></div><p class="edition-choice-empty" th:if="${creators.empty}">Nenhum criador cadastrado. Você pode salvar sem vincular criadores.</p><p id="creatorIds-error" class="field-error" th:if="${#fields.hasErrors('creatorIds')}" th:errors="*{creatorIds}"></p></fieldset>
-                <fieldset id="characterIds" tabindex="-1" class="edition-choice-group edition-full-width" th:attr="aria-invalid=${#fields.hasErrors('characterIds') ? 'true' : null},aria-describedby=${'characterIds-help' + (#fields.hasErrors('characterIds') ? ' characterIds-error' : '')}">
-                    <legend>Personagens desta edição</legend>
-                    <p id="characterIds-help" class="help-text">Marque os personagens presentes para filtrar e comparar suas compras no Financeiro. Não são inferidos pelo título ou ISBN.</p>
-                    <div class="edition-choice-list" th:unless="${characters.empty}"><label class="edition-choice" th:each="item : ${characters}"><input type="checkbox" th:field="*{characterIds}" th:value="${item.id}"><span th:text="${item.name}"></span></label></div>
-                    <p class="edition-choice-empty" th:if="${characters.empty}">Nenhum personagem cadastrado. Você pode salvar sem vincular e cadastrar personagens pelo menu depois.</p>
-                    <p id="characterIds-error" class="field-error" th:if="${#fields.hasErrors('characterIds')}" th:errors="*{characterIds}"></p>
-                </fieldset>
+                <div th:replace="~{fragments/association-picker :: picker('workIds', 'Obras desta edição', 'WORK', ${works})}"></div>
+                <div th:replace="~{fragments/association-picker :: picker('creatorIds', 'Criadores desta edição', 'CREATOR', ${creators})}"></div>
+                <div class="edition-full-width"><div th:replace="~{fragments/association-picker :: picker('characterIds', 'Personagens desta edição', 'CHARACTER', ${characters})}"></div></div>
             </div>
         </fieldset>
         <fieldset id="edition-notes" tabindex="-1" class="edition-form-section">
@@ -154,5 +148,6 @@
         </div>
     </form>
 </main></div>
+<script th:src="@{/js/association-picker.js}" defer></script>
 </body>
 </html>

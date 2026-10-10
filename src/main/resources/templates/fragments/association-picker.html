@@ -1,0 +1,25 @@
+<!DOCTYPE html><html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"><body>
+<fieldset th:fragment="picker(field, title, kind, items)" th:id="${field}" tabindex="-1" class="edition-choice-group association-picker"
+          th:attr="data-field=${field},data-url=@{/edicoes/vinculos/{kind}(kind=${kind})},aria-invalid=${#fields.hasErrors(field) ? 'true' : null},aria-describedby=${field + '-help' + (#fields.hasErrors(field) ? ' ' + field + '-error' : '')}">
+    <legend th:text="${title}"></legend>
+    <p th:id="${field + '-help'}" class="help-text">Pesquise e adicione um ou mais registros. As seleções são mantidas ao mudar a busca. Todos os vínculos são opcionais.</p>
+    <input type="hidden" th:name="${'_' + field}" value="on">
+    <div class="picker-selected" hidden><h3>Selecionados <span class="picker-count">0</span></h3><div class="picker-chips"></div></div>
+    <div class="picker-controls" hidden>
+        <label th:for="${field + '-search'}">Buscar por nome</label>
+        <input type="search" th:id="${field + '-search'}" maxlength="180" autocomplete="off" placeholder="Digite parte do nome...">
+        <div th:if="${kind == 'CREATOR'}"><label th:for="${field + '-function'}">Filtrar por função</label><select th:id="${field + '-function'}" class="picker-function"><option value="">Todas as funções</option><option th:each="function : ${creatorFunctions}" th:value="${function}" th:text="${function.label}"></option></select></div>
+        <button type="button" class="picker-search">Buscar</button>
+    </div>
+    <p class="picker-status help-text" tabindex="-1" role="status" aria-live="polite" aria-atomic="true" th:attr="aria-label=${title}"></p>
+    <p class="help-text" th:if="${items.empty}" th:text="${kind == 'WORK' ? 'Nenhuma obra cadastrada. Você pode salvar sem vincular obras.' : (kind == 'CREATOR' ? 'Nenhum criador cadastrado. Você pode salvar sem vincular criadores.' : 'Nenhum personagem cadastrado. Você pode salvar sem vincular personagens.')}"></p>
+    <div class="edition-choice-list picker-results">
+        <label class="edition-choice" th:each="item : ${items}" th:attr="data-id=${item.id},data-label=${item.label},data-description=${item.description}">
+            <input type="checkbox" th:field="*{__${field}__}" th:value="${item.id}"><span><span th:text="${item.label}"></span><small class="help-text" th:if="${!#strings.isEmpty(item.description)}" th:text="${item.description}"></small></span>
+        </label>
+    </div>
+    <div class="picker-pages" hidden><button type="button" class="picker-previous">Anterior</button><span class="picker-page"></span><button type="button" class="picker-next">Próxima</button></div>
+    <noscript><p class="help-text">Você pode marcar os registros exibidos e manter vínculos existentes. Habilite JavaScript para pesquisar todos os cadastros e acessar outras páginas.</p></noscript>
+    <p th:id="${field + '-error'}" class="field-error" th:if="${#fields.hasErrors(field)}" th:errors="*{__${field}__}"></p>
+</fieldset>
+</body></html>

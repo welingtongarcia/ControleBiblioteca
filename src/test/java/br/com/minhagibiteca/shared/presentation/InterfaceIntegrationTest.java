@@ -45,7 +45,7 @@ class InterfaceIntegrationTest {
         jdbc.update("insert into series_checklist_items(id,owner_user_id,series_id,editorial_number,normalized_number,label,owned,created_at,updated_at) values (?,?,?,'1A','1a',?,false,now(),now())",item,owner.getId(),series,"Edição "+"Especial".repeat(18));
         Files.createDirectories(PREVIEW.resolve("css"));Files.createDirectories(PREVIEW.resolve("js"));
         for(var css:List.of("main","dashboard","home-showcase"))Files.copy(Path.of("src/main/resources/static/css/"+css+".css"),PREVIEW.resolve("css/"+css+".css"),StandardCopyOption.REPLACE_EXISTING);
-        for(var js:List.of("sidebar","home-banner"))Files.copy(Path.of("src/main/resources/static/js/"+js+".js"),PREVIEW.resolve("js/"+js+".js"),StandardCopyOption.REPLACE_EXISTING);
+        for(var js:List.of("sidebar","home-banner","association-picker"))Files.copy(Path.of("src/main/resources/static/js/"+js+".js"),PREVIEW.resolve("js/"+js+".js"),StandardCopyOption.REPLACE_EXISTING);
     }
     Map<String,String> routes(){var routes=new LinkedHashMap<String,String>();
         for(var path:List.of("dashboard","visao-geral","edicoes","series","editoras","obras","criadores","personagens","localizacoes","financeiro","relatorios","backup"))routes.put(path,"/"+path);
@@ -93,6 +93,62 @@ class InterfaceIntegrationTest {
         }
     }
     static void preview(String name,String html) throws Exception {Files.writeString(PREVIEW.resolve(name+".html"),html);}
+    @Test void associationSearchIsPaginatedAccentInsensitiveLiteralAndPrivate() throws Exception {
+        for (var kind : List.of("WORK", "CREATOR", "CHARACTER")) {
+            String table = kind.equals("WORK") ? "works" : kind.equals("CREATOR") ? "creators" : "comic_characters";
+            String name = kind.equals("WORK") ? "title" : "name";
+            for (int i = 0; i < 25; i++) jdbc.update("insert into " + table + "(id,owner_user_id," + name + ",normalized_" + name + ") values (?,?,?,?)",
+                    UUID.randomUUID(), owner.getId(), "A opção " + String.format("%02d", i), "opcao" + i);
+            jdbc.update("insert into " + table + "(id,owner_user_id," + name + ",normalized_" + name + ") values (?,?,?,?)", UUID.randomUUID(), empty.getId(), "A opção privada", "privada");
+            mvc.perform(get("/edicoes/vinculos/" + kind).with(user(UserPrincipal.from(owner))).param("q", "OPCAO"))
+                    .andExpect(status().isOk()).andExpect(header().string("Cache-Control", "no-store"))
+                    .andExpect(jsonPath("$.items.length()").value(20)).andExpect(jsonPath("$.hasNext").value(true))
+                    .andExpect(jsonPath("$.items[0].label").value("A opção 00"));
+            mvc.perform(get("/edicoes/vinculos/" + kind).with(user(UserPrincipal.from(owner))).param("q", "opção").param("page", "1"))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.items.length()").value(5)).andExpect(jsonPath("$.hasNext").value(false));
+            for (var literal : List.of("%", "_", "\\")) mvc.perform(get("/edicoes/vinculos/" + kind).with(user(UserPrincipal.from(owner))).param("q", literal))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.items.length()").value(0));
+            mvc.perform(get("/edicoes/vinculos/" + kind).with(user(UserPrincipal.from(owner))).param("q", "privada"))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.items.length()").value(0));
+            var mapper = new com.fasterxml.jackson.databind.ObjectMapper(); var combined = mapper.createArrayNode();
+            for (int page = 0; page < 2; page++) {
+                var response = mvc.perform(get("/edicoes/vinculos/" + kind).with(user(UserPrincipal.from(owner))).param("page", "" + page))
+                        .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+                combined.addAll((com.fasterxml.jackson.databind.node.ArrayNode) mapper.readTree(response).get("items"));
+            }
+            Files.writeString(PREVIEW.resolve("options-" + kind + ".json"), combined.toString());
+        }
+        preview("picker-new", mvc.perform(get("/edicoes/nova").with(user(UserPrincipal.from(owner)))).andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+    }
+    @Test void associationSearchFiltersCreatorFunctionsAndValidatesParameters() throws Exception {
+        mvc.perform(get("/edicoes/vinculos/CREATOR").with(user(UserPrincipal.from(owner))).param("function", "DESENHISTA"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.items.length()").value(1))
+                .andExpect(jsonPath("$.items[0].description").value("Roteirista, Desenhista"));
+        mvc.perform(get("/edicoes/vinculos/CREATOR").with(user(UserPrincipal.from(owner))).param("function", "COLORISTA"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.items.length()").value(0));
+        for (String query : List.of("page=-1", "page=501", "q=" + "x".repeat(181), "function=INVALID", "function=DESENHISTA"))
+            mvc.perform(get("/edicoes/vinculos/WORK?" + query).with(user(UserPrincipal.from(owner)))).andExpect(status().isBadRequest());
+        mvc.perform(get("/edicoes/vinculos/WORK")).andExpect(status().is3xxRedirection());
+    }
+    @Test void associationSelectionsOutsideFirstPageSurviveEditAndValidation() throws Exception {
+        UUID selectedWork = UUID.randomUUID();
+        for (int i = 0; i < 25; i++) jdbc.update("insert into works(id,owner_user_id,title,normalized_title) values (?,?,?,?)", UUID.randomUUID(), owner.getId(), "A obra " + i, "a obra " + i);
+        jdbc.update("insert into works(id,owner_user_id,title,normalized_title) values (?,?,'Z obra escolhida','z obra escolhida')", selectedWork, owner.getId());
+        jdbc.update("insert into edition_works values (?,?,2)", edition, selectedWork);
+        String html = mvc.perform(get("/edicoes/" + edition + "/editar").with(user(UserPrincipal.from(owner)))).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        audit("picker-edit", html); assertThat(html).contains("Z obra escolhida", "data-field=\"workIds\"", "association-picker.js");
+        assertThat(count(html, "data-id=")).isLessThan(30); preview("picker-edit", html);
+        String invalid = mvc.perform(post("/edicoes/" + edition + "/editar").with(user(UserPrincipal.from(owner))).with(csrf()).param("title", "")
+                .param("workIds", selectedWork.toString()).param("creatorIds", creator.toString()).param("characterIds", character.toString()))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        audit("picker-invalid", invalid); assertThat(invalid).contains("Z obra escolhida", "Revise os campos indicados", "checked=\"checked\""); preview("picker-invalid", invalid);
+        mvc.perform(post("/edicoes/" + edition + "/editar").with(user(UserPrincipal.from(owner))).with(csrf()).param("title", "Seleções preservadas")
+                .param("workIds", selectedWork.toString()).param("creatorIds", creator.toString()).param("characterIds", character.toString()))
+                .andExpect(status().is3xxRedirection());
+        assertThat(jdbc.queryForList("select work_id from edition_works where edition_id=?", UUID.class, edition)).containsExactly(selectedWork);
+        assertThat(jdbc.queryForList("select creator_id from edition_creators where edition_id=?", UUID.class, edition)).containsExactly(creator);
+        assertThat(jdbc.queryForList("select character_id from edition_characters where edition_id=?", UUID.class, edition)).containsExactly(character);
+    }
     static void audit(String name,String html) {
         assertThat(html).as(name).contains("lang=\"pt-BR\"","<title>");assertThat(count(html,"<h1\\b")).as(name+" h1").isEqualTo(1);
         var ids=new HashSet<String>();var labels=new HashSet<String>();var references=new ArrayList<String>();
