@@ -54,6 +54,7 @@
         </fieldset>
         <fieldset class="edition-form-section">
             <legend>Páginas e leitura</legend>
+            <p class="help-text">Informe a quantidade de páginas desta edição para acompanhar páginas lidas e não lidas nos relatórios da coleção e da série. Se ainda não começou, mantenha zero em Páginas já lidas.</p>
             <p id="page-reading-help" class="help-text">Total opcional. Com o total informado, registrar todas as páginas marca a edição como lida; um valor menor indica leitura não concluída. Sem total, mantenha zero páginas lidas e use o interruptor nos detalhes.</p>
             <div class="edition-form-grid">
                 <div class="field"><label for="totalPages">Total de páginas</label><input id="totalPages" th:field="*{totalPages}" type="number" min="1" max="100000" step="1" aria-describedby="page-reading-help totalPages-error"><p id="totalPages-error" class="field-error" th:if="${#fields.hasErrors('totalPages')}" th:errors="*{totalPages}"></p></div>

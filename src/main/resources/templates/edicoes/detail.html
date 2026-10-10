@@ -23,6 +23,7 @@
         <p>Marcação por edição, independente das suas cópias físicas ou digitais.</p>
         <div th:if="${edition.totalPages != null}">
             <p><strong th:text="${edition.pagesRead}">0</strong> de <strong th:text="${edition.totalPages}">0</strong> páginas lidas.</p>
+            <p>Páginas não lidas: <strong th:text="${edition.totalPages - edition.pagesRead}">0</strong>.</p>
             <progress th:max="${edition.totalPages}" th:value="${edition.pagesRead}" th:aria-label="|${edition.pagesRead} de ${edition.totalPages} páginas lidas|">Páginas lidas</progress>
             <form class="stack" method="post" th:action="@{/edicoes/{id}/paginas(id=${edition.id})}">
                 <input type="hidden" name="returnTo" th:value="${navigation.pageReturnUrl}">

@@ -6,9 +6,14 @@
     <div th:replace="~{fragments/reading :: pages(${progress})}"></div>
 </div>
 <div th:fragment="pages(progress)" class="reading-pages-summary">
-    <p th:if="${progress.knownPageEditions > 0}"><strong th:text="${progress.pagesRead}">0</strong> de <strong th:text="${progress.totalPages}">0</strong> páginas lidas · <strong th:text="${progress.pagePercentageLabel()}">0,0%</strong> das páginas conhecidas.</p>
+    <dl class="reading-page-counts" th:if="${progress.knownPageEditions > 0}">
+        <div><dt>Total de páginas informado</dt><dd data-page-count="total" th:text="${progress.totalPages}">0</dd></div>
+        <div><dt>Páginas lidas</dt><dd data-page-count="read" th:text="${progress.pagesRead}">0</dd></div>
+        <div><dt>Páginas não lidas</dt><dd data-page-count="unread" th:text="${progress.pagesUnread()}">0</dd></div>
+    </dl>
+    <p th:if="${progress.knownPageEditions > 0}"><strong th:text="${progress.pagePercentageLabel()}">0,0%</strong> das páginas conhecidas já lidas.</p>
     <p th:if="${progress.knownPageEditions == 0}">Ainda não há totais de páginas informados.</p>
-    <p class="help-text">Total de páginas informado em <strong th:text="${progress.knownPageEditions}">0</strong> de <strong th:text="${progress.total}">0</strong> edições. Edições sem total não entram no percentual por páginas.</p>
+    <p class="help-text">Total de páginas informado em <strong th:text="${progress.knownPageEditions}">0</strong> de <strong th:text="${progress.total}">0</strong> edições. Edições sem total não entram nas contagens nem no percentual por páginas. Cada edição conta uma vez, independentemente dos exemplares.</p>
 </div>
 <div th:fragment="status(edition, fromCatalog)" class="reading-status">
     <form method="post" th:action="@{/edicoes/{id}/leitura(id=${edition.id})}">

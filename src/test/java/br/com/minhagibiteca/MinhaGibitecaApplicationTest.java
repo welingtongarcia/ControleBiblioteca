@@ -1873,12 +1873,15 @@ class MinhaGibitecaApplicationTest {
         var other = userAccountRepository.save(UserAccount.create("pages-other@example.com", "hash", UserRole.USER));
         var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
         var series = comicSeriesRepository.save(ComicSeries.create(owner.getId(), null, "Páginas", null, null, null, null));
+        mockMvc.perform(get("/edicoes/nova").with(auth)).andExpect(content().string(org.hamcrest.Matchers.containsString("name=\"totalPages\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("name=\"pagesRead\"")));
         mockMvc.perform(post("/edicoes").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
                 .param("title", "Leitura parcial").param("seriesId", series.getId().toString()).param("totalPages", "120").param("pagesRead", "30"))
                 .andExpect(status().is3xxRedirection());
         var edition = editionRepository.findByOwnerUserIdAndNormalizedTitleContaining(owner.getId(), "leitura parcial", org.springframework.data.domain.Pageable.unpaged()).getContent().getFirst();
         assertThat(edition.getTotalPages()).isEqualTo(120); assertThat(edition.getPagesRead()).isEqualTo(30); assertThat(edition.isRead()).isFalse();
         var id = edition.getId();
+        assertThat(readingService.overall(owner.getId()).pagesUnread()).isEqualTo(90);
         for (var input : List.of(new String[]{"10", "11"}, new String[]{"", "1"}, new String[]{"0", "0"}, new String[]{"100001", "0"}, new String[]{"100", "-1"}, new String[]{"100", "1.5"})) {
             mockMvc.perform(post("/edicoes").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
                     .param("title", "Inválida").param("totalPages", input[0]).param("pagesRead", input[1])).andExpect(view().name("edicoes/form"));
@@ -1896,6 +1899,7 @@ class MinhaGibitecaApplicationTest {
                 .andExpect(redirectedUrl("/edicoes/" + id));
         assertThat(readingService.overall(owner.getId()).pagePercentageLabel()).isEqualTo("50,0%");
         assertThat(readingService.series(series.getId(), owner.getId()).pagesRead()).isEqualTo(60);
+        assertThat(readingService.series(series.getId(), owner.getId()).pagesUnread()).isEqualTo(60);
         assertThat(readingService.overall(other.getId()).totalPages()).isZero();
         var pagesDetail = mockMvc.perform(get("/edicoes/{id}", id).with(auth)).andExpect(content().string(org.hamcrest.Matchers.containsString("Salvar páginas lidas"))).andReturn().getResponse().getContentAsString();
         if (Boolean.getBoolean("ui.review.export")) {
@@ -1912,13 +1916,20 @@ class MinhaGibitecaApplicationTest {
         assertThat(editionService.viewOwned(id, owner.getId()).read()).isTrue();
         readingService.mark(id, owner.getId(), false); assertThat(readingService.overall(owner.getId()).pagesRead()).isZero();
         readingService.mark(id, owner.getId(), true); assertThat(readingService.overall(owner.getId()).pagesRead()).isEqualTo(120);
-        mockMvc.perform(post("/edicoes/{id}/editar", id).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("title", "Leitura parcial").param("totalPages", "150").param("pagesRead", "120"))
+        mockMvc.perform(post("/edicoes/{id}/editar", id).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("title", "Leitura parcial").param("seriesId", series.getId().toString()).param("totalPages", "150").param("pagesRead", "120"))
                 .andExpect(status().is3xxRedirection());
         assertThat(readingService.overall(owner.getId()).pagePercentageLabel()).isEqualTo("80,0%");
         assertThat(editionService.viewOwned(id, owner.getId()).read()).isFalse();
         mockMvc.perform(get("/dashboard").with(auth)).andExpect(content().string(org.hamcrest.Matchers.containsString("80,0%")));
         mockMvc.perform(get("/visao-geral").with(auth)).andExpect(content().string(org.hamcrest.Matchers.containsString("80,0%")));
+        for (String route : List.of("/dashboard", "/visao-geral", "/series", "/series/" + series.getId() + "/checklist")) {
+            mockMvc.perform(get(route).with(auth)).andExpect(status().isOk())
+                    .andExpect(content().string(org.hamcrest.Matchers.containsString("data-page-count=\"total\">150</dd>")))
+                    .andExpect(content().string(org.hamcrest.Matchers.containsString("data-page-count=\"read\">120</dd>")))
+                    .andExpect(content().string(org.hamcrest.Matchers.containsString("data-page-count=\"unread\">30</dd>")));
+        }
         editionService.delete(id, owner.getId()); assertThat(readingService.overall(owner.getId()).totalPages()).isZero();
+        assertThat(readingService.overall(owner.getId()).pagesUnread()).isZero();
     }
 
     @Test

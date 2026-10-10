@@ -34,6 +34,10 @@ class ReadingTest {
         var progress = new ReadingProgress(3, 1, 300, 75, 2);
         assertThat(progress.percentageLabel()).isEqualTo("33,3%");
         assertThat(progress.pagePercentageLabel()).isEqualTo("25,0%");
+        assertThat(progress.pagesUnread()).isEqualTo(225);
+        assertThat(new ReadingProgress(0, 0).pagesUnread()).isZero();
+        assertThat(new ReadingProgress(1, 0, 120, 0, 1).pagesUnread()).isEqualTo(120);
+        assertThat(new ReadingProgress(1, 1, 120, 120, 1).pagesUnread()).isZero();
         assertThat(new ReadingProgress(3, 1).pagePercentageLabel()).isEqualTo("0,0%");
     }
     @Test void pageUpdateAuthorizesFlushesAndRejectsUnknownTotal() {
