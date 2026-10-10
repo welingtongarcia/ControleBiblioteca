@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Backup e migração')}"><title>Backup e migração</title></head>
+<body class="dashboard-page">
+<a class="skip-link" href="#main-content">Pular para o conteúdo</a>
+<div class="dashboard-layout">
+<aside th:replace="~{fragments/navigation :: sidebar}"></aside>
+<main id="main-content" tabindex="-1" class="content page-content backup-page" aria-labelledby="page-title">
+    <div th:replace="~{fragments/navigation :: breadcrumbs('Backup e migração', null, null)}"></div>
+    <header class="page-heading"><div><p class="eyebrow">Sua coleção, onde você estiver</p><h1 id="page-title">Backup e migração</h1><p class="muted">Salve seu acervo para restaurar em outra máquina ou sistema operacional.</p></div></header>
+    <p th:if="${backupError}" th:text="${backupError}" class="alert" role="alert"></p>
+    <p th:if="${backupSuccess}" th:text="${backupSuccess}" class="alert" role="status"></p>
+    <section class="finance-panel" aria-labelledby="export-title">
+        <h2 id="export-title">1. Salvar minha coleção</h2>
+        <p>Baixe um ZIP com todas as suas edições, capas, valores, datas de compra, páginas e leitura, exemplares, séries, checklist e cadastros de apoio.</p>
+        <p class="help-text">Somente os dados da sua conta. Senhas, chaves de API e configurações não são incluídas. O ZIP não é criptografado: guarde em um local privado.</p>
+        <form method="post" th:action="@{/backup/gerar}" aria-label="Gerar backup da minha coleção"><div class="form-actions"><button type="submit">Baixar backup completo</button></div></form>
+        <p class="help-text">Guarde também a mesma versão do projeto ou JAR. A aplicação precisa ser instalada separadamente. Relatórios PDF e CSV não substituem este backup.</p>
+    </section>
+    <section class="finance-panel" aria-labelledby="migration-title">
+        <h2 id="migration-title">2. Preparar a nova máquina</h2>
+        <ol><li>Instale a mesma versão do Minha Gibiteca com Java 21 e PostgreSQL, ou Docker Compose.</li><li>Configure o banco e o login da nova instalação.</li><li>Entre em uma conta vazia e abra esta página para restaurar o ZIP.</li><li>Confira os cadastros, as capas e os relatórios antes de desativar a instalação antiga.</li></ol>
+        <p class="help-text">As instruções de instalação estão em <code>docs/installation.md</code>; o ZIP inclui um arquivo LEIA-ME. O formato e o esquema do banco precisam ser compatíveis.</p>
+    </section>
+    <section class="finance-panel" aria-labelledby="restore-title">
+        <h2 id="restore-title">3. Restaurar coleção</h2>
+        <p>Restaure somente um backup seu e de origem confiável. Os vínculos serão preservados e os identificadores internos serão recriados.</p>
+        <p th:unless="${emptyAccount}" class="alert" role="status">Esta conta já contém cadastros. Para proteger sua coleção, a restauração está bloqueada. Use uma conta vazia na nova instalação.</p>
+        <form method="post" enctype="multipart/form-data" th:action="@{/backup/restaurar}" aria-label="Restaurar coleção de um backup">
+            <fieldset th:disabled="${!emptyAccount}"><legend>Arquivo e confirmação</legend>
+                <div class="field"><label for="backup-file">Backup ZIP</label><input id="backup-file" name="arquivo" type="file" accept=".zip,application/zip" required aria-describedby="backup-limits"></div>
+                <p id="backup-limits" class="help-text">Até 250 MB por ZIP, 512 MB descompactados, 25 MB de dados, 5 MB por capa, 20.000 arquivos e 100.000 registros.</p>
+                <label class="checkbox-label" for="backup-confirm"><input id="backup-confirm" type="checkbox" name="confirm" value="true" required> Confirmo que esta conta está vazia e desejo restaurar minha coleção.</label>
+                <p class="help-text">Não mesclamos nem substituímos coleções. Se o pacote for inválido, nenhum cadastro será restaurado.</p>
+                <div class="form-actions"><button type="submit">Restaurar coleção</button></div>
+            </fieldset>
+        </form>
+    </section>
+</main></div></body></html>

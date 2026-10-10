@@ -17,6 +17,10 @@ No primeiro início em um banco vazio, o administrador é criado somente pelas v
 
 Execute `./mvnw clean verify`. O conjunto sobe PostgreSQL via Testcontainers, aplica Flyway em banco vazio e verifica a página de login com MockMvc.
 
+## Backup e migração
+
+Para levar a coleção a outra máquina ou sistema operacional, use **Painéis e análises → Backup e migração**. O [guia de backup e restauração](backup-migracao.md) explica o ZIP pessoal, a preparação da nova instalação e o cuidado com volumes de capas existentes no Docker.
+
 ## Execução pelo IntelliJ IDEA
 
 O projeto carrega automaticamente o arquivo local `.env` ao executar `MinhaGibitecaApplication`. Para usar o banco local pelo IntelliJ, suba apenas `postgres` com Docker Compose; o serviço expõe a porta somente em `127.0.0.1:5432`. Pare o serviço `app` do Compose para liberar a porta 8080 e então execute a classe principal pelo IntelliJ.

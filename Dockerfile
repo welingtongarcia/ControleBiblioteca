@@ -13,6 +13,7 @@ RUN apt-get update \
 RUN useradd --system --create-home --uid 10001 gibiteca
 WORKDIR /app
 COPY --from=build /workspace/target/minha-gibiteca-0.1.0-SNAPSHOT.jar app.jar
+RUN mkdir -p /app/data/capas && chown -R gibiteca:gibiteca /app/data
 USER gibiteca
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]
