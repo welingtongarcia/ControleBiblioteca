@@ -793,7 +793,7 @@ class MinhaGibitecaApplicationTest {
             assertThat(html.split("class=\"nav-current\"", -1)).hasSize(2);
             if (path.equals("/series")) {
                 assertThat(html.split("class=\"series-action-button\"", -1)).hasSize(5);
-                assertThat(html).contains("class=\"series-action-button series-action-danger\" type=\"submit\">Excluir", "action=\"/series/" + series.getId() + "/excluir\" method=\"post\"");
+                assertThat(html).contains("class=\"action-delete\"", "Confirmar exclusão", "Esta ação é permanente", "action=\"/series/" + series.getId() + "/excluir\" method=\"post\"");
             }
             boolean inCatalog = List.of("/editoras", "/obras", "/criadores", "/personagens").stream().anyMatch(path::startsWith);
             boolean inOverview = List.of("/dashboard", "/visao-geral", "/financeiro").contains(path);

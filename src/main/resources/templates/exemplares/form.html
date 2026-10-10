@@ -9,21 +9,22 @@
     <p>Edição: <span th:text="${edition.title}"></span></p>
     <p class="help-text">Cadastre cada cópia física separadamente. Os dados bibliográficos continuam na edição.</p>
     <form class="stack copy-form" th:action="${formAction}" th:object="${copyForm}" method="post"><input type="hidden" name="returnTo" th:value="${navigation.pageReturnUrl}">
+        <div th:replace="~{fragments/forms :: errors}"></div>
         <div class="field">
             <label for="condition">Conservação <span aria-hidden="true">*</span></label>
-            <select id="condition" th:field="*{condition}" required aria-describedby="condition-error">
+            <select id="condition" th:field="*{condition}" required th:attr="aria-invalid=${#fields.hasErrors('condition') ? 'true' : null},aria-describedby=${#strings.trim('' + (#fields.hasErrors('condition') ? ' condition-error' : ''))}">
                 <option th:each="item : ${conditions}" th:value="${item}" th:text="${item.label}"></option>
             </select>
             <p id="condition-error" class="field-error" th:if="${#fields.hasErrors('condition')}" th:errors="*{condition}"></p>
         </div>
         <div class="field">
             <label for="conditionNotes">Detalhes da conservação</label>
-            <textarea id="conditionNotes" th:field="*{conditionNotes}" maxlength="2000" rows="3" aria-describedby="conditionNotes-error"></textarea>
+            <textarea id="conditionNotes" th:field="*{conditionNotes}" maxlength="2000" rows="3" th:attr="aria-invalid=${#fields.hasErrors('conditionNotes') ? 'true' : null},aria-describedby=${#strings.trim('' + (#fields.hasErrors('conditionNotes') ? ' conditionNotes-error' : ''))}"></textarea>
             <p id="conditionNotes-error" class="field-error" th:if="${#fields.hasErrors('conditionNotes')}" th:errors="*{conditionNotes}"></p>
         </div>
         <div class="field">
             <label for="storageLocationId">Localização</label>
-            <select id="storageLocationId" th:field="*{storageLocationId}" aria-describedby="location-error">
+            <select id="storageLocationId" th:field="*{storageLocationId}" th:attr="aria-invalid=${#fields.hasErrors('storageLocationId') ? 'true' : null},aria-describedby=${#strings.trim('' + (#fields.hasErrors('storageLocationId') ? ' location-error' : ''))}">
                 <option value="">Não informada</option>
                 <option th:each="location : ${locations}" th:value="${location.id}" th:text="${location.path}"></option>
             </select>
@@ -31,23 +32,23 @@
         </div>
         <div class="field">
             <label for="acquisitionSource">Origem da aquisição</label>
-            <input id="acquisitionSource" th:field="*{acquisitionSource}" maxlength="160" aria-describedby="source-error">
+            <input id="acquisitionSource" th:field="*{acquisitionSource}" maxlength="160" th:attr="aria-invalid=${#fields.hasErrors('acquisitionSource') ? 'true' : null},aria-describedby=${#strings.trim('' + (#fields.hasErrors('acquisitionSource') ? ' source-error' : ''))}">
             <p id="source-error" class="field-error" th:if="${#fields.hasErrors('acquisitionSource')}" th:errors="*{acquisitionSource}"></p>
         </div>
         <div class="field">
             <label for="acquisitionDate">Data de aquisição</label>
-            <input id="acquisitionDate" th:field="*{acquisitionDate}" type="date" aria-describedby="date-error">
+            <input id="acquisitionDate" th:field="*{acquisitionDate}" type="date" th:attr="aria-invalid=${#fields.hasErrors('acquisitionDate') ? 'true' : null},aria-describedby=${#strings.trim('' + (#fields.hasErrors('acquisitionDate') ? ' date-error' : ''))}">
             <p id="date-error" class="field-error" th:if="${#fields.hasErrors('acquisitionDate')}" th:errors="*{acquisitionDate}"></p>
         </div>
         <div class="field">
             <label for="acquisitionPrice">Valor pago neste exemplar (R$)</label>
-            <input id="acquisitionPrice" th:field="*{acquisitionPrice}" inputmode="decimal" placeholder="29,90" aria-describedby="price-help price-error">
+            <input id="acquisitionPrice" th:field="*{acquisitionPrice}" inputmode="decimal" placeholder="29,90" th:attr="aria-invalid=${#fields.hasErrors('acquisitionPrice') ? 'true' : null},aria-describedby=${#strings.trim('' + ' price-help' + (#fields.hasErrors('acquisitionPrice') ? ' price-error' : ''))}">
             <p id="price-help" class="help-text">Opcional, com até duas casas decimais. Zero indica aquisição gratuita. Não é preenchido pelo valor de referência da edição.</p>
             <p id="price-error" class="field-error" th:if="${#fields.hasErrors('acquisitionPrice')}" th:errors="*{acquisitionPrice}"></p>
         </div>
         <div class="field">
             <label for="notes">Observações do exemplar</label>
-            <textarea id="notes" th:field="*{notes}" maxlength="2000" rows="4" aria-describedby="notes-error"></textarea>
+            <textarea id="notes" th:field="*{notes}" maxlength="2000" rows="4" th:attr="aria-invalid=${#fields.hasErrors('notes') ? 'true' : null},aria-describedby=${#strings.trim('' + (#fields.hasErrors('notes') ? ' notes-error' : ''))}"></textarea>
             <p id="notes-error" class="field-error" th:if="${#fields.hasErrors('notes')}" th:errors="*{notes}"></p>
         </div>
         <div class="form-actions"><button type="submit">Salvar exemplar</button><a th:href="@{${navigation.parentUrl('/edicoes/' + edition.id)}}">Cancelar</a></div>

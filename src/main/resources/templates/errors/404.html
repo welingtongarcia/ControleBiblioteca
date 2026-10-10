@@ -3,5 +3,5 @@
 <head th:replace="~{fragments/head :: head(${pageTitle})}"><title>Página não encontrada</title></head>
 <body class="dashboard-page"><a class="skip-link" href="#main-content">Pular para o conteúdo</a><div class="dashboard-layout"><aside th:replace="~{fragments/navigation :: sidebar}"></aside><main id="main-content" tabindex="-1" class="content page-content" aria-labelledby="page-title">
 <div th:replace="~{fragments/navigation :: breadcrumbs('Página não encontrada', null, null)}"></div>
-<h1 id="page-title">Página não encontrada</h1><p>O recurso não existe ou não está disponível para sua conta.</p><a th:href="@{/dashboard}">Voltar ao painel</a></main></div></body>
+<h1 id="page-title">Página não encontrada</h1><p>O recurso não existe ou não está disponível para sua conta.</p><a class="button-link" th:href="@{/dashboard}">Voltar ao início</a></main></div></body>
 </html>

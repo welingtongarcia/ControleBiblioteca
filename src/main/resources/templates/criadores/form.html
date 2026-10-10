@@ -1,8 +1,9 @@
 <!DOCTYPE html><html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"><head th:replace="~{fragments/head :: head(${pageTitle})}"><title>Criador</title></head><body class="dashboard-page"><a class="skip-link" href="#main-content">Pular para o conteúdo</a><div class="dashboard-layout"><aside th:replace="~{fragments/navigation :: sidebar}"></aside><main id="main-content" tabindex="-1" class="content form-content page-content" aria-labelledby="page-title">
 <div th:replace="~{fragments/navigation :: breadcrumbs(${pageTitle}, null, null)}"></div>
-<h1 id="page-title" th:text="${pageTitle}">Novo criador</h1>
+<h1 id="page-title" th:text="${pageTitle}">Novo criador</h1><p class="help-text">O nome é obrigatório. Você pode informar o nome para ordenação e selecionar várias funções.</p>
 <form class="stack" th:action="${formAction}" th:object="${creatorForm}" method="post">
     <input type="hidden" name="returnTo" th:value="${navigation.pageReturnUrl}">
+        <div th:replace="~{fragments/forms :: errors}"></div>
     <div class="field">
         <label for="name">Nome <span aria-hidden="true">*</span></label>
         <input id="name" th:field="*{name}" maxlength="180" required th:attr="aria-invalid=${#fields.hasErrors('name')},aria-describedby=${#fields.hasErrors('name') ? 'name-error' : null}">
@@ -19,7 +20,7 @@
         <p id="functions-help" class="help-text">Opcional. Marque todas as funções que se aplicam. São áreas de atuação do criador, não créditos específicos de uma edição.</p>
         <div class="edition-choice-list creator-function-list">
             <label class="edition-choice" th:each="function : ${creatorFunctions}">
-                <input type="checkbox" th:field="*{functions}" th:value="${function}">
+                <input type="checkbox" th:field="*{functions}" th:value="${function}" th:attr="aria-invalid=${#fields.hasErrors('functions') ? 'true' : null}">
                 <span th:text="${function.label}">Roteirista</span>
             </label>
         </div>

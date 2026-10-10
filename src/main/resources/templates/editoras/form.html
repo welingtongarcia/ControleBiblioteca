@@ -6,24 +6,25 @@
 <div th:replace="~{fragments/navigation :: breadcrumbs(${pageTitle}, null, null)}"></div>
 
 
-    <h1 id="page-title" th:text="${pageTitle}">Nova editora</h1>
+    <h1 id="page-title" th:text="${pageTitle}">Nova editora</h1><p class="help-text">O nome é obrigatório. Informe a sigla do país, como BR, e observações se desejar.</p>
     <form class="stack" th:action="${formAction}" th:object="${publisherForm}" method="post"><input type="hidden" name="returnTo" th:value="${navigation.pageReturnUrl}">
+        <div th:replace="~{fragments/forms :: errors}"></div>
         <div class="field">
             <label for="name">Nome <span aria-hidden="true">*</span></label>
-            <input id="name" th:field="*{name}" maxlength="160" required aria-describedby="name-error">
+            <input id="name" th:field="*{name}" maxlength="160" required th:attr="aria-invalid=${#fields.hasErrors('name') ? 'true' : null},aria-describedby=${#strings.trim('' + (#fields.hasErrors('name') ? ' name-error' : ''))}">
             <p id="name-error" class="field-error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></p>
         </div>
         <div class="field">
             <label for="countryCode">País (sigla ISO)</label>
-            <input id="countryCode" th:field="*{countryCode}" maxlength="2" placeholder="BR" aria-describedby="country-error">
+            <input id="countryCode" th:field="*{countryCode}" maxlength="2" placeholder="BR" th:attr="aria-invalid=${#fields.hasErrors('countryCode') ? 'true' : null},aria-describedby=${#strings.trim('' + (#fields.hasErrors('countryCode') ? ' country-error' : ''))}">
             <p id="country-error" class="field-error" th:if="${#fields.hasErrors('countryCode')}" th:errors="*{countryCode}"></p>
         </div>
         <div class="field">
             <label for="notes">Observações</label>
-            <textarea id="notes" th:field="*{notes}" maxlength="2000" rows="5" aria-describedby="notes-error"></textarea>
+            <textarea id="notes" th:field="*{notes}" maxlength="2000" rows="5" th:attr="aria-invalid=${#fields.hasErrors('notes') ? 'true' : null},aria-describedby=${#strings.trim('' + (#fields.hasErrors('notes') ? ' notes-error' : ''))}"></textarea>
             <p id="notes-error" class="field-error" th:if="${#fields.hasErrors('notes')}" th:errors="*{notes}"></p>
         </div>
-        <div class="form-actions"><button type="submit">Salvar</button><a th:href="@{${navigation.returnUrl}}">Cancelar</a></div>
+        <div class="form-actions"><button type="submit">Salvar editora</button><a th:href="@{${navigation.returnUrl}}">Cancelar</a></div>
     </form>
 </main></div>
 </body>

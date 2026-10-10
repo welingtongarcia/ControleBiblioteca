@@ -1,0 +1,15 @@
+<!DOCTYPE html><html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"><body>
+<section th:fragment="errors" th:if="${#fields.hasAnyErrors()}" id="form-errors" class="alert alert-error form-error-summary" role="alert" tabindex="-1" aria-labelledby="form-errors-title">
+    <h2 id="form-errors-title">Revise os campos indicados</h2>
+    <p>Seus dados foram mantidos. Corrija os erros abaixo antes de salvar.</p>
+    <ul><li th:each="error : ${#fields.errors('*')}" th:text="${error}"></li></ul>
+</section>
+<details th:fragment="deleteConfirm(action, returnTo, name)" class="action-delete">
+    <summary class="action-danger" th:attr="aria-label=|Excluir ${name}|">Excluir</summary>
+    <div class="action-delete-panel">
+        <p>Excluir <strong th:text="${name}"></strong>?</p>
+        <p class="help-text">Esta ação é permanente. Cadastros com vínculos podem bloquear a exclusão. Para desistir, feche esta confirmação.</p>
+        <form th:action="${action}" method="post"><input type="hidden" name="returnTo" th:value="${returnTo}"><button class="button-danger" type="submit">Confirmar exclusão</button></form>
+    </div>
+</details>
+</body></html>

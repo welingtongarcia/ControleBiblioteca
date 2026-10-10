@@ -12,8 +12,21 @@ Constituição e AGENTS.md preservados: MVC/Thymeleaf/CSS próprio, pt-BR, autor
 
 ## Plan → tasks → analyze
 
-- [ ] T1 Auditar templates/CSS e renderizar todas as rotas/estados existentes com fixtures isoladas; registrar achados.
-- [ ] T2 Melhorar componentes compartilhados e telas/formulários com problemas; preservar regras e segurança.
-- [ ] T3 Testes estruturais/validação, QA responsivo no navegador, clean verify e relatório/commit.
+- [x] T1 Auditar templates/CSS e renderizar todas as rotas/estados existentes com fixtures isoladas; registrar achados.
+- [x] T2 Melhorar componentes compartilhados e telas/formulários com problemas; preservar regras e segurança.
+- [x] T3 Testes estruturais/validação, QA responsivo no navegador, clean verify e relatório/commit.
 
 Achados iniciais: vários formulários de apoio não têm resumo nem aria-invalid; IDs de erros condicionais são referenciados mesmo quando ausentes. CSS usa `:invalid:not(:placeholder-shown)` e marca campos novos sem placeholder em vermelho. Ações similares alternam entre links sublinhados, links sem moldura e botões; exclusões diretas de editoras/obras/criadores/séries podem ocorrer com um clique. Formulários simples não têm organização visual dos formulários de edição/série. Detalhe de edição concentra blocos de leitura e upload sem painel/contexto equivalente. Revisão de renderização e responsividade determinará ajustes adicionais, sem redesenho arbitrário.
+
+## Implementação e evidências
+
+- UI-001: estilos compartilhados de botões secundários, busca e paginação em `main.css`; fragmento `forms.html` com confirmação nativa para editoras/obras/criadores/séries, sem modificar endpoints nem CSRF. Confirmações existentes de personagens/locais/exemplares/checklist usam botão destrutivo distinto. Abertura da confirmação móvel revelou quebra do flex; corrigidos wrap e flex-basis. Nenhuma exclusão real executada.
+- UI-002: resumo de erros nos oito formulários de apoio; mensagens associadas apenas quando presentes, preservação de valores e indicadores de erro do servidor. Auditoria também encontrou referências inválidas de erros de páginas no formulário de edição; corrigidas sem alterar regras de leitura. Campos obrigatórios novos não recebem borda vermelha antes da validação/interação.
+- UI-003/004: painéis e largura de leitura/upload no detalhe da edição, contexto nos cadastros, orientação de listas vazias, ações de retorno e links de navegação com área de interação de 44 px. Tabelas financeiras com região nomeada e foco por teclado. Estilos respeitam redução de movimento.
+- UI-005: `InterfaceIntegrationTest` renderiza famílias de rotas, conta vazia, buscas sem resultado, novos/edições, formulários inválidos, login e erros com PostgreSQL isolado. Confere pt-BR, h1, labels, IDs únicos, referências ARIA, CSRF e dados preservados. Prévia sintética em `target/ui-review` (artefato de teste; não contém acervo real).
+- QA navegador: 72 documentos/estados × 320/390/768/1440 px = 288 verificações de largura, sem overflow horizontal de página após carregamento completo dos estilos. Inspeção visual de confirmação móvel, detalhe de edição e resumo de validação; a primeira leitura prematura antes do CSS deu falsos positivos, por isso a matriz foi repetida aguardando `load`.
+- Teste focado: `./mvnw -q -Dtest=InterfaceIntegrationTest test`, exit 0, 5 testes. Primeiros ciclos revelaram referências ARIA inexistentes, corrigidas; a asserção de anotação preservada foi ajustada para decodificar entidades HTML.
+- Primeira suíte completa: 203 testes, 1 falha, 0 erros. Falha na expectativa antiga de exclusão direta de séries em `MinhaGibitecaApplicationTest`; atualizada para exigir a confirmação, preservando verificação de destino e CSRF.
+- Verificação final: `./mvnw -q clean verify`, exit 0, 203 testes, 0 falhas, 0 erros, 0 ignorados. `git diff --check`, exit 0. Conferido também Financeiro com sidebar visível em 1440 px, sem overflow; tabela mensal aberta com Enter, foco visível e região tabulável nomeada. Servidor/tab de prévia encerrados e viewport restaurado.
+
+Limites: auditoria básica de estrutura e responsividade não certifica WCAG 2.2 AA; não houve avaliação com leitor de tela ou matriz de múltiplos navegadores. Erro de upload possui teste existente do advice, mas não foi incluído na matriz visual de 72 estados. Não houve mudança de esquema, dados reais, autorização, regras financeiras ou serviços de domínio. A aplicação real não foi reiniciada.

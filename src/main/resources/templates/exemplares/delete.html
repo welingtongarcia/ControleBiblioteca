@@ -15,6 +15,6 @@
     <p>A exclusão é permanente. A edição e os demais exemplares serão preservados.</p>
     <form class="stack" th:action="@{/exemplares/{id}/excluir(id=${copy.id})}" method="post"><input type="hidden" name="returnTo" th:value="${navigation.pageReturnUrl}">
         <label><input type="checkbox" name="confirmed" value="true" required> Confirmo a exclusão deste exemplar.</label>
-        <div class="form-actions"><button type="submit">Excluir exemplar</button><a th:href="@{${navigation.parentUrl('/edicoes/' + edition.id)}}">Cancelar</a></div>
+        <div class="form-actions"><button class="button-danger" type="submit">Excluir exemplar</button><a th:href="@{${navigation.parentUrl('/edicoes/' + edition.id)}}">Cancelar</a></div>
     </form>
 </main></div></body></html>

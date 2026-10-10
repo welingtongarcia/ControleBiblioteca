@@ -8,6 +8,6 @@
     <p>A exclusão é permanente e não altera edições nem exemplares.</p>
     <form class="stack" th:action="@{/checklist/itens/{id}/excluir(id=${item.id})}" method="post"><input type="hidden" name="returnTo" th:value="${navigation.pageReturnUrl}">
         <label><input type="checkbox" name="confirmed" value="true" required> Confirmo a exclusão deste item.</label>
-        <div class="form-actions"><button type="submit">Excluir item</button><a th:href="@{${navigation.parentUrl('/series/' + series.id + '/checklist')}}">Cancelar</a></div>
+        <div class="form-actions"><button class="button-danger" type="submit">Excluir item</button><a th:href="@{${navigation.parentUrl('/series/' + series.id + '/checklist')}}">Cancelar</a></div>
     </form>
 </main></div></body></html>

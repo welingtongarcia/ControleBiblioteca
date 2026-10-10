@@ -4,7 +4,7 @@
     <title>Edição | Minha Gibiteca</title>
 </head>
 <body class="dashboard-page"><a class="skip-link" href="#main-content">Pular para o conteúdo</a><div class="dashboard-layout"><aside th:replace="~{fragments/navigation :: sidebar}"></aside>
-<main id="main-content" tabindex="-1" class="content page-content" aria-labelledby="page-title">
+<main id="main-content" tabindex="-1" class="content page-content edition-detail-page" aria-labelledby="page-title">
 <div th:replace="~{fragments/navigation :: breadcrumbs(${edition.title}, null, null)}"></div>
 
 
@@ -38,7 +38,7 @@
         <img class="edition-cover" th:if="${edition.coverFileName}" th:src="@{/edicoes/{id}/capa(id=${edition.id})}" alt="Capa da edição"/>
         <p th:unless="${edition.coverFileName}">Nenhuma capa cadastrada.</p>
         <form class="stack" th:action="@{/edicoes/{id}/capa(id=${edition.id})}" method="post" enctype="multipart/form-data"><input type="hidden" name="returnTo" th:value="${navigation.pageReturnUrl}">
-            <div class="field"><label for="cover">Imagem da capa</label><input id="cover" name="cover" type="file" accept="image/png,image/jpeg" required><p class="help-text">Envie um arquivo PNG ou JPEG de até 5 MB.</p></div>
+            <div class="field"><label for="cover">Imagem da capa</label><input id="cover" name="cover" type="file" accept="image/png,image/jpeg" required aria-describedby="cover-help"><p id="cover-help" class="help-text">Envie um arquivo PNG ou JPEG de até 5 MB.</p></div>
             <button type="submit">Enviar capa</button>
         </form>
     </section>

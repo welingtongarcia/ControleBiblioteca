@@ -11,7 +11,7 @@
 <div class="field"><label for="characterId">Personagem</label><select id="characterId" name="characterId"><option value="">Todos os personagens</option><option th:each="item : ${characterOptions}" th:value="${item.id}" th:text="${item.name}" th:selected="${item.id == filter.characterId}"></option></select></div>
 <div class="field"><label for="publisherId">Editora</label><select id="publisherId" name="publisherId"><option value="">Todas as editoras</option><option th:each="item : ${publisherOptions}" th:value="${item.id}" th:text="${item.name}" th:selected="${item.id == filter.publisherId}"></option></select></div>
    <div class="field"><label for="mediaType">Suporte</label><select id="mediaType" name="mediaType"><option value="">Todos os suportes</option><option th:each="item : ${mediaTypes}" th:value="${item}" th:text="${item.label}" th:selected="${item == filter.mediaType}"></option><option value="UNSPECIFIED" th:selected="${filter.unknownMedia}">Não informado</option></select></div>
-   <div class="field"><label for="ranking">Comparar rankings por</label><select id="ranking" name="ranking"><option value="AMOUNT" th:selected="${ranking == 'AMOUNT'}">Valor gasto</option><option value="QUANTITY" th:selected="${ranking == 'QUANTITY'}">Quantidade de edições</option></select></div>
+   <div class="field"><label for="ranking">Comparar classificações por</label><select id="ranking" name="ranking"><option value="AMOUNT" th:selected="${ranking == 'AMOUNT'}">Valor gasto</option><option value="QUANTITY" th:selected="${ranking == 'QUANTITY'}">Quantidade de edições</option></select></div>
   </div><p id="period-help" class="help-text">Informe início e fim juntos, entre 1900 e hoje, até 3.660 dias. Sem período: totais gerais e evolução dos últimos 12 meses. Criadores incluem autores, artistas e outros papéis cadastrados, sem inferência.</p>
   <div class="form-actions"><button type="submit">Aplicar filtros</button><a th:href="@{/financeiro}">Limpar filtros</a></div>
  </form>
@@ -42,7 +42,7 @@
   <svg class="finance-line" viewBox="0 0 720 220" role="img" aria-label="Evolução mensal dos valores pagos. Valores exatos na tabela abaixo."><line x1="20" y1="190" x2="700" y2="190" class="finance-axis"/><polyline th:attr="points=${report.monthly.points}" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/></svg>
   <div class="finance-chart-range"><span th:text="${report.monthly.items[0].label}"></span><span th:text="${report.monthly.items[report.monthly.items.size()-1].label}"></span></div>
   <p><strong>Mês de maior gasto: </strong><span th:text="${report.monthly.peak}"></span></p>
-  <details><summary>Ver valores mensais em tabela</summary><div class="finance-table-wrap"><table><caption>Edições por mês nos filtros selecionados</caption><thead><tr><th scope="col">Mês</th><th scope="col">Edições</th><th scope="col">Valor pago</th></tr></thead><tbody><tr th:each="month : ${report.monthly.items}"><th scope="row" th:text="${month.label}"></th><td th:text="${month.count}"></td><td th:text="${month.money}"></td></tr></tbody></table></div></details>
+  <details><summary>Ver valores mensais em tabela</summary><div class="finance-table-wrap" tabindex="0" role="region" aria-label="Tabela financeira com rolagem horizontal"><table><caption>Edições por mês nos filtros selecionados</caption><thead><tr><th scope="col">Mês</th><th scope="col">Edições</th><th scope="col">Valor pago</th></tr></thead><tbody><tr th:each="month : ${report.monthly.items}"><th scope="row" th:text="${month.label}"></th><td th:text="${month.count}"></td><td th:text="${month.money}"></td></tr></tbody></table></div></details>
  </section>
  <h2>Distribuição dos gastos no acervo</h2><p class="help-text">Os gráficos abaixo usam a seleção inteira, não somente a página da lista. Valores monetários são totais conhecidos; valores ausentes não significam gratuidade. Clique em um nome para refinar os filtros.</p>
  <div class="finance-chart-grid">
@@ -61,7 +61,7 @@
      <p class="help-text" th:text="|Edições: ${item.bucket.count}|"></p>
     </li>
    </ul>
-   <details th:unless="${chart.items.empty}"><summary>Ver tabela comparativa</summary><div class="finance-table-wrap"><table><caption th:text="${chart.title}"></caption><thead><tr><th scope="col">Grupo</th><th scope="col">Edições</th><th scope="col">Valor pago</th></tr></thead><tbody><tr th:each="item : ${chart.items}"><th scope="row" th:text="${item.bucket.label}"></th><td th:text="${item.bucket.count}"></td><td th:text="${item.bucket.money}"></td></tr></tbody></table></div></details>
+   <details th:unless="${chart.items.empty}"><summary>Ver tabela comparativa</summary><div class="finance-table-wrap" tabindex="0" role="region" aria-label="Tabela financeira com rolagem horizontal"><table><caption th:text="${chart.title}"></caption><thead><tr><th scope="col">Grupo</th><th scope="col">Edições</th><th scope="col">Valor pago</th></tr></thead><tbody><tr th:each="item : ${chart.items}"><th scope="row" th:text="${item.bucket.label}"></th><td th:text="${item.bucket.count}"></td><td th:text="${item.bucket.money}"></td></tr></tbody></table></div></details>
   </section>
  </div>
  <section aria-labelledby="finance-editions"><div class="page-heading"><h2 id="finance-editions">HQs da seleção</h2><span th:text="|${report.entries.totalElements} edições|"></span></div>
