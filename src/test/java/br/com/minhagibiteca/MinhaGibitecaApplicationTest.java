@@ -103,6 +103,8 @@ class MinhaGibitecaApplicationTest {
     @Autowired
     private CreatorService creatorService;
 
+    @Autowired private br.com.minhagibiteca.catalog.application.CharacterService characterService;
+
     @Autowired
     private EditionAssociationService editionAssociationService;
 
@@ -134,6 +136,7 @@ class MinhaGibitecaApplicationTest {
         checklistRepository.deleteAllInBatch();
         physicalCopyRepository.deleteAllInBatch();
         editionRepository.deleteAll();
+        new org.springframework.jdbc.core.JdbcTemplate(dataSource).update("delete from comic_characters");
         workRepository.deleteAll();
         creatorRepository.deleteAll();
         storageLocationRepository.deleteAllInBatch();
@@ -1599,5 +1602,72 @@ class MinhaGibitecaApplicationTest {
                 .with(SecurityMockMvcRequestPostProcessors.csrf())).andExpect(redirectedUrl("/editoras"));
         assertThat(publisherRepository.existsById(publisher.getId())).isFalse();
         assertThat(comicSeriesRepository.existsById(series.getId())).isTrue();
+    }
+
+    @Test
+    void rendersAllInterfaceLayoutsWithLongNamesAndValidationErrors() throws Exception {
+        var owner = userAccountRepository.save(UserAccount.create("ui-review@example.com", "hash", UserRole.USER));
+        var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
+        var pages = new java.util.LinkedHashMap<String, String>();
+        // Include empty states before seeding fixtures. Never use the running application's database.
+        for (var path : List.of("/", "/edicoes", "/editoras", "/series", "/obras", "/criadores", "/personagens", "/localizacoes", "/financeiro")) {
+            pages.put((path.equals("/") ? "inicio" : path.substring(1)) + "-vazio", mockMvc.perform(get(path).with(auth)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        }
+        var longName = "Coleção de aventuras brasileiras — edição especial de colecionador com descrição extensa";
+        var publisher = publisherRepository.save(Publisher.create(owner.getId(), longName, "BR", "Observações da editora"));
+        var series = comicSeriesRepository.save(ComicSeries.create(owner.getId(), publisher.getId(), longName, 2000, 2026, null, null));
+        var work = workService.create(owner.getId(), new WorkService.Command(longName, 2000, "Resumo da obra"));
+        var creator = creatorService.create(owner.getId(), new CreatorService.Command(longName, null));
+        var character = characterService.save(owner.getId(), null, longName);
+        var edition = editionService.create(owner.getId(), new EditionService.Command(publisher.getId(), series.getId(), longName, "1", "Especial", null, 2026, "Capa dura", "Observações da edição", br.com.minhagibiteca.catalog.domain.MediaType.PHYSICAL, new BigDecimal("129.90"), new BigDecimal("99.90"), java.time.LocalDate.now()));
+        editionAssociationService.replace(edition.getId(), owner.getId(), List.of(work.getId()), List.of(creator.getId()));
+        characterService.replace(owner.getId(), edition.getId(), List.of(character));
+        var location = locationService.create(owner.getId(), new br.com.minhagibiteca.inventory.application.LocationService.Command(null, br.com.minhagibiteca.inventory.domain.LocationLevel.BOX, longName, null));
+        var copy = copyService.create(edition.getId(), owner.getId(), new CopyService.Command(location, CopyCondition.values()[0], "Detalhes de conservação", "Loja de quadrinhos", java.time.LocalDate.now(), new BigDecimal("99.90"), "Observações do exemplar"));
+        var item = checklistService.create(series.getId(), owner.getId(), new br.com.minhagibiteca.collection.application.ChecklistService.Command("1A", longName, false, "Observações do checklist"));
+        var routes = new java.util.LinkedHashMap<String, String>();
+        routes.put("inicio", "/");
+        routes.put("login", "/login");
+        routes.put("login-erro", "/login?error");
+        for (var entry : java.util.Map.of("edicoes", "nova", "editoras", "nova", "series", "nova", "obras", "nova", "criadores", "novo", "personagens", "novo", "localizacoes", "nova").entrySet()) {
+            routes.put(entry.getKey(), "/" + entry.getKey());
+            routes.put(entry.getKey() + "-novo", "/" + entry.getKey() + "/" + entry.getValue());
+        }
+        var ids = java.util.Map.of("edicoes", edition.getId(), "editoras", publisher.getId(), "series", series.getId(), "obras", work.getId(), "criadores", creator.getId(), "personagens", character, "localizacoes", location, "exemplares", copy);
+        ids.forEach((name, id) -> routes.put(name + "-editar", "/" + name + "/" + id + "/editar"));
+        routes.put("edicao-detalhe", "/edicoes/" + edition.getId());
+        routes.put("exemplar-novo", "/edicoes/" + edition.getId() + "/exemplares/novo");
+        routes.put("exemplar-excluir", "/exemplares/" + copy + "/excluir");
+        routes.put("localizacao-excluir", "/localizacoes/" + location + "/excluir");
+        routes.put("personagem-excluir", "/personagens/" + character + "/excluir");
+        routes.put("checklist", "/series/" + series.getId() + "/checklist");
+        routes.put("faltantes", "/series/" + series.getId() + "/faltantes");
+        routes.put("checklist-editar", "/checklist/itens/" + item + "/editar");
+        routes.put("checklist-excluir", "/checklist/itens/" + item + "/excluir");
+        routes.put("financeiro", "/financeiro?start=" + java.time.LocalDate.now().minusDays(30) + "&end=" + java.time.LocalDate.now());
+        for (var entry : routes.entrySet()) {
+            var html = mockMvc.perform(get(entry.getValue()).with(auth)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+            assertThat(html).contains("lang=\"pt-BR\"", "name=\"viewport\"", "/css/main.css", "/css/dashboard.css");
+            pages.put(entry.getKey(), html);
+        }
+        pages.put("edicao-erros", mockMvc.perform(post("/edicoes").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("title", "").param("referencePaidPrice", "inválido")).andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        pages.put("financeiro-invalido", mockMvc.perform(get("/financeiro?start=2026-01-01").with(auth)).andExpect(status().isBadRequest()).andReturn().getResponse().getContentAsString());
+        pages.put("erro-404", mockMvc.perform(get("/edicoes/" + java.util.UUID.randomUUID()).with(auth)).andExpect(status().isNotFound()).andReturn().getResponse().getContentAsString());
+        pages.put("erro-400", mockMvc.perform(get("/edicoes/uuid-invalido").with(auth)).andExpect(status().isBadRequest()).andReturn().getResponse().getContentAsString());
+        if (Boolean.getBoolean("ui.review.export")) {
+            var root = java.nio.file.Path.of("target", "ui-review");
+            java.nio.file.Files.createDirectories(root);
+            for (var asset : List.of("css/main.css", "css/dashboard.css", "js/sidebar.js")) {
+                var target = root.resolve(asset);
+                java.nio.file.Files.createDirectories(target.getParent());
+                java.nio.file.Files.copy(java.nio.file.Path.of("src/main/resources/static").resolve(asset), target, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            }
+            var index = new StringBuilder("<!doctype html><html lang=\"pt-BR\"><meta charset=\"UTF-8\"><title>Revisão isolada da interface</title><h1>Páginas renderizadas com dados fictícios</h1><ul>");
+            for (var entry : pages.entrySet()) {
+                java.nio.file.Files.writeString(root.resolve(entry.getKey() + ".html"), entry.getValue());
+                index.append("<li><a href=\"").append(entry.getKey()).append(".html\">").append(entry.getKey()).append("</a></li>");
+            }
+            java.nio.file.Files.writeString(root.resolve("index.html"), index.append("</ul></html>").toString());
+        }
     }
 }
