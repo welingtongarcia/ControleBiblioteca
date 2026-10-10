@@ -1,3 +1,29 @@
 <!DOCTYPE html><html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"><head th:replace="~{fragments/head :: head(${pageTitle})}"><title>Criador</title></head><body class="dashboard-page"><a class="skip-link" href="#main-content">Pular para o conteúdo</a><div class="dashboard-layout"><aside th:replace="~{fragments/navigation :: sidebar}"></aside><main id="main-content" tabindex="-1" class="content form-content page-content" aria-labelledby="page-title">
 <div th:replace="~{fragments/navigation :: breadcrumbs(${pageTitle}, null, null)}"></div>
-<h1 id="page-title" th:text="${pageTitle}">Novo criador</h1><form class="stack" th:action="${formAction}" th:object="${creatorForm}" method="post"><input type="hidden" name="returnTo" th:value="${navigation.pageReturnUrl}"><div class="field"><label for="name">Nome <span aria-hidden="true">*</span></label><input id="name" th:field="*{name}" maxlength="180" required><p class="field-error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></p></div><div class="field"><label for="sortName">Nome para ordenação</label><input id="sortName" th:field="*{sortName}" maxlength="180" placeholder="Ex.: Sobrenome, Nome"><p class="help-text">Opcional. Use para definir como o nome será ordenado no catálogo.</p><p class="field-error" th:if="${#fields.hasErrors('sortName')}" th:errors="*{sortName}"></p></div><div class="form-actions"><button type="submit">Salvar criador</button><a th:href="@{${navigation.returnUrl}}">Cancelar</a></div></form></main></div></body></html>
+<h1 id="page-title" th:text="${pageTitle}">Novo criador</h1>
+<form class="stack" th:action="${formAction}" th:object="${creatorForm}" method="post">
+    <input type="hidden" name="returnTo" th:value="${navigation.pageReturnUrl}">
+    <div class="field">
+        <label for="name">Nome <span aria-hidden="true">*</span></label>
+        <input id="name" th:field="*{name}" maxlength="180" required th:attr="aria-invalid=${#fields.hasErrors('name')},aria-describedby=${#fields.hasErrors('name') ? 'name-error' : null}">
+        <p id="name-error" class="field-error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></p>
+    </div>
+    <div class="field">
+        <label for="sortName">Nome para ordenação</label>
+        <input id="sortName" th:field="*{sortName}" maxlength="180" placeholder="Ex.: Sobrenome, Nome" th:attr="aria-invalid=${#fields.hasErrors('sortName')},aria-describedby=${'sortName-help' + (#fields.hasErrors('sortName') ? ' sortName-error' : '')}">
+        <p id="sortName-help" class="help-text">Opcional. Use para definir como o nome será ordenado no catálogo.</p>
+        <p id="sortName-error" class="field-error" th:if="${#fields.hasErrors('sortName')}" th:errors="*{sortName}"></p>
+    </div>
+    <fieldset class="edition-choice-group" th:attr="aria-invalid=${#fields.hasErrors('functions')},aria-describedby=${'functions-help' + (#fields.hasErrors('functions') ? ' functions-error' : '')}">
+        <legend>Funções do criador</legend>
+        <p id="functions-help" class="help-text">Opcional. Marque todas as funções que se aplicam. São áreas de atuação do criador, não créditos específicos de uma edição.</p>
+        <div class="edition-choice-list creator-function-list">
+            <label class="edition-choice" th:each="function : ${creatorFunctions}">
+                <input type="checkbox" th:field="*{functions}" th:value="${function}">
+                <span th:text="${function.label}">Roteirista</span>
+            </label>
+        </div>
+        <p id="functions-error" class="field-error" th:if="${#fields.hasErrors('functions')}">Selecione apenas as funções disponíveis na lista.</p>
+    </fieldset>
+    <div class="form-actions"><button type="submit">Salvar criador</button><a th:href="@{${navigation.returnUrl}}">Cancelar</a></div>
+</form></main></div></body></html>

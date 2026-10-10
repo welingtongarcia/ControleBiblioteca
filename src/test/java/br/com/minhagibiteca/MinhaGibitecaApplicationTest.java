@@ -56,6 +56,97 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Testcontainers
 class MinhaGibitecaApplicationTest {
 
+    @Test
+    void savesCreatorFunctionsAndRendersThemAcrossCatalog() throws Exception {
+        var owner = userAccountRepository.save(UserAccount.create("functions@example.com", "hash", UserRole.USER));
+        var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
+        var blank = mockMvc.perform(get("/criadores/novo").with(auth)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertThat(blank).contains("Funções do criador", "Arte-finalista", "name=\"_functions\"", "functions-help");
+        saveCreatorFunctionsPreview("new", blank);
+        mockMvc.perform(post("/criadores").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                .param("name", "Artista múltiplo").param("functions", "DESENHISTA", "ROTEIRISTA"))
+                .andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/criadores"));
+        var creator = creatorRepository.findByOwnerUserIdOrderByNormalizedNameAsc(owner.getId()).getFirst();
+        assertThat(creator.getFunctions()).containsExactlyInAnyOrder(
+                br.com.minhagibiteca.catalog.domain.CreatorFunction.DESENHISTA, br.com.minhagibiteca.catalog.domain.CreatorFunction.ROTEIRISTA);
+        var edit = mockMvc.perform(get("/criadores/" + creator.getId() + "/editar").with(auth)).andExpect(status().isOk()).andReturn();
+        assertThat(((br.com.minhagibiteca.catalog.presentation.CreatorForm) edit.getModelAndView().getModel().get("creatorForm")).getFunctions()).hasSize(2);
+        saveCreatorFunctionsPreview("edit", edit.getResponse().getContentAsString());
+        mockMvc.perform(get("/criadores").with(auth)).andExpect(content().string(org.hamcrest.Matchers.containsString("Roteirista, Desenhista")));
+        mockMvc.perform(get("/edicoes/nova").with(auth)).andExpect(content().string(org.hamcrest.Matchers.containsString("Roteirista, Desenhista")));
+        var edition = editionService.create(owner.getId(), new EditionService.Command(null, null, "HQ", null, null, null, null, null, null));
+        editionAssociationService.replace(edition.getId(), owner.getId(), List.of(), List.of(creator.getId()));
+        mockMvc.perform(get("/edicoes/" + edition.getId()).with(auth)).andExpect(content().string(org.hamcrest.Matchers.containsString("Roteirista, Desenhista")));
+        mockMvc.perform(post("/criadores/" + creator.getId() + "/editar").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                .param("name", creator.getName()).param("_functions", "on"))
+                .andExpect(status().is3xxRedirection());
+        assertThat(creatorService.findOwned(creator.getId(), owner.getId()).getFunctions()).isEmpty();
+        assertThat(editionAssociationService.creatorIds(edition.getId())).containsExactly(creator.getId());
+    }
+
+    @Test
+    void validatesCreatorFunctionsPreservesDraftAndProtectsOwner() throws Exception {
+        var owner = userAccountRepository.save(UserAccount.create("functions-valid@example.com", "hash", UserRole.USER));
+        var other = userAccountRepository.save(UserAccount.create("functions-other@example.com", "hash", UserRole.USER));
+        var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
+        var creator = creatorService.create(owner.getId(), new CreatorService.Command("Existente", null));
+        for (var name : List.of("", "Existente")) {
+            var result = mockMvc.perform(post("/criadores").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                    .param("name", name).param("functions", "COLORISTA", "LETRISTA"))
+                    .andExpect(status().isOk()).andExpect(view().name("criadores/form")).andReturn();
+            var draft = (br.com.minhagibiteca.catalog.presentation.CreatorForm) result.getModelAndView().getModel().get("creatorForm");
+            assertThat(draft.getFunctions()).hasSize(2);
+            saveCreatorFunctionsPreview("errors", result.getResponse().getContentAsString());
+        }
+        mockMvc.perform(post("/criadores").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                .param("name", "Inválido").param("functions", "INVALID_FUNCTION"))
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("Selecione apenas as funções disponíveis")));
+        assertThat(creatorRepository.count()).isEqualTo(1);
+        mockMvc.perform(post("/criadores").with(auth).param("name", "Sem CSRF").param("functions", "EDITOR")).andExpect(status().isForbidden());
+        var foreignAuth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(other));
+        mockMvc.perform(get("/criadores/" + creator.getId() + "/editar").with(foreignAuth)).andExpect(status().isNotFound());
+        mockMvc.perform(post("/criadores/" + creator.getId() + "/editar").with(foreignAuth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                .param("name", "Alterado").param("functions", "EDITOR")).andExpect(status().isNotFound());
+        assertThat(creatorService.findOwned(creator.getId(), owner.getId()).getFunctions()).isEmpty();
+        mockMvc.perform(get("/criadores").with(foreignAuth)).andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Existente"))));
+    }
+
+    private void saveCreatorFunctionsPreview(String name, String html) throws java.io.IOException {
+        var preview = java.nio.file.Path.of("target/ui-creator-functions");
+        java.nio.file.Files.createDirectories(preview.resolve("css"));
+        java.nio.file.Files.createDirectories(preview.resolve("js"));
+        java.nio.file.Files.writeString(preview.resolve(name + ".html"), html);
+        for (var css : List.of("main", "dashboard", "home-showcase"))
+            java.nio.file.Files.copy(java.nio.file.Path.of("src/main/resources/static/css/" + css + ".css"), preview.resolve("css/" + css + ".css"), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        java.nio.file.Files.copy(java.nio.file.Path.of("src/main/resources/static/js/sidebar.js"), preview.resolve("js/sidebar.js"), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+    }
+
+    @Autowired private jakarta.persistence.EntityManagerFactory entityManagerFactory;
+
+    @Test
+    void loadsCreatorFunctionsWithoutNPlusOneAndEnforcesDatabaseConstraints() {
+        var owner = userAccountRepository.save(UserAccount.create("functions-batch@example.com", "hash", UserRole.USER));
+        for (int i = 0; i < 25; i++) creatorService.create(owner.getId(), new CreatorService.Command(
+                "Artista " + i, null, java.util.Set.of(br.com.minhagibiteca.catalog.domain.CreatorFunction.ROTEIRISTA)));
+        var statistics = entityManagerFactory.unwrap(org.hibernate.SessionFactory.class).getStatistics();
+        statistics.setStatisticsEnabled(true);
+        statistics.clear();
+        try {
+            var page = creatorService.list(owner.getId(), "", org.springframework.data.domain.PageRequest.of(0, 20));
+            assertThat(page.getTotalElements()).isEqualTo(25);
+            assertThat(page.getContent()).allSatisfy(creator -> assertThat(creator.getFunctionsDescription()).isEqualTo("Roteirista"));
+            assertThat(statistics.getPrepareStatementCount()).isLessThanOrEqualTo(3);
+            var creator = page.getContent().getFirst();
+            var jdbc = new org.springframework.jdbc.core.JdbcTemplate(dataSource);
+            assertThatThrownBy(() -> jdbc.update("insert into creator_functions(creator_id, function) values (?, ?)", creator.getId(), "INVALID"))
+                    .isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class);
+            creatorService.delete(creator.getId(), owner.getId());
+            assertThat(jdbc.queryForObject("select count(*) from creator_functions where creator_id = ?", Integer.class, creator.getId())).isZero();
+        } finally {
+            statistics.setStatisticsEnabled(false);
+        }
+    }
+
     @Container
     static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine");
 

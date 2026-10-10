@@ -154,6 +154,8 @@ select { background: #11151d; border: 1px solid #657084; border-radius: .5rem; c
 .edition-choice:has(input:checked) { background: #2b3442; border-radius: .35rem; }
 .edition-choice:focus-within { outline: 2px solid #fff; outline-offset: -2px; }
 .edition-choice input[type=checkbox] { accent-color: var(--accent); width: 1.15rem; height: 1.15rem; min-height: 0; flex: 0 0 auto; margin: 0; }
+.creator-function-list { max-height: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); }
+.edition-choice small.help-text { display: block; margin-top: .25rem; }
 .edition-choice-empty { color: var(--muted); font-size: .85rem; border: 1px dashed #657084; border-radius: .5rem; padding: 1rem; line-height: 1.5; }
 .edition-form-footer { border-top: 1px solid #3a4251; padding-top: 1rem; }
 .edition-form-footer .form-actions { justify-content: flex-end; }

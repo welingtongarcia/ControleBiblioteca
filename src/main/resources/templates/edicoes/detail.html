@@ -64,7 +64,8 @@
     <section class="details-section" aria-labelledby="creators-title">
         <h2 id="creators-title">Criadores</h2>
         <p th:if="${creators.empty}">Nenhum criador associado.</p>
-        <ul th:unless="${creators.empty}"><li th:each="creator : ${creators}" th:text="${creator.name}"></li></ul>
+        <p class="help-text" th:unless="${creators.empty}">As funções indicam a atuação geral do criador, não os créditos específicos desta edição.</p>
+        <ul th:unless="${creators.empty}"><li th:each="creator : ${creators}"><span th:text="${creator.name}"></span> — <span th:text="${creator.functionsDescription}"></span></li></ul>
     </section>
     <section class="details-section" aria-labelledby="characters-title">
         <h2 id="characters-title">Personagens</h2>

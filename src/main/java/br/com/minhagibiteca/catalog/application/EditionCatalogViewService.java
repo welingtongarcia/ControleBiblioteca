@@ -37,7 +37,7 @@ public class EditionCatalogViewService {
         return works.options(owner).stream().map(w -> new WorkOption(w.getId(), w.getTitle())).toList();
     }
     public List<NamedOption> creators(UUID owner) {
-        return creators.options(owner).stream().map(c -> new NamedOption(c.getId(), c.getName())).toList();
+        return creators.options(owner).stream().map(c -> new NamedOption(c.getId(), c.getName(), c.getFunctionsDescription())).toList();
     }
     public List<WorkOption> editionWorks(UUID id, UUID owner) {
         return jdbc.query("""
@@ -50,12 +50,15 @@ public class EditionCatalogViewService {
     }
     public List<NamedOption> editionCreators(UUID id, UUID owner) {
         return jdbc.query("""
-                select distinct c.id, c.name from edition_creators ec
+                select distinct c.id, c.name,
+                    (select string_agg(cf.function, ',') from creator_functions cf where cf.creator_id = c.id) as functions
+                from edition_creators ec
                 join editions e on e.id = ec.edition_id
                 join creators c on c.id = ec.creator_id
                 where e.id = ? and e.owner_user_id = ? and c.owner_user_id = ?
                 order by c.name, c.id
-                """, (row, index) -> new NamedOption(row.getObject("id", UUID.class), row.getString("name")), id, owner, owner);
+                """, (row, index) -> new NamedOption(row.getObject("id", UUID.class), row.getString("name"),
+                        describeFunctions(row.getString("functions"))), id, owner, owner);
     }
     public List<NamedOption> seriesOptions(UUID owner) {
         return jdbc.query("select id, name from series where owner_user_id = ? order by normalized_name, id",
@@ -63,6 +66,14 @@ public class EditionCatalogViewService {
     }
     public String publisherName(UUID id, UUID owner) { return id == null ? "Não informada" : publishers.findOwned(id, owner).getName(); }
     public String seriesName(UUID id, UUID owner) { return id == null ? "Não informada" : series.findOwned(id, owner).getName(); }
-    public record NamedOption(UUID id, String name) { }
+    public record NamedOption(UUID id, String name, String functionsDescription) {
+        public NamedOption(UUID id, String name) { this(id, name, null); }
+    }
+    private static String describeFunctions(String functions) {
+        return functions == null ? "Funções não informadas" : java.util.Arrays.stream(functions.split(","))
+                .map(br.com.minhagibiteca.catalog.domain.CreatorFunction::valueOf).sorted()
+                .map(br.com.minhagibiteca.catalog.domain.CreatorFunction::getLabel)
+                .collect(java.util.stream.Collectors.joining(", "));
+    }
     public record WorkOption(UUID id, String title) { }
 }
