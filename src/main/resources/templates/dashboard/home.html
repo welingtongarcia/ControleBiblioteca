@@ -20,7 +20,8 @@
         </nav>
         <p class="alert alert-success" role="status" th:if="${successMessage}" th:text="${successMessage}"></p>
         <p class="alert alert-error" role="alert" th:if="${errorMessage}" th:text="${errorMessage}"></p>
-        <section class="showcase-feature" th:if="${showcase.featured != null}" th:with="edition=${showcase.featured}" aria-labelledby="featured-title">
+        <section class="home-banner" id="home-banner" aria-label="Destaques da sua Gibiteca" aria-roledescription="carrossel">
+        <section id="banner-highlight" class="showcase-feature banner-slide" data-banner-title="Em destaque" th:if="${showcase.featured != null}" th:with="edition=${showcase.featured}" aria-labelledby="featured-title" aria-roledescription="painel">
             <div class="showcase-feature-copy">
                 <p class="showcase-eyebrow"><span aria-hidden="true">✦</span> Em destaque na sua coleção</p>
                 <p class="showcase-feature-kicker" th:text="${edition.read ? 'Uma história para revisitar' : 'Sua próxima história começa aqui'}"></p>
@@ -45,10 +46,54 @@
                 </div>
             </div>
         </section>
-        <section class="showcase-empty" th:if="${showcase.featured == null}" aria-labelledby="empty-title">
+        <section id="banner-highlight" class="showcase-empty banner-slide" data-banner-title="Comece sua coleção" th:if="${showcase.featured == null}" aria-labelledby="empty-title" aria-roledescription="painel">
             <div><p class="showcase-eyebrow">O próximo capítulo é seu</p><h2 id="empty-title">Toda grande coleção começa com uma história.</h2><p>Cadastre seu primeiro quadrinho e veja suas capas ganharem espaço aqui. Seus números e valores continuam na Visão geral.</p>
             <div class="showcase-feature-actions"><a class="button-link" th:href="@{/edicoes/nova(returnTo='/dashboard')}">Cadastrar minha primeira edição</a><a class="showcase-secondary" th:href="@{/edicoes}">Abrir catálogo</a></div></div>
             <div class="showcase-empty-art" aria-hidden="true"><span>MG</span><span>Uma coleção.<br>Infinitas histórias.</span></div>
+        </section>
+        <section id="banner-reading" class="showcase-feature banner-slide banner-reading" data-banner-title="Sua jornada de leitura" aria-labelledby="banner-reading-title" aria-roledescription="painel">
+            <div class="showcase-feature-copy">
+                <p class="showcase-eyebrow">Cada leitura é uma nova aventura</p>
+                <h2 id="banner-reading-title">Sua jornada de leitura</h2>
+                <p class="showcase-feature-description"><strong th:text="${bannerReading.read}">0</strong> de <strong th:text="${bannerReading.total}">0</strong> edições marcadas como lidas.</p>
+                <p class="showcase-feature-description" th:if="${bannerReading.total == 0}">Cadastre suas histórias para começar a acompanhar sua leitura.</p>
+                <p class="showcase-feature-description" th:if="${bannerReading.total > 0}" th:text="${bannerReading.read == bannerReading.total ? 'Todas as edições estão marcadas como lidas. Que tal revisitar uma favorita?' : 'Marque suas leituras no catálogo e acompanhe seu progresso na Visão geral.'}"></p>
+                <div class="showcase-feature-actions"><a class="button-link" th:href="@{/edicoes}">Escolher uma história</a><a class="showcase-secondary" th:href="@{/visao-geral}">Acompanhar progresso</a></div>
+            </div>
+            <div class="banner-stat"><p class="banner-stat-value" th:text="${bannerReading.percentageLabel()}">0,0%</p><p>da coleção lida</p><progress max="100" th:value="${bannerReading.percentage()}" th:aria-label="${bannerReading.label()}">Progresso de leitura</progress></div>
+        </section>
+        <section id="banner-collection" class="showcase-feature banner-slide banner-collection" data-banner-title="Histórias em todos os formatos" aria-labelledby="banner-collection-title" aria-roledescription="painel">
+            <div class="showcase-feature-copy">
+                <p class="showcase-eyebrow">Na estante ou na tela</p>
+                <h2 id="banner-collection-title">Histórias em todos os formatos</h2>
+                <p class="showcase-feature-description">Seu catálogo reúne <strong th:text="${bannerSummary.editions}">0</strong> edições. Cada edição conta uma vez, independentemente do número de exemplares físicos.</p>
+                <div class="showcase-feature-actions"><a class="button-link" th:href="@{/edicoes(mediaType='PHYSICAL')}">Explorar físicas</a><a class="showcase-secondary" th:href="@{/edicoes(mediaType='DIGITAL')}">Explorar digitais</a></div>
+            </div>
+            <dl class="banner-formats"><div><dt>Edições físicas</dt><dd th:text="${bannerSummary.physicalEditions}">0</dd></div><div><dt>Edições digitais</dt><dd th:text="${bannerSummary.digitalEditions}">0</dd></div><div th:if="${bannerSummary.unknownMediaEditions() > 0}"><dt>Suporte não informado</dt><dd th:text="${bannerSummary.unknownMediaEditions()}">0</dd></div></dl>
+        </section>
+        <section id="banner-finance" class="showcase-feature banner-slide banner-finance" data-banner-title="Sua coleção, suas escolhas" aria-labelledby="banner-finance-title" aria-roledescription="painel">
+            <div class="showcase-feature-copy">
+                <p class="showcase-eyebrow">Conheça seus gastos</p>
+                <h2 id="banner-finance-title">Sua coleção, suas escolhas</h2>
+                <p class="showcase-feature-description">Compare gastos por período, coleção, autor, personagem e editora na aba Financeiro.</p>
+                <p class="showcase-feature-description">Total considera os valores pagos informados nos cadastros de edições, sem somar os valores dos exemplares físicos.</p>
+                <p class="showcase-feature-description" th:if="${bannerSummary.unpricedEditions() > 0}"><strong th:text="${bannerSummary.unpricedEditions()}">0</strong> <span th:text="${bannerSummary.unpricedEditions() == 1 ? 'edição sem valor pago informado.' : 'edições sem valor pago informado.'}">edições sem valor pago informado.</span> O total pode estar incompleto.</p>
+                <div class="showcase-feature-actions"><a class="button-link" th:href="@{/financeiro}">Analisar meus gastos</a><a class="showcase-secondary" th:href="@{/visao-geral}">Ver resumo completo</a></div>
+            </div>
+            <div class="banner-stat"><p class="banner-stat-value banner-money" th:text="${bannerSummary.registeredPaidLabel()}">Não informado</p><p>Total pago nos cadastros</p><p class="banner-stat-caption">Valores informados em <strong th:text="${bannerSummary.pricedEditions}">0</strong> de <strong th:text="${bannerSummary.editions}">0</strong> edições.</p></div>
+        </section>
+        <div class="banner-controls" hidden>
+            <div class="banner-direction"><button type="button" data-banner-prev aria-label="Banner anterior"><span aria-hidden="true">←</span></button><button type="button" data-banner-next aria-label="Próximo banner"><span aria-hidden="true">→</span></button></div>
+            <div class="banner-selectors" role="group" aria-label="Escolher um banner">
+                <button type="button" data-banner-select="0" aria-controls="banner-highlight" aria-label="Mostrar banner 1: destaque">1</button>
+                <button type="button" data-banner-select="1" aria-controls="banner-reading" aria-label="Mostrar banner 2: leitura">2</button>
+                <button type="button" data-banner-select="2" aria-controls="banner-collection" aria-label="Mostrar banner 3: formatos">3</button>
+                <button type="button" data-banner-select="3" aria-controls="banner-finance" aria-label="Mostrar banner 4: financeiro">4</button>
+            </div>
+            <button type="button" data-banner-play>Pausar rotação</button>
+            <p class="banner-position" data-banner-position>1 de 4</p>
+        </div>
+        <p class="visually-hidden" data-banner-announcement aria-live="polite" aria-atomic="true"></p>
         </section>
         <div id="home-shelves" class="showcase-shelves" th:if="${!showcase.shelves.empty}">
             <p class="showcase-scroll-help">Explore as fileiras com o toque, a barra de rolagem ou as setas do teclado ao focar uma fileira. Até 12 edições por seleção.</p>
@@ -71,4 +116,5 @@
         <footer class="showcase-footer"><p>Suas capas. Suas histórias. Sua Gibiteca.</p><a th:href="@{/visao-geral}">Ver os números da coleção <span aria-hidden="true">→</span></a></footer>
     </main>
 </div>
+<script th:src="@{/js/home-banner.js}" defer></script>
 </body></html>

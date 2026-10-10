@@ -20,6 +20,8 @@ public class DashboardController {
     @GetMapping({"/", "/dashboard"})
     String dashboard(Model model) {
         model.addAttribute("showcase", home.showcase(user.id()));
+        model.addAttribute("bannerSummary", dashboard.summary(user.id()));
+        model.addAttribute("bannerReading", reading.overall(user.id()));
         return "dashboard/home";
     }
 

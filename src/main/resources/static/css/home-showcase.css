@@ -1,6 +1,28 @@
 /* Vitrine do próprio acervo: rolagem nativa, sem carrossel automático. */
 .showcase-page { background: #101215; }
 .showcase-main { max-width: 1600px; }
+.home-banner { min-width: 0; }
+.banner-slide[hidden], .banner-controls[hidden] { display: none; }
+.home-banner:not(.banner-ready) .banner-slide + .banner-slide { margin-top: 1rem; }
+.banner-reading { background: radial-gradient(ellipse at 85% 35%, #32676166, transparent 60%), #171e25; }
+.banner-collection { background: radial-gradient(ellipse at 85% 35%, #51427277, transparent 60%), #1b1c28; }
+.banner-finance { background: radial-gradient(ellipse at 85% 35%, #72552b66, transparent 60%), #1e2025; }
+.banner-stat { min-width: 0; text-align: center; color: #c4c8ce; overflow-wrap: anywhere; }
+.banner-stat .banner-stat-value { font-size: clamp(2.5rem, 5vw, 4.5rem); line-height: 1.2; font-weight: 800; color: #f1ce87; margin: 0; }
+.banner-stat .banner-money { font-size: clamp(1.7rem, 3.3vw, 3rem); }
+.banner-stat progress { width: 100%; accent-color: #edc06a; }
+.banner-stat-caption { font-size: .8rem; line-height: 1.5; }
+.banner-formats { display: grid; gap: 1rem; margin: 0; min-width: 0; }
+.banner-formats > div { border: 1px solid #777f8b; border-radius: .75rem; padding: 1rem; background: #ffffff05; }
+.banner-formats dt { color: #c4c8ce; font-size: .85rem; }
+.banner-formats dd { margin: .35rem 0 0; color: #f1ce87; font-weight: 800; font-size: 2rem; }
+.banner-controls { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; padding: 1rem 0; }
+.banner-controls button { min-width: 44px; min-height: 44px; white-space: nowrap; background: #20262e; color: #eeeae1; border-color: #68717d; }
+.banner-controls button:hover { background: #303741; }
+.banner-controls button:focus-visible { outline: 3px solid white; outline-offset: 3px; }
+.banner-direction, .banner-selectors { display: flex; flex-wrap: wrap; gap: .5rem; }
+.banner-selectors button[aria-current="true"] { background: #edc06a; color: #191b20; border-color: #edc06a; }
+.banner-position { color: #c4c8ce; font-size: .75rem; line-height: 1.5; margin: 0 0 0 auto; }
 .showcase-header { display: flex; flex-wrap: wrap; align-items: center; gap: 1.25rem; }
 .showcase-header > div { flex: 1 1 20rem; min-width: 0; }
 .showcase-header h1 { font-size: clamp(1.4rem, 2.4vw, 2rem); line-height: 1.3; margin: 0; }

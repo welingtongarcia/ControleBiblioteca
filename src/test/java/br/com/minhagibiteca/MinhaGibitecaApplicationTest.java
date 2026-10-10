@@ -1659,7 +1659,7 @@ class MinhaGibitecaApplicationTest {
         if (Boolean.getBoolean("ui.review.export")) {
             var root = java.nio.file.Path.of("target", "ui-review");
             java.nio.file.Files.createDirectories(root);
-            for (var asset : List.of("css/main.css", "css/dashboard.css", "css/home-showcase.css", "js/sidebar.js")) {
+            for (var asset : List.of("css/main.css", "css/dashboard.css", "css/home-showcase.css", "js/sidebar.js", "js/home-banner.js")) {
                 var target = root.resolve(asset);
                 java.nio.file.Files.createDirectories(target.getParent());
                 java.nio.file.Files.copy(java.nio.file.Path.of("src/main/resources/static").resolve(asset), target, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
@@ -1682,14 +1682,19 @@ class MinhaGibitecaApplicationTest {
             mockMvc.perform(get(path)).andExpect(status().is3xxRedirection()).andExpect(redirectedUrlPattern("**/login"));
         }
         var empty = mockMvc.perform(get("/").with(auth)).andExpect(view().name("dashboard/home")).andReturn();
+        assertThat(((br.com.minhagibiteca.dashboard.application.CollectionSummary) empty.getModelAndView().getModel().get("bannerSummary")).editions()).isZero();
+        assertThat(((br.com.minhagibiteca.collection.application.ReadingProgress) empty.getModelAndView().getModel().get("bannerReading")).total()).isZero();
         var previews = new java.util.LinkedHashMap<String, String>();
         previews.put("inicio-vazio", empty.getResponse().getContentAsString());
         assertThat(empty.getResponse().getContentAsString()).contains("Toda grande coleção começa com uma história.", "Visão geral").doesNotContain("id=\"home-overview\"", "class=\"showcase-rail\"");
-        editionRepository.save(Edition.create(other.getId(), null, null, "SEGREDO OUTRO USUÁRIO", null, null, null, null, null, null));
+        var foreign = Edition.create(other.getId(), null, null, "SEGREDO OUTRO USUÁRIO", null, null, null, null, null, null);
+        foreign.updatePricingAndMedia(br.com.minhagibiteca.catalog.domain.MediaType.DIGITAL, null, new BigDecimal("9999.99"));
+        foreign.markRead(true);
+        editionRepository.save(foreign);
         var owned = new java.util.ArrayList<Edition>();
         for (int i = 0; i < 30; i++) {
             var edition = Edition.create(owner.getId(), null, null, "Minha história " + i, Integer.toString(i), null, null, 2026, "Capa dura", null);
-            edition.updatePricingAndMedia(i % 2 == 0 ? br.com.minhagibiteca.catalog.domain.MediaType.PHYSICAL : br.com.minhagibiteca.catalog.domain.MediaType.DIGITAL, null, null);
+            edition.updatePricingAndMedia(i % 2 == 0 ? br.com.minhagibiteca.catalog.domain.MediaType.PHYSICAL : br.com.minhagibiteca.catalog.domain.MediaType.DIGITAL, null, i == 0 ? new BigDecimal("25.50") : null);
             edition.markRead(i % 3 == 0);
             owned.add(editionRepository.save(edition));
         }
@@ -1701,6 +1706,15 @@ class MinhaGibitecaApplicationTest {
             var result = mockMvc.perform(get(path).with(auth)).andExpect(status().isOk()).andExpect(view().name("dashboard/home")).andReturn();
             var showcase = (br.com.minhagibiteca.dashboard.application.HomeShowcase) result.getModelAndView().getModel().get("showcase");
             assertThat(result.getModelAndView().getModel()).doesNotContainKeys("summary", "readingProgress");
+            var bannerSummary = (br.com.minhagibiteca.dashboard.application.CollectionSummary) result.getModelAndView().getModel().get("bannerSummary");
+            var bannerReading = (br.com.minhagibiteca.collection.application.ReadingProgress) result.getModelAndView().getModel().get("bannerReading");
+            assertThat(bannerSummary.editions()).isEqualTo(30);
+            assertThat(bannerSummary.physicalEditions()).isEqualTo(15);
+            assertThat(bannerSummary.digitalEditions()).isEqualTo(15);
+            assertThat(bannerSummary.registeredPaid()).isEqualByComparingTo("25.50");
+            assertThat(bannerSummary.unpricedEditions()).isEqualTo(29);
+            assertThat(bannerReading.total()).isEqualTo(30);
+            assertThat(bannerReading.read()).isEqualTo(10);
             assertThat(showcase.featured().id()).isEqualTo(owned.get(29).getId());
             assertThat(showcase.featured().hasCover()).isTrue();
             assertThat(showcase.shelves()).hasSize(5);
@@ -1714,6 +1728,7 @@ class MinhaGibitecaApplicationTest {
                 if (shelf.category() == br.com.minhagibiteca.dashboard.application.HomeShelf.DIGITAL) assertThat(shelf.editions()).allMatch(e -> e.media() == br.com.minhagibiteca.catalog.domain.MediaType.DIGITAL);
             }
             var html = result.getResponse().getContentAsString();
+            assertThat(html).contains("id=\"home-banner\"", "id=\"banner-reading\"", "id=\"banner-collection\"", "id=\"banner-finance\"", "Sua jornada de leitura", "33,3%", bannerSummary.registeredPaidLabel(), "O total pode estar incompleto.", "data-banner-play", "aria-live=\"polite\"", "/js/home-banner.js", "href=\"/financeiro\"").doesNotContain("9.999,99");
             previews.put("inicio-com-capa", html);
             assertThat(html).contains("Seu universo de histórias", "Adicionados recentemente", "Sua próxima leitura", "Biblioteca digital", "Já lidos para revisitar", "tabindex=\"0\"", "loading=\"lazy\"", "returnTo=/dashboard", "/css/home-showcase.css", "/edicoes/" + owned.get(29).getId() + "/capa").doesNotContain("SEGREDO OUTRO USUÁRIO", "Sua coleção em números", "cover_file_name");
         }
@@ -1725,6 +1740,8 @@ class MinhaGibitecaApplicationTest {
         mockMvc.perform(get("/edicoes/{id}/capa", owned.get(29).getId()).with(SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(other)))).andExpect(status().isNotFound());
         mockMvc.perform(get("/edicoes/{id}/capa", owned.get(29).getId()).with(auth)).andExpect(status().isOk());
         readingService.mark(owned.get(29).getId(), owner.getId(), true);
+        var updatedReading = (br.com.minhagibiteca.collection.application.ReadingProgress) mockMvc.perform(get("/dashboard").with(auth)).andReturn().getModelAndView().getModel().get("bannerReading");
+        assertThat(updatedReading.read()).isEqualTo(11);
         var afterReading = (br.com.minhagibiteca.dashboard.application.HomeShowcase) mockMvc.perform(get("/dashboard").with(auth)).andReturn().getModelAndView().getModel().get("showcase");
         assertThat(afterReading.featured().id()).isEqualTo(owned.get(28).getId());
         assertThat(afterReading.shelves().stream().filter(s -> s.category() == br.com.minhagibiteca.dashboard.application.HomeShelf.UNREAD).findFirst().orElseThrow().editions()).noneMatch(e -> e.id().equals(owned.get(29).getId()));
@@ -1734,13 +1751,16 @@ class MinhaGibitecaApplicationTest {
         mockMvc.perform(post("/edicoes").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("title", "Nova história <script>").param("returnTo", "/dashboard")).andExpect(redirectedUrl("/dashboard"));
         var refreshed = mockMvc.perform(get("/dashboard").with(auth)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         assertThat(refreshed).contains("Nova história &lt;script&gt;").doesNotContain("Nova história <script>");
+        var refreshedBanner = (br.com.minhagibiteca.dashboard.application.CollectionSummary) mockMvc.perform(get("/dashboard").with(auth)).andReturn().getModelAndView().getModel().get("bannerSummary");
+        assertThat(refreshedBanner.editions()).isEqualTo(31);
+        assertThat(refreshedBanner.registeredPaid()).isEqualByComparingTo("25.50");
         previews.put("inicio-sem-capa", refreshed);
         var refreshedSummary = (br.com.minhagibiteca.dashboard.application.CollectionSummary) mockMvc.perform(get("/visao-geral").with(auth)).andReturn().getModelAndView().getModel().get("summary");
         assertThat(refreshedSummary.editions()).isEqualTo(31);
         if (Boolean.getBoolean("ui.review.export")) {
             var root = java.nio.file.Path.of("target", "ui-showcase");
             java.nio.file.Files.createDirectories(root);
-            for (var asset : List.of("css/main.css", "css/dashboard.css", "css/home-showcase.css", "js/sidebar.js")) {
+            for (var asset : List.of("css/main.css", "css/dashboard.css", "css/home-showcase.css", "js/sidebar.js", "js/home-banner.js")) {
                 java.nio.file.Files.createDirectories(root.resolve(asset).getParent());
                 java.nio.file.Files.copy(java.nio.file.Path.of("src/main/resources/static").resolve(asset), root.resolve(asset), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
             }
