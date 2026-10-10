@@ -343,8 +343,44 @@ class MinhaGibitecaApplicationTest {
                         .param("title", draft.getTitle()).param("isbn", draft.getIsbn()).param("publicationYear", draft.getPublicationYear().toString())
                         .param("publisherId", draft.getPublisherId().toString()).param("creatorIds", creator.getId().toString())
                         .param("mediaType", "DIGITAL").param("referencePaidPrice", "19,50"))
-                .andExpect(redirectedUrl("/edicoes"));
+                .andExpect(redirectedUrlPattern("/edicoes/*"));
         assertThat(editionRepository.count()).isEqualTo(1);
+    }
+
+    @Test
+    void opensNewEditionDetailsWithCoverFormAndSafeOrigin() throws Exception {
+        var owner = userAccountRepository.save(UserAccount.create("create-details@example.com", "hash", UserRole.USER));
+        var other = userAccountRepository.save(UserAccount.create("create-details-other@example.com", "hash", UserRole.USER));
+        var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
+        for (String origin : java.util.Arrays.asList(null, "/edicoes?q=HQ&page=1", "/dashboard", "/financeiro", "https://example.com")) {
+            String title = "HQ " + editionRepository.count();
+            var request = post("/edicoes").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("title", title);
+            if (origin != null) request.param("returnTo", origin);
+            var saved = mockMvc.perform(request).andExpect(status().is3xxRedirection()).andReturn();
+            var edition = editionRepository.findAll().stream().filter(e -> e.getTitle().equals(title)).findFirst().orElseThrow();
+            String detail = "/edicoes/" + edition.getId();
+            String destination = saved.getResponse().getRedirectedUrl();
+            boolean safeOrigin = origin != null && origin.startsWith("/");
+            if (safeOrigin) {
+                assertThat(destination).startsWith(detail + "?returnTo=");
+                assertThat(java.net.URLDecoder.decode(destination.split("returnTo=")[1], java.nio.charset.StandardCharsets.UTF_8))
+                        .isEqualTo(origin);
+            } else assertThat(destination).isEqualTo(detail);
+            var detailsRequest = get(detail).with(auth).flashAttrs(saved.getFlashMap());
+            if (safeOrigin) detailsRequest.param("returnTo", origin);
+            var html = mockMvc.perform(detailsRequest).andExpect(status().isOk()).andReturn().getResponse()
+                    .getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+            assertThat(html).contains("Edição cadastrada com sucesso", "adicionar a capa", "Imagem da capa",
+                    "action=\"" + detail + "/capa\"", "multipart/form-data", "name=\"_csrf\"", "Enviar capa");
+            mockMvc.perform(get(detail).with(SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(other))))
+                    .andExpect(status().isNotFound());
+        }
+        long before = editionRepository.count();
+        mockMvc.perform(post("/edicoes").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("title", ""))
+                .andExpect(status().isOk()).andExpect(view().name("edicoes/form"));
+        assertThat(editionRepository.count()).isEqualTo(before);
+        mockMvc.perform(post("/edicoes").with(auth).param("title", "Sem CSRF")).andExpect(status().isForbidden());
+        assertThat(editionRepository.count()).isEqualTo(before);
     }
 
     @Test
@@ -380,7 +416,7 @@ class MinhaGibitecaApplicationTest {
                 .param("publisherId", pub.getId().toString()).param("seriesId", series.getId().toString())
                 .param("workIds", workA.getId().toString(), workB.getId().toString()).param("creatorIds", creatorA.getId().toString(), creatorB.getId().toString())
                 .param("returnTo", "/edicoes?q=aventura&page=1"))
-                .andExpect(redirectedUrl("/edicoes?q=aventura&page=1"));
+                .andExpect(redirectedUrlPattern("/edicoes/*?returnTo=/**"));
         var edition = editionRepository.findAll().getFirst();
         assertThat(editionAssociationService.workIds(edition.getId())).containsExactlyInAnyOrder(workA.getId(), workB.getId());
         assertThat(editionAssociationService.creatorIds(edition.getId())).containsExactlyInAnyOrder(creatorA.getId(), creatorB.getId());
@@ -853,7 +889,7 @@ class MinhaGibitecaApplicationTest {
         String redirect = saved.getResponse().getRedirectedUrl();
         assertThat(redirect).startsWith("/edicoes/" + edition.getId() + "?returnTo=");
         assertThat(java.net.URLDecoder.decode(redirect.split("returnTo=")[1], java.nio.charset.StandardCharsets.UTF_8)).isEqualTo(origin);
-        mockMvc.perform(post("/edicoes").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("title", "Nova HQ").param("returnTo", origin)).andExpect(redirectedUrl(origin));
+        mockMvc.perform(post("/edicoes").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("title", "Nova HQ").param("returnTo", origin)).andExpect(redirectedUrlPattern("/edicoes/*?returnTo=/**"));
         String publisherOrigin = "/editoras?q=Editora&page=2";
         mockMvc.perform(post("/editoras").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("name", "Editora contextual").param("returnTo", publisherOrigin)).andExpect(redirectedUrl(publisherOrigin));
     }
@@ -872,7 +908,7 @@ class MinhaGibitecaApplicationTest {
         mockMvc.perform(post("/checklist/itens/{id}/editar", item).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
                         .param("editorialNumber", "Especial").param("owned", "true").param("returnTo", origin)).andExpect(redirectedUrl(origin));
         for (String unsafe : List.of("https://example.com", "//example.com", "/series", "/edicoes/nova")) {
-            mockMvc.perform(post("/edicoes").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("title", "Retorno seguro").param("returnTo", unsafe)).andExpect(redirectedUrl("/edicoes"));
+            mockMvc.perform(post("/edicoes").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("title", "Retorno seguro").param("returnTo", unsafe)).andExpect(redirectedUrlPattern("/edicoes/*"));
         }
         mockMvc.perform(get("/checklist/itens/{id}/editar", item).with(SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(other))).param("returnTo", origin))
                 .andExpect(status().isNotFound()).andExpect(view().name("errors/404"))
@@ -1078,7 +1114,7 @@ class MinhaGibitecaApplicationTest {
         mockMvc.perform(post("/edicoes").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
                         .param("title", "Quadrinho digital").param("mediaType", "DIGITAL")
                         .param("coverPrice", "29,90").param("referencePaidPrice", "19.50"))
-                .andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/edicoes"));
+                .andExpect(status().is3xxRedirection()).andExpect(redirectedUrlPattern("/edicoes/*"));
         Edition edition = editionRepository.findAll().getFirst();
         assertThat(edition.getMediaType()).isEqualTo(br.com.minhagibiteca.catalog.domain.MediaType.DIGITAL);
         assertThat(edition.getCoverPrice()).isEqualByComparingTo("29.90");
@@ -2074,7 +2110,7 @@ class MinhaGibitecaApplicationTest {
         readingService.mark(owned.get(29).getId(), owner.getId(), false);
         var detail = mockMvc.perform(get("/edicoes/{id}?returnTo=/dashboard", owned.get(29).getId()).with(auth)).andExpect(status().isOk()).andReturn();
         assertThat(detail.getResponse().getContentAsString()).contains("← Voltar para Início");
-        mockMvc.perform(post("/edicoes").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("title", "Nova história <script>").param("returnTo", "/dashboard")).andExpect(redirectedUrl("/dashboard"));
+        mockMvc.perform(post("/edicoes").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("title", "Nova história <script>").param("returnTo", "/dashboard")).andExpect(redirectedUrlPattern("/edicoes/*?returnTo=/dashboard"));
         var refreshed = mockMvc.perform(get("/dashboard").with(auth)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         assertThat(refreshed).contains("Nova história &lt;script&gt;").doesNotContain("Nova história <script>");
         var refreshedBanner = (br.com.minhagibiteca.dashboard.application.CollectionSummary) mockMvc.perform(get("/dashboard").with(auth)).andReturn().getModelAndView().getModel().get("bannerSummary");

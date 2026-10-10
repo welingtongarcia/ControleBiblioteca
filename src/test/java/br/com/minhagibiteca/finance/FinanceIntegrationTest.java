@@ -80,7 +80,7 @@ class FinanceIntegrationTest {
   var auth=SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(a));
   String context="/financeiro?start=2026-06-01&end=2026-06-10";
   mvc.perform(post("/edicoes").with(auth).param("title","HQ")).andExpect(status().isForbidden());
-  mvc.perform(post("/edicoes").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("title","HQ <script>").param("referencePaidPrice","19,50").param("purchaseDate","2026-06-01").param("returnTo",context)).andExpect(redirectedUrl(context));
+  mvc.perform(post("/edicoes").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("title","HQ <script>").param("referencePaidPrice","19,50").param("purchaseDate","2026-06-01").param("returnTo",context)).andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrlPattern("/edicoes/*?returnTo=/**"));
   var entry=finance.report(a.getId(),all(),0).entries().getContent().getFirst();
   assertThat(entry.amount()).isEqualByComparingTo("19.50");assertThat(entry.purchaseDate()).isEqualTo(LocalDate.of(2026,6,1));
   var form=mvc.perform(get("/edicoes/{id}/editar",entry.id()).with(auth).param("returnTo",context)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
@@ -154,7 +154,7 @@ class FinanceIntegrationTest {
   var character=characters.options(a.getId()).getFirst();assertThatThrownBy(()->characters.save(a.getId(),null," batman ")).isInstanceOf(CharacterService.CharacterRule.class);
   var foreign=characters.save(b.getId(),null,"Privado");
   mvc.perform(post("/edicoes").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("title","Não pode salvar").param("characterIds",foreign.toString())).andExpect(status().isNotFound());assertThat(jdbc.queryForObject("select count(*) from editions",Long.class)).isZero();
-  mvc.perform(post("/edicoes").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("title","Edição com personagem").param("characterIds",character.id().toString())).andExpect(redirectedUrl("/edicoes"));
+  mvc.perform(post("/edicoes").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("title","Edição com personagem").param("characterIds",character.id().toString())).andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrlPattern("/edicoes/*"));
   UUID id=jdbc.queryForObject("select id from editions",UUID.class);assertThat(characters.ids(a.getId(),id)).containsExactly(character.id());
   mvc.perform(get("/edicoes/{id}/editar",id).with(auth)).andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("checked=\"checked\"")));
   assertThatThrownBy(()->characters.delete(a.getId(),character.id())).isInstanceOf(CharacterService.CharacterRule.class);

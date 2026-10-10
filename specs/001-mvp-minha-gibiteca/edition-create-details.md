@@ -10,8 +10,18 @@ Constituição preservada: MVC/Thymeleaf, PRG, CSRF e autorização por propriet
 
 ## Plan → tasks → analyze
 
-- [ ] T1 Usar UUID retornado por EditionRegistrationService.save no redirect e orientar na confirmação. Reutilizar interceptor de navegação que preserva contexto nos destinos de detalhes.
-- [ ] T2 Atualizar expectativas antigas e verificar via MockMvc destino correspondente ao registro salvo, detalhes/formulário de capa, contexto seguro, retorno inválido e validação; executar suíte.
-- [ ] T3 Registrar resultados, arquivos e pendências; commit após validação real.
+- [x] T1 Usar UUID retornado por EditionRegistrationService.save no redirect e orientar na confirmação. No interceptor, preservar destino de detalhes especificamente no cadastro de edição, anexando contexto seguro.
+- [x] T2 Atualizar expectativas antigas e verificar via MockMvc destino correspondente ao registro salvo, detalhes/formulário de capa, contexto seguro, retorno inválido e validação; executar suíte.
+- [x] T3 Registrar resultados, arquivos e pendências; commit após validação real.
 
-Análise: NavigationContext.redirect já anexa returnTo validado ao destino de detalhes; não requer alterar infraestrutura de navegação, template, esquema ou serviço transacional. Não cadastrar capa automaticamente nem tornar imagem obrigatória.
+Análise: NavigationContext.redirect anexa returnTo do catálogo aos detalhes, mas redireciona diretamente a painéis de origem. O interceptor deve usar withReturn especificamente no POST /edicoes bem-sucedido, sem mudar fluxos de edição ou outros cadastros. Não requer alterar template, esquema ou serviço transacional. Não cadastrar capa automaticamente nem tornar imagem obrigatória.
+
+## Implementação → verificação
+
+EditionController usa o UUID devolvido pelo serviço transacional e redireciona para os detalhes; confirmação orienta o envio da capa. NavigationConfiguration mantém o destino no POST /edicoes e usa NavigationContext.withReturn com contexto já validado. Outros POSTs permanecem com comportamento anterior.
+
+MinhaGibitecaApplicationTest cobre criação sem origem, origem filtrada, Início, Financeiro e origem externa rejeitada; confirma UUID salvo, HTML do formulário de capa, CSRF, mensagem, propriedade e validação sem criação. Expectativas antigas atualizadas nesse arquivo e em FinanceIntegrationTest; testes de upload existentes continuam na suíte.
+
+Primeira execução de `./mvnw -q clean verify`: exit 1, 214 testes e 4 falhas de expectativas antigas/padrão de URL, sem erros; expectativas ajustadas. Execução final do mesmo comando: exit 0, 214 testes, 0 falhas, 0 erros, 0 ignorados. `git diff --check`: exit 0. CAD-001/002/003 atendidos.
+
+Sem alteração de esquema, template ou dados reais; data/ preservado. Sem nova avaliação visual, pois layout não foi alterado; HTML conferido via MockMvc. Aplicação real não foi reiniciada: reiniciá-la para usar o novo fluxo.
