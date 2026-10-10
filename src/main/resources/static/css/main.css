@@ -118,6 +118,14 @@ select { background: #11151d; border: 1px solid #657084; border-radius: .5rem; c
 .edition-delete-button { background: transparent; border: 1px solid var(--error); color: var(--error); }
 .edition-price-note { font-size: .85rem; }
 .page-content.form-content.edition-form-page { max-width: 64rem; }
+.edition-edit-title { color: var(--accent); font-weight: 650; font-size: 1.15rem; margin: 12px 0; overflow-wrap: anywhere; }
+.edition-edit-toolbar { display: grid; gap: 16px; margin: 24px 0; padding: 16px; border: 1px solid #46525c; background: #191f23; border-radius: 12px; }
+.edition-section-nav { display: flex; flex-wrap: wrap; gap: 8px; }
+.edition-section-nav a { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; border: 1px solid #697985; border-radius: 8px; padding: 8px 12px; color: var(--text); font-size: .85rem; text-decoration: none; }
+.edition-section-nav a:hover { background: #2b3338; }
+.edition-edit-toolbar .form-actions { justify-content: flex-end; }
+.edition-edit-toolbar .form-actions a { min-height: 44px; }
+.edition-form-section[id] { scroll-margin-top: 24px; }
 .edition-form-heading { margin-bottom: 1.5rem; }
 .edition-form-heading .muted { margin-bottom: .5rem; }
 .edition-form-heading .help-text { font-size: .9rem; margin-top: 0; }

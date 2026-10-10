@@ -299,6 +299,13 @@ class MinhaGibitecaApplicationTest {
         assertThat(html.split("checked=\"checked\"", -1)).hasSize(5);
         assertThat(html).contains("type=\"checkbox\"", "name=\"_workIds\"", "name=\"_creatorIds\"", "39,50", "59,90")
                 .doesNotContain("Buscar pelo ISBN", "Obra privada de outro usuário");
+        assertThat(html).contains("aria-label=\"Seções da edição\"", "form=\"edition-entry-form\">Salvar alterações", "id=\"edition-entry-form\"", "class=\"edition-edit-title\"", "href=\"#edition-reading\"");
+        int previousSection = -1;
+        for (String section : List.of("Identificação da edição", "ISBN <", "Suporte e valores", "Páginas e leitura", "Vínculos bibliográficos", "Observações")) {
+            int position = html.indexOf("<legend>" + section);
+            assertThat(position).isGreaterThan(previousSection);
+            previousSection = position;
+        }
         saveEditionFormPreview("edit.html", html);
         var draft = rendered.getModelAndView().getModel().get("editionForm");
         var newForm = mockMvc.perform(get("/edicoes/nova").with(auth).flashAttr("editionForm", draft)).andExpect(status().isOk()).andReturn();
@@ -337,9 +344,11 @@ class MinhaGibitecaApplicationTest {
         var edition = editionService.create(owner.getId(), new EditionService.Command(null, null, "Leitura com interruptor", null, null, null, null, null, null));
         var preview = java.nio.file.Path.of("target/ui-reading-switch");
         java.nio.file.Files.createDirectories(preview.resolve("css"));
-        for (String css : List.of("main.css", "dashboard.css"))
+        for (String css : List.of("main.css", "dashboard.css", "home-showcase.css"))
             java.nio.file.Files.copy(java.nio.file.Path.of("src/main/resources/static/css", css),
                     preview.resolve("css").resolve(css), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        java.nio.file.Files.createDirectories(preview.resolve("js"));
+        java.nio.file.Files.copy(java.nio.file.Path.of("src/main/resources/static/js/sidebar.js"), preview.resolve("js/sidebar.js"), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
         for (boolean read : List.of(false, true)) {
             for (boolean catalog : List.of(true, false)) {
                 var path = catalog ? "/edicoes" : "/edicoes/" + edition.getId();

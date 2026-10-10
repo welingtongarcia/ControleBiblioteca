@@ -7,10 +7,15 @@
     <header class="edition-form-heading">
         <p class="eyebrow">Catálogo</p>
         <h1 id="page-title" th:text="${pageTitle}">Nova edição</h1>
-        <p class="muted">Registre os dados do quadrinho. Os exemplares físicos são cadastrados separadamente.</p>
+        <p class="muted" th:if="${editionId == null}">Registre os dados do quadrinho. Os exemplares físicos são cadastrados separadamente.</p>
+        <p class="edition-edit-title" th:if="${editionId != null}" th:text="${editionForm.title}"></p>
         <p class="help-text">Somente o título é obrigatório. Os demais campos podem ser preenchidos depois.</p>
     </header>
-    <form class="edition-form" th:action="${formAction}" th:object="${editionForm}" method="post">
+    <div class="edition-edit-toolbar" th:if="${editionId != null}">
+        <nav class="edition-section-nav" aria-label="Seções da edição"><a href="#edition-identification">Identificação</a><a href="#edition-purchase">Compra</a><a href="#edition-reading">Leitura</a><a href="#edition-associations">Vínculos</a><a href="#edition-notes">Observações</a></nav>
+        <div class="form-actions"><a th:href="@{${navigation.withReturn('/edicoes/' + editionId)}}">Cancelar</a><button type="submit" form="edition-entry-form">Salvar alterações</button></div>
+    </div>
+    <form id="edition-entry-form" class="edition-form" th:action="${formAction}" th:object="${editionForm}" method="post">
         <input type="hidden" name="returnTo" th:value="${navigation.pageReturnUrl}">
         <section class="alert alert-error edition-errors" th:if="${#fields.hasAnyErrors()}" role="alert" aria-labelledby="edition-errors-title">
             <h2 id="edition-errors-title">Revise os campos indicados</h2>
@@ -52,15 +57,15 @@
                 <a th:href="${metadataApplied.sourceUrl()}" th:text="${'Consultar na ' + metadataApplied.sourceName()}" target="_blank" rel="noopener noreferrer"></a>
             </section>
         </fieldset>
-        <fieldset class="edition-form-section">
-            <legend>Páginas e leitura</legend>
-            <p class="help-text">Informe a quantidade de páginas desta edição para acompanhar páginas lidas e não lidas nos relatórios da coleção e da série. Se ainda não começou, mantenha zero em Páginas já lidas.</p>
-            <p id="page-reading-help" class="help-text">Total opcional. Com o total informado, registrar todas as páginas marca a edição como lida; um valor menor indica leitura não concluída. Sem total, mantenha zero páginas lidas e use o interruptor nos detalhes.</p>
+        <fieldset id="edition-identification" tabindex="-1" class="edition-form-section">
+            <legend>Identificação da edição</legend>
             <div class="edition-form-grid">
-                <div class="field"><label for="totalPages">Total de páginas</label><input id="totalPages" th:field="*{totalPages}" type="number" min="1" max="100000" step="1" aria-describedby="page-reading-help totalPages-error"><p id="totalPages-error" class="field-error" th:if="${#fields.hasErrors('totalPages')}" th:errors="*{totalPages}"></p></div>
-                <div class="field"><label for="pagesRead">Páginas já lidas</label><input id="pagesRead" th:field="*{pagesRead}" type="number" min="0" max="100000" step="1" required aria-describedby="page-reading-help pagesRead-error"><p id="pagesRead-error" class="field-error" th:if="${#fields.hasErrors('pagesRead')}" th:errors="*{pagesRead}"></p></div>
+                <div class="edition-full-width"><div class="field"><label for="title">Título <span class="edition-required">obrigatório</span></label><input id="title" th:field="*{title}" maxlength="240" required placeholder="Ex.: Batman — Ano Um" th:attr="aria-invalid=${#fields.hasErrors('title') ? 'true' : null},aria-describedby=${#fields.hasErrors('title') ? 'title-error' : null}"><p id="title-error" class="field-error" th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></p></div></div>
+                <div class="field"><label for="editorialNumber">Número editorial</label><input id="editorialNumber" th:field="*{editorialNumber}" maxlength="60" placeholder="Ex.: 1A ou Especial" th:attr="aria-invalid=${#fields.hasErrors('editorialNumber') ? 'true' : null},aria-describedby=${'number-help' + (#fields.hasErrors('editorialNumber') ? ' editorialNumber-error' : '')}"><p id="editorialNumber-error" class="field-error" th:if="${#fields.hasErrors('editorialNumber')}" th:errors="*{editorialNumber}"></p><p id="number-help" class="help-text">Pode incluir letras e números; não precisa seguir uma sequência.</p></div>
+                <div class="field"><label for="variant">Variação da edição</label><input id="variant" th:field="*{variant}" maxlength="120" placeholder="Ex.: Capa variante" th:attr="aria-invalid=${#fields.hasErrors('variant') ? 'true' : null},aria-describedby=${#fields.hasErrors('variant') ? 'variant-error' : null}"><p id="variant-error" class="field-error" th:if="${#fields.hasErrors('variant')}" th:errors="*{variant}"></p></div>
+                <div class="field"><label for="publicationYear">Ano de publicação</label><input id="publicationYear" th:field="*{publicationYear}" type="number" min="1800" max="2100" placeholder="Ex.: 2026" th:attr="aria-invalid=${#fields.hasErrors('publicationYear') ? 'true' : null},aria-describedby=${#fields.hasErrors('publicationYear') ? 'publicationYear-error' : null}"><p id="publicationYear-error" class="field-error" th:if="${#fields.hasErrors('publicationYear')}" th:errors="*{publicationYear}"></p></div>
+                <div class="field"><label for="format">Formato</label><input id="format" th:field="*{format}" maxlength="60" placeholder="Ex.: Revista mensal ou encadernado" th:attr="aria-invalid=${#fields.hasErrors('format') ? 'true' : null},aria-describedby=${#fields.hasErrors('format') ? 'format-error' : null}"><p id="format-error" class="field-error" th:if="${#fields.hasErrors('format')}" th:errors="*{format}"></p></div>
             </div>
-            <p id="pageReadingValid" tabindex="-1" class="field-error" th:if="${#fields.hasErrors('pageReadingValid')}" th:errors="*{pageReadingValid}"></p>
         </fieldset>
         <fieldset class="edition-form-section edition-isbn-section">
             <legend>ISBN <span class="edition-optional">opcional</span></legend>
@@ -86,17 +91,7 @@
                 <p class="help-text" th:if="${isbnMetadata.coverAvailable}">A fonte informa uma capa disponível. Consulte-a no link acima; o upload de capa continua disponível após salvar a edição.</p>
             </section>
         </fieldset>
-        <fieldset class="edition-form-section">
-            <legend>Identificação da edição</legend>
-            <div class="edition-form-grid">
-                <div class="edition-full-width"><div class="field"><label for="title">Título <span class="edition-required">obrigatório</span></label><input id="title" th:field="*{title}" maxlength="240" required placeholder="Ex.: Batman — Ano Um" th:attr="aria-invalid=${#fields.hasErrors('title') ? 'true' : null},aria-describedby=${#fields.hasErrors('title') ? 'title-error' : null}"><p id="title-error" class="field-error" th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></p></div></div>
-                <div class="field"><label for="editorialNumber">Número editorial</label><input id="editorialNumber" th:field="*{editorialNumber}" maxlength="60" placeholder="Ex.: 1A ou Especial" th:attr="aria-invalid=${#fields.hasErrors('editorialNumber') ? 'true' : null},aria-describedby=${'number-help' + (#fields.hasErrors('editorialNumber') ? ' editorialNumber-error' : '')}"><p id="editorialNumber-error" class="field-error" th:if="${#fields.hasErrors('editorialNumber')}" th:errors="*{editorialNumber}"></p><p id="number-help" class="help-text">Pode incluir letras e números; não precisa seguir uma sequência.</p></div>
-                <div class="field"><label for="variant">Variação da edição</label><input id="variant" th:field="*{variant}" maxlength="120" placeholder="Ex.: Capa variante" th:attr="aria-invalid=${#fields.hasErrors('variant') ? 'true' : null},aria-describedby=${#fields.hasErrors('variant') ? 'variant-error' : null}"><p id="variant-error" class="field-error" th:if="${#fields.hasErrors('variant')}" th:errors="*{variant}"></p></div>
-                <div class="field"><label for="publicationYear">Ano de publicação</label><input id="publicationYear" th:field="*{publicationYear}" type="number" min="1800" max="2100" placeholder="Ex.: 2026" th:attr="aria-invalid=${#fields.hasErrors('publicationYear') ? 'true' : null},aria-describedby=${#fields.hasErrors('publicationYear') ? 'publicationYear-error' : null}"><p id="publicationYear-error" class="field-error" th:if="${#fields.hasErrors('publicationYear')}" th:errors="*{publicationYear}"></p></div>
-                <div class="field"><label for="format">Formato</label><input id="format" th:field="*{format}" maxlength="60" placeholder="Ex.: Revista mensal ou encadernado" th:attr="aria-invalid=${#fields.hasErrors('format') ? 'true' : null},aria-describedby=${#fields.hasErrors('format') ? 'format-error' : null}"><p id="format-error" class="field-error" th:if="${#fields.hasErrors('format')}" th:errors="*{format}"></p></div>
-            </div>
-        </fieldset>
-        <fieldset class="edition-form-section">
+        <fieldset id="edition-purchase" tabindex="-1" class="edition-form-section">
             <legend>Suporte e valores</legend>
             <div class="field">
                 <label for="mediaType">Suporte do quadrinho</label>
@@ -114,7 +109,17 @@
             </div>
             <p id="prices-help" class="help-text">Valores opcionais em reais. Use até duas casas decimais, sem separador de milhares. Deixe em branco se não souber; informe 0 para gratuito. O valor pago entra no Financeiro e no resumo da coleção, uma vez por edição. Preço de capa não entra no total gasto.</p>
         </fieldset>
-        <fieldset class="edition-form-section">
+        <fieldset id="edition-reading" tabindex="-1" class="edition-form-section">
+            <legend>Páginas e leitura</legend>
+            <p class="help-text">Informe a quantidade de páginas desta edição para acompanhar páginas lidas e não lidas nos relatórios da coleção e da série. Se ainda não começou, mantenha zero em Páginas já lidas.</p>
+            <p id="page-reading-help" class="help-text">Total opcional. Com o total informado, registrar todas as páginas marca a edição como lida; um valor menor indica leitura não concluída. Sem total, mantenha zero páginas lidas e use o interruptor nos detalhes.</p>
+            <div class="edition-form-grid">
+                <div class="field"><label for="totalPages">Total de páginas</label><input id="totalPages" th:field="*{totalPages}" type="number" min="1" max="100000" step="1" aria-describedby="page-reading-help totalPages-error pageReadingValid" th:attr="aria-invalid=${#fields.hasErrors('totalPages') or #fields.hasErrors('pageReadingValid')}"><p id="totalPages-error" class="field-error" th:if="${#fields.hasErrors('totalPages')}" th:errors="*{totalPages}"></p></div>
+                <div class="field"><label for="pagesRead">Páginas já lidas</label><input id="pagesRead" th:field="*{pagesRead}" type="number" min="0" max="100000" step="1" required aria-describedby="page-reading-help pagesRead-error pageReadingValid" th:attr="aria-invalid=${#fields.hasErrors('pagesRead') or #fields.hasErrors('pageReadingValid')}"><p id="pagesRead-error" class="field-error" th:if="${#fields.hasErrors('pagesRead')}" th:errors="*{pagesRead}"></p></div>
+            </div>
+            <p id="pageReadingValid" tabindex="-1" class="field-error" th:if="${#fields.hasErrors('pageReadingValid')}" th:errors="*{pageReadingValid}"></p>
+        </fieldset>
+        <fieldset id="edition-associations" tabindex="-1" class="edition-form-section">
             <legend>Vínculos bibliográficos</legend>
             <p class="help-text">Associe os registros que você já cadastrou. Todos os vínculos são opcionais.</p>
             <div class="edition-form-grid">
@@ -131,7 +136,7 @@
                 </fieldset>
             </div>
         </fieldset>
-        <fieldset class="edition-form-section">
+        <fieldset id="edition-notes" tabindex="-1" class="edition-form-section">
             <legend>Observações</legend>
             <div class="field">
                 <label for="notes">Anotações sobre a edição</label>
