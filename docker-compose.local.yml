@@ -1,0 +1,9 @@
+# Complemento EXCLUSIVO para HTTP local. Nunca usar em implantação pública.
+# Requer Docker Compose >= 2.24.4 para !override.
+# docker compose -f docker-compose.yml -f docker-compose.local.yml up -d --build
+services:
+  app:
+    environment:
+      SERVER_SERVLET_SESSION_COOKIE_SECURE: "false"
+    ports: !override
+      - "127.0.0.1:8080:8080"

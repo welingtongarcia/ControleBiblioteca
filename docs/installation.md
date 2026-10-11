@@ -8,13 +8,13 @@ Ao atualizar e reiniciar a aplicação, a migração V21 classifica os registros
 
 ## Pré-requisitos
 
-Java 21 e Docker Compose v2. O Maven Wrapper está versionado, portanto Maven instalado é opcional após a primeira execução.
+Para execução inteiramente em containers, use Docker e Compose 2.24.4 ou superior; não é necessário instalar Java no computador. Para IntelliJ/terminal e testes, instale também JDK 21. O Maven Wrapper está versionado. Os comandos para Linux/macOS e Windows estão no [README](../README.md).
 
 ## Execução com Docker
 
 1. Copie `.env.example` para `.env`.
 2. Substitua ambos os valores de senha por uma senha local forte e mantenha `POSTGRES_PASSWORD` e `DB_PASSWORD` iguais. Defina também o e-mail e uma senha de ao menos 12 caracteres para o administrador inicial.
-3. Execute `docker compose up --build`.
+3. Para HTTP no computador, execute `docker compose -f docker-compose.yml -f docker-compose.local.yml up -d --build`. O complemento libera o cookie no HTTP local e limita a aplicação a `127.0.0.1:8080`; não o use em implantação pública. A configuração base ativa produção, que exige HTTPS para cookies seguros.
 4. Consulte `http://localhost:8080/actuator/health/readiness` para verificar disponibilidade.
 
 No primeiro início em um banco vazio, o administrador é criado somente pelas variáveis `BOOTSTRAP_ADMIN_EMAIL` e `BOOTSTRAP_ADMIN_PASSWORD`. Após existir algum usuário, essas variáveis são ignoradas. Nunca versione o `.env`.
@@ -27,7 +27,7 @@ E-mails são normalizados e não podem ser repetidos. Em caso de erro, o e-mail 
 
 ## Verificação
 
-Execute `./mvnw clean verify`. O conjunto sobe PostgreSQL via Testcontainers, aplica Flyway em banco vazio e verifica a página de login com MockMvc.
+Execute `./mvnw clean verify` (Windows: `.\mvnw.cmd clean verify`). Os testes exigem JDK 21 e Docker acessível, sobem PostgreSQL isolado via Testcontainers e verificam migrações, segurança, cadastro, leitura, financeiro, relatórios, imagens e backup; não são somente testes de login.
 
 ## Backup e migração
 
@@ -39,11 +39,11 @@ O projeto carrega automaticamente o arquivo local `.env` ao executar `MinhaGibit
 
 ## Consulta por ISBN
 
-### Visibilidade do menu lateral
+## Visibilidade do menu lateral
 
-Nas páginas privadas, **Ocultar menu** esconde toda a barra lateral e libera espaço para o conteúdo. O botão muda para **Mostrar menu** e permanece disponível fora da barra. A escolha é lembrada neste navegador entre páginas e recarregamentos. Sem JavaScript, o menu permanece visível; se o armazenamento local estiver bloqueado, o botão funciona, mas a escolha não persiste. Os grupos Sua coleção e Dados do catálogo continuam recolhíveis independentemente.
+Nas páginas privadas, **Ocultar menu** esconde toda a barra lateral e libera espaço para o conteúdo. O botão muda para **Mostrar menu** e permanece disponível fora da barra. A escolha é lembrada neste navegador entre páginas e recarregamentos. Sem JavaScript, o menu permanece visível; se o armazenamento local estiver bloqueado, o botão funciona, mas a escolha não persiste. Os grupos Painéis e análises, Minha coleção e Cadastros de apoio continuam recolhíveis independentemente.
 
-### Busca gratuita pelo título
+## Busca gratuita pelo título
 
 Na tela **Nova edição**, use **Buscar dados pelo título** quando não tiver ISBN ou a consulta por ISBN não encontrar a HQ. Digite o título no campo específico, escolha Open Library ou Google Books e clique em **Pesquisar pelo título**. A pesquisa exibe até cinco candidatos; consulte o link da fonte e confira idioma, editora e ano. Clique em **Aplicar dados desta edição** para preencher somente campos vazios; **Salvar edição** continua sendo necessário.
 
