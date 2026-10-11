@@ -13,7 +13,7 @@ public record NavigationContext(String key, String label, String listUrl, String
     private static final Map<String, String> LABELS = Map.ofEntries(Map.entry("edicoes", "Catálogo de edições"), Map.entry("series", "Séries e checklist"),
             Map.entry("localizacoes", "Localizações"), Map.entry("editoras", "Editoras"), Map.entry("obras", "Obras"), Map.entry("criadores", "Criadores"),
             Map.entry("dashboard", "Início"), Map.entry("financeiro", "Financeiro"), Map.entry("personagens", "Personagens"),
-            Map.entry("visao-geral", "Visão geral"), Map.entry("relatorios", "Relatórios"), Map.entry("backup", "Backup e migração"));
+            Map.entry("visao-geral", "Visão geral"), Map.entry("relatorios", "Relatórios"), Map.entry("backup", "Backup e migração"), Map.entry("desejos", "Lista de desejos"));
 
     public static NavigationContext from(HttpServletRequest request) {
         String path = request.getServletPath();
@@ -25,7 +25,7 @@ public record NavigationContext(String key, String label, String listUrl, String
         if (!LABELS.containsKey(key)) key = "dashboard";
         String list = "/" + key;
         String back = canonical(request.getParameter("returnTo"), key);
-        // O Financeiro edita os próprios dados da HQ; aceita só o painel local validado.
+        // O Financeiro edita os próprios dados da edição; aceita só o painel local validado.
         if (back == null && key.equals("edicoes")) back = canonical(request.getParameter("returnTo"), "financeiro");
         if (back == null && key.equals("edicoes")) back = canonical(request.getParameter("returnTo"), "dashboard");
         if (back == null && key.equals("edicoes")) back = canonical(request.getParameter("returnTo"), "visao-geral");
@@ -47,7 +47,8 @@ public record NavigationContext(String key, String label, String listUrl, String
         return path != null && (path.equals("/" + key) || (key.equals("series") && path.matches("/series/" + UUID_PATTERN + "/(checklist|faltantes)")));
     }
     private static List<String> parameters(String path) {
-        if (path.equals("/edicoes")) return List.of("q", "publisherId", "seriesId", "format", "mediaType", "order", "page");
+        if (path.equals("/desejos")) return List.of("q", "status", "page");
+        if (path.equals("/edicoes")) return List.of("q", "publisherId", "seriesId", "format", "mediaType", "publicationType", "order", "page");
         if (path.equals("/financeiro")) return List.of("start", "end", "seriesId", "creatorId", "characterId", "publisherId", "mediaType", "ranking", "page");
         if (path.equals("/relatorios")) return List.of("q", "start", "end", "seriesId", "creatorId", "creatorFunction", "characterId", "publisherId", "mediaType", "reading", "type", "page");
         if (path.matches("/series/" + UUID_PATTERN + "/(checklist|faltantes)")) return List.of("page");
@@ -68,12 +69,14 @@ public record NavigationContext(String key, String label, String listUrl, String
                 if (name.equals("page") && (Integer.parseInt(value) < 0)) continue;
                 if (Set.of("publisherId","seriesId","creatorId","characterId").contains(name) && !value.matches(UUID_PATTERN)) continue;
                 if (name.equals("ranking") && !Set.of("AMOUNT","QUANTITY").contains(value)) continue;
+                if (name.equals("status") && !Set.of("PENDING","ACQUIRED","ALL").contains(value)) continue;
                 if (name.equals("start") || name.equals("end")) java.time.LocalDate.parse(value);
                 if (name.equals("mediaType") && !Set.of("PHYSICAL", "DIGITAL").contains(value) && !(Set.of("financeiro","relatorios").contains(key) && value.equals("UNSPECIFIED")) && !(key.equals("relatorios") && value.equals("ALL"))) continue;
+                if (name.equals("publicationType") && !Set.of("COMIC","BOOK").contains(value)) continue;
                 if (name.equals("reading") && !Set.of("ALL","READ","UNREAD").contains(value)) continue;
                 if (name.equals("type") && !Set.of("SUMMARY","CATALOG").contains(value)) continue;
                 if (name.equals("creatorFunction")) br.com.minhagibiteca.catalog.domain.CreatorFunction.valueOf(value);
-                if (name.equals("order") && !Set.of("TITLE_ASC", "TITLE_DESC", "NEWEST", "OLDEST").contains(value)) continue;
+                if (name.equals("order") && !Set.of("TITLE_ASC", "TITLE_DESC", "NEWEST", "OLDEST", "NUMBER_ASC", "NUMBER_DESC", "TITLE_NUMBER_ASC", "TITLE_NUMBER_DESC").contains(value)) continue;
                 builder.queryParam(name, value);
             }
             return builder.build().encode().toUriString();

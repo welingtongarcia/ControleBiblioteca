@@ -9,6 +9,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface CreatorRepository extends JpaRepository<Creator, UUID> {
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @org.springframework.data.jpa.repository.Query("select c from Creator c where c.id=:id and c.ownerUserId=:owner")
+    Optional<Creator> lockOwned(@org.springframework.data.repository.query.Param("id") UUID id,@org.springframework.data.repository.query.Param("owner") UUID owner);
     @org.springframework.data.jpa.repository.Query(value = """
         select exists(select 1 from edition_creators ec join editions e on e.id = ec.edition_id
             where ec.creator_id = :id and e.owner_user_id = :owner)

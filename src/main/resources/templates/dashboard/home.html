@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/head :: head('Início')}"><title>Início | Minha Gibiteca</title></head>
+<head th:replace="~{fragments/head :: head('Início')}"><title>Início | Minha Biblioteca</title></head>
 <body class="dashboard-page showcase-page">
 <a class="skip-link" href="#main-content">Pular para o conteúdo</a>
 <div class="dashboard-layout">
     <aside th:replace="~{fragments/navigation :: sidebar}"></aside>
     <main id="main-content" class="dashboard-main showcase-main" aria-labelledby="page-title" tabindex="-1">
         <header class="showcase-header">
-            <div><p class="dashboard-kicker">Minha Gibiteca · Início</p><h1 id="page-title">Seu universo de histórias</h1></div>
+            <div><p class="dashboard-kicker">Minha Biblioteca · Início</p><h1 id="page-title">Seu universo de histórias</h1></div>
             <form class="dashboard-search" method="get" th:action="@{/edicoes}" role="search" aria-label="Pesquisar no catálogo">
                 <label class="visually-hidden" for="home-query">Buscar por título, ISBN ou número editorial</label>
                 <input id="home-query" name="q" type="search" maxlength="240" placeholder="Encontre uma história…"><button type="submit">Buscar</button>
@@ -20,7 +20,7 @@
         </nav>
         <p class="alert alert-success" role="status" th:if="${successMessage}" th:text="${successMessage}"></p>
         <p class="alert alert-error" role="alert" th:if="${errorMessage}" th:text="${errorMessage}"></p>
-        <section class="home-banner" id="home-banner" aria-label="Destaques da sua Gibiteca" aria-roledescription="carrossel">
+        <section class="home-banner" id="home-banner" aria-label="Destaques da sua Biblioteca" aria-roledescription="carrossel">
         <section id="banner-highlight" class="showcase-feature banner-slide" data-banner-title="Em destaque" th:if="${showcase.featured != null}" th:with="edition=${showcase.featured}" aria-labelledby="featured-title" aria-roledescription="painel">
             <div class="showcase-feature-copy">
                 <p class="showcase-eyebrow"><span aria-hidden="true">✦</span> Em destaque na sua coleção</p>
@@ -47,7 +47,7 @@
             </div>
         </section>
         <section id="banner-highlight" class="showcase-empty banner-slide" data-banner-title="Comece sua coleção" th:if="${showcase.featured == null}" aria-labelledby="empty-title" aria-roledescription="painel">
-            <div><p class="showcase-eyebrow">O próximo capítulo é seu</p><h2 id="empty-title">Toda grande coleção começa com uma história.</h2><p>Cadastre seu primeiro quadrinho e veja suas capas ganharem espaço aqui. Seus números e valores continuam na Visão geral.</p>
+            <div><p class="showcase-eyebrow">O próximo capítulo é seu</p><h2 id="empty-title">Toda grande coleção começa com uma história.</h2><p>Cadastre seu primeiro livro ou quadrinho e veja suas capas ganharem espaço aqui. Seus números e valores continuam na Visão geral.</p>
             <div class="showcase-feature-actions"><a class="button-link" th:href="@{/edicoes/nova(returnTo='/dashboard')}">Cadastrar minha primeira edição</a><a class="showcase-secondary" th:href="@{/edicoes}">Abrir catálogo</a></div></div>
             <div class="showcase-empty-art" aria-hidden="true"><span>MG</span><span>Uma coleção.<br>Infinitas histórias.</span></div>
         </section>
@@ -114,7 +114,7 @@
                 </ul>
             </section>
         </div>
-        <footer class="showcase-footer"><p>Suas capas. Suas histórias. Sua Gibiteca.</p><a th:href="@{/visao-geral}">Ver os números da coleção <span aria-hidden="true">→</span></a></footer>
+        <footer class="showcase-footer"><p>Suas capas. Suas histórias. Sua Biblioteca.</p><a th:href="@{/visao-geral}">Ver os números da coleção <span aria-hidden="true">→</span></a></footer>
     </main>
 </div>
 <script th:src="@{/js/home-banner.js}" defer></script>

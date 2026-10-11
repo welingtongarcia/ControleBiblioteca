@@ -292,3 +292,46 @@
 .edition-detail-page > .details-list { padding:1.25rem; background:var(--surface); border:1px solid #414954; border-radius:.85rem; line-height:1.6; }
 .edition-detail-page .details-section .details-section { background:#161b22; }
 @media(max-width:38rem) { .edition-detail-page .details-section, .edition-detail-page .cover-section, .edition-detail-page > .details-list { padding:1rem; } }
+.edition-detail-page .edition-hero { display:grid; grid-template-columns:minmax(0, 18rem) minmax(0, 1fr); gap:1.5rem; margin:1.5rem 0; align-items:start; }
+.edition-detail-page .edition-hero .cover-section { margin:0; }
+.edition-identification { min-width:0; padding:1.25rem; }
+.edition-identification h1 { margin:.5rem 0; overflow-wrap:anywhere; }
+.edition-number { color:var(--accent); font-size:1.25rem; font-weight:700; margin:.75rem 0; }
+.edition-detail-page .edition-cover { width:100%; height:20rem; object-fit:contain; background:#11151d; }
+.edition-cover-placeholder { min-height:12rem; display:grid; place-items:center; text-align:center; color:var(--muted); background:#11151d; border:1px dashed #657084; border-radius:.5rem; padding:1rem; margin:.75rem 0; }
+.edition-cover-upload summary { cursor:pointer; min-height:44px; padding:.65rem 0; color:var(--accent); }
+.edition-cover-upload input { width:100%; min-width:0; max-width:100%; }
+.edition-section-links { display:flex; flex-wrap:wrap; gap:.25rem 1rem; margin-top:1rem; }
+.edition-section-links a { display:inline-flex; align-items:center; min-height:44px; }
+.edition-experience, .edition-data-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1.25rem; margin:1.5rem 0; }
+.edition-detail-page .edition-experience > .details-section, .edition-detail-page .edition-data-grid > .details-section { margin:0; min-width:0; }
+.edition-detail-page .details-list { grid-template-columns:minmax(0,8rem) minmax(0,1fr); margin:1rem 0; }
+.edition-detail-page .details-list dt, .edition-detail-page .details-list dd { min-width:0; overflow-wrap:anywhere; }
+.edition-content-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1.25rem; }
+.edition-detail-page .edition-content-grid .details-section { margin:0; min-width:0; }
+.edition-content-grid h3 { margin-top:0; }
+.edition-content-grid ul { padding-left:1.25rem; overflow-wrap:anywhere; }
+.edition-notes { white-space:pre-wrap; overflow-wrap:anywhere; }
+.edition-detail-page .edition-danger-zone { border-color:#98656c; }
+.edition-detail-page [id] { scroll-margin-top:1rem; }
+.edition-card-personal { margin-top:1rem; border-top:1px solid #3a4251; padding-top:.75rem; }
+.edition-card .edition-card-personal .reading-status { margin:0; }
+.edition-card-personal .rating-summary { font-size:.85rem; }
+.edition-card .edition-card-prices { grid-template-columns:1fr; margin:.75rem 0; padding-top:.75rem; }
+.edition-card .edition-card-actions { margin-top:auto; gap:.5rem; }
+.edition-card .button-secondary { background:transparent; color:var(--text); border:1px solid #657084; }
+@media(max-width:56rem) {
+    .edition-detail-page .edition-hero, .edition-experience, .edition-data-grid, .edition-content-grid { grid-template-columns:minmax(0,1fr); }
+    .edition-detail-page .edition-hero .cover-section { max-width:26rem; width:100%; justify-self:center; }
+    .edition-identification { padding:0; }
+}
+@media(max-width:25rem) { .edition-detail-page .details-list { grid-template-columns:1fr; gap:.35rem; }.edition-detail-page .details-list dd { margin-bottom:.6rem; } }
+.wish-info { min-width:0; flex:1; overflow-wrap:anywhere; }
+.wish-info h2 { font-size:1.15rem; margin:.6rem 0; }
+.wish-info .details-list { margin:.7rem 0; }
+.wish-notes { white-space:pre-wrap; overflow-wrap:anywhere; }
+.creator-photo-preview { width:144px;height:144px;object-fit:cover;border-radius:.75rem;border:1px solid #414954;display:block;margin-bottom:1rem; }
+.creator-list-identity { display:flex;align-items:center;gap:1rem; }
+.creator-list-identity > div { min-width:0;overflow-wrap:anywhere; }
+.creator-photo-thumbnail { width:64px;height:64px;object-fit:cover;border-radius:50%;flex-shrink:0; }
+.creator-photo-section h2 { font-size:1.15rem; }

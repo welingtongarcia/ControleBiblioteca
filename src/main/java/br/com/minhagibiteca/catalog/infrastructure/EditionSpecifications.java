@@ -52,6 +52,7 @@ public final class EditionSpecifications {
             if (filter.publisherId() != null) predicates.add(cb.equal(root.get("publisherId"), filter.publisherId()));
             if (filter.seriesId() != null) predicates.add(cb.equal(root.get("seriesId"), filter.seriesId()));
             if (filter.mediaType() != null) predicates.add(cb.equal(root.get("mediaType"), filter.mediaType()));
+            if (filter.publicationType() != null) predicates.add(cb.equal(root.get("publicationType"), filter.publicationType()));
             if (!filter.format().isBlank()) predicates.add(cb.equal(cb.lower(root.get("format")), filter.format().toLowerCase(Locale.ROOT)));
             return cb.and(predicates.toArray(Predicate[]::new));
         };

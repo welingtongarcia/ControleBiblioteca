@@ -62,7 +62,7 @@ public class ReportQueries {
                     (select string_agg(c.name || ' (' || coalesce((select string_agg(case cf.function
                         when 'ROTEIRISTA' then 'Roteirista' when 'DESENHISTA' then 'Desenhista' when 'ARTE_FINALISTA' then 'Arte-finalista'
                         when 'COLORISTA' then 'Colorista' when 'LETRISTA' then 'Letrista' when 'CAPISTA' then 'Capista'
-                        when 'EDITOR' then 'Editor' when 'TRADUTOR' then 'Tradutor' else 'Outra função' end, ', ' order by cf.function)
+                        when 'EDITOR' then 'Editor' when 'TRADUTOR' then 'Tradutor' when 'ESCRITOR' then 'Escritor' else 'Outra função' end, ', ' order by cf.function)
                         from creator_functions cf where cf.creator_id=c.id), 'Funções não informadas') || ')', '; ' order by c.name,c.id)
                         from creators c where c.owner_user_id=:owner and exists(select 1 from edition_creators ec where ec.edition_id=e.id and ec.creator_id=c.id)) creators,
                     (select string_agg(c.name, '; ' order by c.name,c.id) from edition_characters ec join comic_characters c

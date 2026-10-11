@@ -57,7 +57,7 @@ public class PublisherService {
     public void delete(UUID id, UUID ownerUserId) {
         var publisher = findOwned(id, ownerUserId);
         if (publisherRepository.hasReferences(id, ownerUserId))
-            throw new ReferencedCatalogException("Esta editora está vinculada a edições ou séries. Edite esses cadastros para remover ou trocar a editora antes de excluí-la. Nenhuma HQ foi apagada.");
+            throw new ReferencedCatalogException("Esta editora está vinculada a edições ou séries. Edite esses cadastros para remover ou trocar a editora antes de excluí-la. Nenhuma edição foi apagada.");
         publisherRepository.delete(publisher);
         publisherRepository.flush();
     }

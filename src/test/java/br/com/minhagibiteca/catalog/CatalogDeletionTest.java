@@ -49,17 +49,18 @@ class CatalogDeletionTest {
         var publishers = mock(PublisherService.class);
         var works = mock(WorkService.class);
         var creators = mock(CreatorService.class);
+        var registration = mock(br.com.minhagibiteca.catalog.application.CreatorRegistrationService.class);
         doThrow(new DataIntegrityViolationException("SECRET SQL editions_publisher_id_fkey")).when(publishers).delete(id, owner);
         doThrow(new DataIntegrityViolationException("SECRET SQL edition_works")).when(works).delete(id, owner);
-        doThrow(new DataIntegrityViolationException("SECRET SQL edition_creators")).when(creators).delete(id, owner);
+        doThrow(new DataIntegrityViolationException("SECRET SQL edition_creators")).when(registration).delete(id, owner);
         var mvc = MockMvcBuilders.standaloneSetup(new PublisherController(publishers, user),
-                new WorkController(works, user), new CreatorController(creators, user)).build();
+                new WorkController(works, user), new CreatorController(creators, user, registration, mock(br.com.minhagibiteca.catalog.application.CreatorPhotoService.class))).build();
         for (var path : new String[]{"/editoras", "/obras", "/criadores"}) {
             var result = mvc.perform(post(path + "/{id}/excluir", id))
                     .andExpect(status().is3xxRedirection()).andExpect(redirectedUrl(path)).andReturn();
             assertThat(result.getFlashMap().containsKey("successMessage")).isFalse();
             assertThat(result.getFlashMap().get("errorMessage").toString())
-                    .contains("conflito", "Nenhuma HQ foi apagada").doesNotContain("SECRET", "SQL", "fkey", id.toString());
+                    .contains("conflito", "Nenhuma edição foi apagada").doesNotContain("SECRET", "SQL", "fkey", id.toString());
         }
     }
 }

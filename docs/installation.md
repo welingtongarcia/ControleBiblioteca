@@ -1,5 +1,11 @@
 # Instalação e execução local
 
+## Livros e quadrinhos
+
+O nome visível é **Minha Biblioteca**. Em **Nova edição**, escolha **Livro** ou **Quadrinho** no campo **Tipo de publicação**. O suporte físico/digital é independente desse tipo. Livros usam os mesmos campos de autores/criadores, ISBN opcional, capa, valores, compra, páginas, leitura e estrelas. No catálogo, abra **Filtrar catálogo** para mostrar somente livros ou quadrinhos.
+
+Ao atualizar e reiniciar a aplicação, a migração V21 classifica os registros anteriores como quadrinhos sem alterar seus dados. Livros cadastrados entram nos totais, no Financeiro e nos relatórios existentes. O backup gerado pela versão atual inclui o tipo. Identificadores técnicos, banco, caminhos de capas e contas permanecem inalterados; não é necessário criar outro banco nem apagar o existente.
+
 ## Pré-requisitos
 
 Java 21 e Docker Compose v2. O Maven Wrapper está versionado, portanto Maven instalado é opcional após a primeira execução.
@@ -12,6 +18,12 @@ Java 21 e Docker Compose v2. O Maven Wrapper está versionado, portanto Maven in
 4. Consulte `http://localhost:8080/actuator/health/readiness` para verificar disponibilidade.
 
 No primeiro início em um banco vazio, o administrador é criado somente pelas variáveis `BOOTSTRAP_ADMIN_EMAIL` e `BOOTSTRAP_ADMIN_PASSWORD`. Após existir algum usuário, essas variáveis são ignoradas. Nunca versione o `.env`.
+
+## Cadastro de novos usuários
+
+Na tela de login, escolha **Criar conta**. Informe e-mail, senha e confirmação. A senha deve ter de 12 a 64 caracteres e até 72 bytes UTF-8; acentos e emojis podem ocupar mais de um byte. Após o cadastro, entre pelo login. Cada conta começa com uma coleção vazia e particular; todas as contas criadas nessa tela são usuários comuns, nunca administradores.
+
+E-mails são normalizados e não podem ser repetidos. Em caso de erro, o e-mail é mantido, mas as senhas precisam ser preenchidas novamente. O administrador inicial continua sendo configurado pelo bootstrap. Não há confirmação de e-mail ou recuperação de senha neste fluxo. Antes de expor a instalação à internet, use HTTPS/configuração de produção e proteção contra abuso/rate limiting no ambiente.
 
 ## Verificação
 

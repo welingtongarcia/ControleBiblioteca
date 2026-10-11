@@ -4,7 +4,7 @@
     <button id="sidebar-toggle" class="sidebar-toggle" type="button" aria-controls="main-sidebar" aria-expanded="true">Ocultar menu</button>
 </div>
 <aside id="main-sidebar" class="dashboard-sidebar" aria-label="Menu principal">
-    <a class="dashboard-brand" th:href="@{/dashboard}" aria-label="Minha Gibiteca — início"><span class="brand-mark" aria-hidden="true">MG</span><span>Minha<br> Gibiteca<span class="brand-caption">Seu universo em quadrinhos</span></span></a>
+    <a class="dashboard-brand" th:href="@{/dashboard}" aria-label="Minha Biblioteca — início"><span class="brand-mark" aria-hidden="true">MB</span><span>Minha<br> Biblioteca<span class="brand-caption">Seu universo de leitura</span></span></a>
     <nav class="dashboard-navigation" aria-label="Navegação principal">
         <details class="nav-group" id="nav-overview" th:open="${#lists.contains({'dashboard','visao-geral','financeiro','relatorios','backup'}, navigation.key)}">
         <summary class="nav-group-toggle">Painéis e análises</summary>
@@ -15,10 +15,11 @@
         <a th:href="@{/relatorios}" th:classappend="${navigation.key == 'relatorios'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'relatorios' ? 'page' : null}"><span aria-hidden="true">▤</span>Relatórios</a>
         <a th:href="@{/backup}" th:classappend="${navigation.key == 'backup'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'backup' ? 'page' : null}"><span aria-hidden="true">⇩</span>Backup e migração</a>
         </div></details>
-        <details class="nav-group" id="nav-collection" th:open="${#lists.contains({'edicoes','series','localizacoes'}, navigation.key)}">
+        <details class="nav-group" id="nav-collection" th:open="${#lists.contains({'edicoes','series','localizacoes','desejos'}, navigation.key)}">
         <summary class="nav-group-toggle">Minha coleção</summary>
         <div class="nav-group-links">
         <a th:href="@{/edicoes}" th:classappend="${navigation.key == 'edicoes'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'edicoes' ? 'page' : null}"><span aria-hidden="true">▤</span>Catálogo de edições</a>
+        <a th:href="@{/desejos}" th:classappend="${navigation.key == 'desejos'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'desejos' ? 'page' : null}"><span aria-hidden="true">♡</span>Lista de desejos</a>
         <a th:href="@{/series}" th:classappend="${navigation.key == 'series'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'series' ? 'page' : null}"><span aria-hidden="true">✓</span>Séries e checklist</a>
         <a th:href="@{/localizacoes}" th:classappend="${navigation.key == 'localizacoes'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'localizacoes' ? 'page' : null}"><span aria-hidden="true">▦</span>Localizações</a>
         </div></details>
@@ -32,7 +33,7 @@
         </div></details>
     </nav>
     <form class="navigation-logout dashboard-logout" th:action="@{/logout}" method="post"><button type="submit">Sair</button></form>
-    <div class="sidebar-note"><strong>Cada quadrinho tem uma história.</strong><p>A sua coleção também.</p></div>
+    <div class="sidebar-note"><strong>Cada publicação tem uma história.</strong><p>A sua coleção também.</p></div>
 </aside>
 </th:block>
 <div th:fragment="breadcrumbs(currentLabel, parentLabel, parentUrl)" class="navigation-context">

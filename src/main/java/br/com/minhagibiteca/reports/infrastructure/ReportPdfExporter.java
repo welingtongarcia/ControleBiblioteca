@@ -20,7 +20,7 @@ public class ReportPdfExporter {
         try(var doc=new PDDocument();var source=new ClassPathResource("fonts/DejaVuSans.ttf").getInputStream();var out=new ByteArrayOutputStream()) {
             var font=PDType0Font.load(doc,source);
             doc.getDocumentInformation().setTitle(catalog?"Catálogo do acervo":"Resumo da coleção");
-            doc.getDocumentInformation().setAuthor("Minha Gibiteca");
+            doc.getDocumentInformation().setAuthor("Minha Biblioteca");
             try(var writer=new Layout(doc,font,data.emissionLabel(),catalog?"Catálogo do acervo":"Resumo da coleção")) {
                 writer.heading("Filtros utilizados");
                 for(var filter:data.filters()) writer.paragraph(filter,10);
@@ -29,7 +29,7 @@ public class ReportPdfExporter {
                 writer.paragraph("Edições: "+s.editions()+"   |   Exemplares físicos: "+s.copies(),12);
                 writer.paragraph("Total gasto registrado: "+s.paidLabel(),12);
                 writer.paragraph("Preços informados em "+s.priced()+" de "+s.editions()+" edições. Sem preço: "+s.unpriced()+".",10);
-                writer.paragraph("Valores vêm do preço pago cadastrado nas HQs. Não somamos novamente os valores dos exemplares. Não é avaliação de mercado.",9);
+                writer.paragraph("Valores vêm do preço pago cadastrado nas edições. Não somamos novamente os valores dos exemplares. Não é avaliação de mercado.",9);
                 writer.paragraph("Edições lidas: "+s.read()+" de "+s.editions(),10);
                 writer.paragraph("Páginas informadas: "+s.totalPages()+" | Lidas: "+s.pagesRead()+" | Restantes: "+s.pagesUnread(),10);
                 writer.paragraph("Edições sem páginas: "+s.unpaged()+". Totais de páginas incluem somente edições com quantidade informada.",9);
@@ -62,7 +62,7 @@ public class ReportPdfExporter {
             }
             int count=doc.getNumberOfPages();
             for(int i=0;i<count;i++) try(var cs=new PDPageContentStream(doc,doc.getPage(i),PDPageContentStream.AppendMode.APPEND,true,true)) {
-                cs.beginText(); cs.setFont(font,9); cs.newLineAtOffset(44,28); cs.showText("Minha Gibiteca - Página "+(i+1)+" de "+count); cs.endText();
+                cs.beginText(); cs.setFont(font,9); cs.newLineAtOffset(44,28); cs.showText("Minha Biblioteca - Página "+(i+1)+" de "+count); cs.endText();
             }
             doc.save(out); return out.toByteArray();
         }

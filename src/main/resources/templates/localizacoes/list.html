@@ -9,7 +9,7 @@
     <p class="alert alert-success" th:if="${successMessage}" role="status" th:text="${successMessage}"></p>
     <p class="alert alert-error" th:if="${errorMessage}" role="alert" th:text="${errorMessage}"></p>
     <form class="search-form" method="get" th:action="@{/localizacoes}"><label for="q">Buscar pelo nome da localização</label><input id="q" name="q" th:value="${query}" type="search" maxlength="120"><button type="submit">Buscar</button><a th:href="@{/localizacoes}">Limpar busca</a></form>
-    <section class="empty-state" th:if="${locations.empty}"><h2>Nenhuma localização encontrada</h2><p>Cadastre cômodos, estantes, prateleiras ou caixas para organizar seus quadrinhos.</p></section>
+    <section class="empty-state" th:if="${locations.empty}"><h2>Nenhuma localização encontrada</h2><p>Cadastre cômodos, estantes, prateleiras ou caixas para organizar seus livros e quadrinhos.</p></section>
     <section th:unless="${locations.empty}" aria-label="Localizações cadastradas">
         <ul class="resource-list"><li th:each="location : ${locations.content}">
             <div><strong th:text="${location.path}">Caminho</strong><span th:text="${location.level.label}">Tipo</span></div>

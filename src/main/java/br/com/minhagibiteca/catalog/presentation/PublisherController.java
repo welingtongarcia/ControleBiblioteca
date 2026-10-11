@@ -101,7 +101,7 @@ public class PublisherController {
         } catch (br.com.minhagibiteca.catalog.application.ReferencedCatalogException error) {
             redirectAttributes.addFlashAttribute("errorMessage", error.getMessage());
         } catch (org.springframework.dao.DataIntegrityViolationException error) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Não foi possível excluir esta editora por um conflito com dados vinculados. Revise os vínculos das edições e séries e tente novamente. Nenhuma HQ foi apagada.");
+            redirectAttributes.addFlashAttribute("errorMessage", "Não foi possível excluir esta editora por um conflito com dados vinculados. Revise os vínculos das edições e séries e tente novamente. Nenhuma edição foi apagada.");
         }
         return "redirect:/editoras";
     }

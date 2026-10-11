@@ -54,20 +54,21 @@ public class BackupService {
                     var locations=new ArrayList<JsonNode>();data.withArray("storage_locations").forEach(locations::add);
                     locations.sort(Comparator.comparingInt(row->level(row.path("level").asText())));
                     data.set("storage_locations",new ObjectMapper().valueToTree(locations));
-                    for (JsonNode row:data.withArray("editions")) {
-                        var edition=(ObjectNode)row;
-                        if (!edition.path("cover_file_name").isNull()) {
-                            String old=edition.path("cover_file_name").asText();String extension=old.substring(old.lastIndexOf('.'));
+                    for (var image:BackupArchive.images(data)) {
+                        var edition=(ObjectNode)image.row();
+                        String field=image.field()+"_file_name";
+                        if (!edition.path(field).isNull()) {
+                            String old=edition.path(field).asText();String extension=old.substring(old.lastIndexOf('.'));
                             String name=edition.path("id").asText()+"-"+UUID.randomUUID()+extension;
                             Path target=archive.storage().resolve(name);
                             try {
                                 Files.createDirectories(archive.storage());
                                 // CREATE_NEW ensures that a restore never replaces an existing file.
                                 try(var out=Files.newOutputStream(target,StandardOpenOption.CREATE_NEW)) {
-                                    created.add(target);Files.copy(pack.files().get("capas/"+old),out);
+                                    created.add(target);Files.copy(pack.files().get(image.prefix()+old),out);
                                 }
                             } catch(IOException e) {throw new InvalidBackupException("Não foi possível gravar as capas. Nenhum cadastro foi restaurado.",e);}
-                            edition.put("cover_file_name",name);
+                            edition.put(field,name);
                         }
                     }
                     for(var table:BackupTables.all()) repository.insertAll(table,data.withArray(table));
@@ -107,14 +108,16 @@ public class BackupService {
             if (!parent.isNull() && level(locations.get(uuid(parent)).path("level").asText())>=child) throw invalid("Hierarquia de localizações inválida.");
         }
         var covers=new HashSet<String>();
-        for(var row:data.withArray("editions")) {
-            var name=row.get("cover_file_name");
+        for(var image:BackupArchive.images(data)) {
+            var row=image.row();String field=image.field();
+            var name=row.get(field+"_file_name");
             if (name.isNull()) {
-                if (!row.get("cover_content_type").isNull() || !row.get("cover_updated_at").isNull()) throw invalid("Metadados de capa incompletos.");
+                if (!row.get(field+"_content_type").isNull() || !row.get(field+"_updated_at").isNull()) throw invalid("Metadados de imagem incompletos.");
             } else {
-                if (!name.isTextual() || !BackupArchive.coverName(name.asText()) || !covers.add("capas/"+name.asText()))throw invalid("Nome de capa inválido ou repetido.");
-                Path file=pack.files().get("capas/"+name.asText());if(file==null)throw invalid("Uma capa do cadastro está ausente no backup.");
-                try {archive.validateImage(file,row.path("cover_content_type").asText(),name.asText());}
+                if (!name.isTextual() || !BackupArchive.coverName(name.asText()) || !covers.add(image.prefix()+name.asText()))throw invalid("Nome de imagem inválido ou repetido.");
+                Path file=pack.files().get(image.prefix()+name.asText());if(file==null)throw invalid("Uma imagem do cadastro está ausente no backup.");
+                if(row.get(field+"_updated_at").isNull())throw invalid("Metadados de imagem incompletos.");
+                try {archive.validateImage(file,row.path(field+"_content_type").asText(),name.asText());}
                 catch(IOException e){throw new InvalidBackupException("Capa inválida no backup.",e);}
             }
         }

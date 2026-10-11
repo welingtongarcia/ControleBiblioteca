@@ -27,6 +27,9 @@ public class Creator {
     @Column(name = "normalized_name", nullable = false) private String normalizedName;
     @Column(name = "sort_name") private String sortName;
     @Column(name = "created_at") private Instant createdAt;
+    @Column(name = "photo_file_name") private String photoFileName;
+    @Column(name = "photo_content_type") private String photoContentType;
+    @Column(name = "photo_updated_at") private Instant photoUpdatedAt;
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "creator_functions", joinColumns = @JoinColumn(name = "creator_id"))
     @Column(name = "function", nullable = false)
@@ -63,6 +66,9 @@ public class Creator {
                 .map(CreatorFunction::getLabel).collect(Collectors.joining(", "));
     }
     public UUID getId() { return id; }
+    public String getPhotoFileName() { return photoFileName; }
+    public String getPhotoContentType() { return photoContentType; }
+    public void updatePhoto(String name,String mime) { photoFileName=name;photoContentType=mime;photoUpdatedAt=name==null?null:Instant.now(); }
     public UUID getOwnerUserId() { return ownerUserId; }
     public String getName() { return name; }
     public String getSortName() { return sortName; }

@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/head :: head('Visão geral')}"><title>Visão geral | Minha Gibiteca</title></head>
+<head th:replace="~{fragments/head :: head('Visão geral')}"><title>Visão geral | Minha Biblioteca</title></head>
 <body class="dashboard-page">
 <a class="skip-link" href="#main-content">Pular para o conteúdo</a>
 <div class="dashboard-layout">
     <aside th:replace="~{fragments/navigation :: sidebar}"></aside>
     <main id="main-content" class="dashboard-main home-page" aria-labelledby="page-title" tabindex="-1">
         <header class="home-header">
-            <div><p class="dashboard-kicker">Minha Gibiteca · Visão geral</p><h1 id="page-title">Visão geral da coleção</h1><p class="home-intro">Acompanhe seu acervo e escolha sua próxima leitura.</p></div>
+            <div><p class="dashboard-kicker">Minha Biblioteca · Visão geral</p><h1 id="page-title">Visão geral da coleção</h1><p class="home-intro">Acompanhe seu acervo e escolha sua próxima leitura.</p></div>
             <form class="dashboard-search" method="get" th:action="@{/edicoes}" role="search" aria-label="Pesquisar no catálogo">
                 <label class="visually-hidden" for="dashboard-query">Buscar por título, ISBN ou número editorial</label>
                 <input id="dashboard-query" name="q" type="search" maxlength="240" placeholder="Título, ISBN ou número…"><button type="submit">Buscar</button>
@@ -22,7 +22,7 @@
         <p class="alert alert-error" role="alert" th:if="${errorMessage}" th:text="${errorMessage}"></p>
         <section class="home-empty" th:if="${summary.editions == 0}" aria-labelledby="home-empty-title">
             <h2 id="home-empty-title">Sua coleção começa com a primeira edição</h2>
-            <p>Use “Cadastrar edição” acima para registrar seus quadrinhos. Depois, acompanhe valores, exemplares e leituras aqui.</p>
+            <p>Use “Cadastrar edição” acima para registrar seus livros e quadrinhos. Depois, acompanhe valores, exemplares e leituras aqui.</p>
         </section>
         <section id="home-overview" class="dashboard-section" aria-labelledby="summary-title">
             <div class="dashboard-section-heading"><h2 id="summary-title">Sua coleção em números</h2><span>Seus registros, em um só lugar</span></div>
@@ -77,10 +77,10 @@
             <div class="home-support-links">
                 <a th:href="@{/editoras}"><span class="small-shortcut icon-gold" aria-hidden="true">◇</span><span><strong>Editoras</strong><span>Editoras e selos do catálogo</span></span><span aria-hidden="true">→</span></a>
                 <a th:href="@{/obras}"><span class="small-shortcut icon-purple" aria-hidden="true">▧</span><span><strong>Obras</strong><span>Histórias associadas às edições</span></span><span aria-hidden="true">→</span></a>
-                <a th:href="@{/criadores}"><span class="small-shortcut icon-green" aria-hidden="true">✎</span><span><strong>Criadores</strong><span>Autores e artistas dos quadrinhos</span></span><span aria-hidden="true">→</span></a>
+                <a th:href="@{/criadores}"><span class="small-shortcut icon-green" aria-hidden="true">✎</span><span><strong>Criadores</strong><span>Autores e artistas das publicações</span></span><span aria-hidden="true">→</span></a>
             </div>
         </section>
-        <footer class="dashboard-footer"><span>Minha Gibiteca · Sua coleção, do seu jeito.</span><span>Informações baseadas nos seus cadastros.</span></footer>
+        <footer class="dashboard-footer"><span>Minha Biblioteca · Sua coleção, do seu jeito.</span><span>Informações baseadas nos seus cadastros.</span></footer>
     </main>
 </div>
 </body>

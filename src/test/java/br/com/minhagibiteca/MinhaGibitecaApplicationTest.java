@@ -55,6 +55,347 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @AutoConfigureMockMvc
 @Testcontainers
 class MinhaGibitecaApplicationTest {
+    @Test void registersWriterAndUsesWriterFiltersAndReportLabels() throws Exception {
+        var owner=userAccountRepository.save(UserAccount.create("writer@example.com","hash",UserRole.USER));
+        var auth=SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
+        mockMvc.perform(get("/criadores/novo").with(auth)).andExpect(content().string(org.hamcrest.Matchers.containsString("Escritor")));
+        mockMvc.perform(post("/criadores").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("name","Escritor de teste").param("functions","ESCRITOR"))
+                .andExpect(redirectedUrl("/criadores"));
+        var creator=creatorRepository.findByOwnerUserIdOrderByNormalizedNameAsc(owner.getId()).getFirst();
+        assertThat(creator.getFunctions()).containsExactly(br.com.minhagibiteca.catalog.domain.CreatorFunction.ESCRITOR);
+        assertThat(creator.getFunctionsDescription()).isEqualTo("Escritor");
+        mockMvc.perform(get("/edicoes/vinculos/CREATOR").with(auth).param("function","ESCRITOR"))
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("Escritor de teste")));
+        var edition=editionService.create(owner.getId(),new EditionService.Command(null,null,"Livro do escritor",null,null,null,null,null,null));
+        editionAssociationService.replace(edition.getId(),owner.getId(),List.of(),List.of(creator.getId()));
+        mockMvc.perform(get("/relatorios/csv").with(auth).param("type","CATALOG").param("creatorFunction","ESCRITOR"))
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("Escritor de teste (Escritor)")));
+        mockMvc.perform(post("/criadores/"+creator.getId()+"/editar").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("name",creator.getName())
+                .param("functions",java.util.Arrays.stream(br.com.minhagibiteca.catalog.domain.CreatorFunction.values()).map(Enum::name).toArray(String[]::new)))
+                .andExpect(redirectedUrl("/criadores"));
+        assertThat(creatorRepository.findById(creator.getId()).orElseThrow().getFunctions()).hasSize(10);
+    }
+    @Autowired private br.com.minhagibiteca.catalog.application.CreatorRegistrationService creatorRegistration;
+
+    @Test void cleansUpNewCreatorPhotoIfDatabaseCommitFails() throws Exception {
+        var owner=userAccountRepository.save(UserAccount.create("creator-photo-rollback@example.com","hash",UserRole.USER));
+        var creator=creatorService.create(owner.getId(),new CreatorService.Command("Foto rollback",null));
+        byte[] png=Base64.getDecoder().decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=");
+        var file=new MockMultipartFile("photo","foto.png","image/png",png);
+        creatorRegistration.update(creator.getId(),owner.getId(),new CreatorService.Command("Foto rollback",null),file);
+        String previous=creatorRepository.findById(creator.getId()).orElseThrow().getPhotoFileName();
+        assertThatThrownBy(()->creatorRegistration.update(creator.getId(),owner.getId(),new CreatorService.Command("Foto rollback","x".repeat(181)),file))
+                .isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class);
+        assertThat(creatorRepository.findById(creator.getId()).orElseThrow().getPhotoFileName()).isEqualTo(previous);
+        try(var files=java.nio.file.Files.list(java.nio.file.Path.of("target/test-covers"))){assertThat(files.filter(p->p.getFileName().toString().startsWith(creator.getId()+"-")).map(p->p.getFileName().toString()).toList()).containsExactly(previous);}
+    }
+
+    @Test void createsReplacesRemovesAndProtectsCreatorPhotos() throws Exception {
+        var owner=userAccountRepository.save(UserAccount.create("creator-photo@example.com","hash",UserRole.USER));
+        var other=userAccountRepository.save(UserAccount.create("creator-photo-other@example.com","hash",UserRole.USER));
+        var auth=SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
+        var foreign=SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(other));
+        byte[] png=Base64.getDecoder().decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=");
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart("/criadores").file(new MockMultipartFile("photo","../../foto.png","image/png",png))
+                .with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("name","Artista com foto").param("functions","ROTEIRISTA").param("photoFileName","injetado.png"))
+                .andExpect(redirectedUrl("/criadores"));
+        var creator=creatorRepository.findByOwnerUserIdOrderByNormalizedNameAsc(owner.getId()).getFirst();var id=creator.getId();String first=creator.getPhotoFileName();
+        assertThat(first).startsWith(id.toString()).endsWith(".png").doesNotContain("..","injetado");
+        assertThat(java.nio.file.Files.exists(java.nio.file.Path.of("target/test-covers",first))).isTrue();
+        mockMvc.perform(get("/criadores/"+id+"/foto").with(auth)).andExpect(status().isOk()).andExpect(content().contentType("image/png")).andExpect(content().bytes(png));
+        mockMvc.perform(get("/criadores").with(auth)).andExpect(content().string(org.hamcrest.Matchers.containsString("/criadores/"+id+"/foto")));
+        mockMvc.perform(get("/criadores/"+id+"/editar").with(auth)).andExpect(content().string(org.hamcrest.Matchers.containsString("Substituir foto")));
+        mockMvc.perform(get("/criadores/"+id+"/foto").with(foreign)).andExpect(status().isNotFound());
+        mockMvc.perform(post("/criadores/"+id+"/foto/remover").with(foreign).with(SecurityMockMvcRequestPostProcessors.csrf())).andExpect(status().isNotFound());
+        mockMvc.perform(post("/criadores/"+id+"/foto/remover").with(auth)).andExpect(status().isForbidden());
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart("/criadores/"+id+"/editar").file(new MockMultipartFile("photo","nova.png","image/png",png))
+                .with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("name","Artista atualizado"))
+                .andExpect(redirectedUrl("/criadores"));
+        String second=creatorRepository.findById(id).orElseThrow().getPhotoFileName();assertThat(second).isNotEqualTo(first);
+        assertThat(java.nio.file.Files.exists(java.nio.file.Path.of("target/test-covers",first))).isFalse();
+        mockMvc.perform(post("/criadores/"+id+"/foto/remover").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())).andExpect(redirectedUrl("/criadores/"+id+"/editar"));
+        assertThat(creatorRepository.findById(id).orElseThrow().getPhotoFileName()).isNull();assertThat(java.nio.file.Files.exists(java.nio.file.Path.of("target/test-covers",second))).isFalse();
+        mockMvc.perform(get("/criadores/"+id+"/foto").with(auth)).andExpect(status().isNotFound());
+    }
+
+    @Test void rejectsInvalidCreatorPhotosAndRollsBackCreatorChanges() throws Exception {
+        var owner=userAccountRepository.save(UserAccount.create("creator-photo-invalid@example.com","hash",UserRole.USER));
+        var auth=SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
+        var creator=creatorService.create(owner.getId(),new CreatorService.Command("Nome anterior",null));
+        byte[] png=Base64.getDecoder().decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=");
+        creatorRegistration.update(creator.getId(),owner.getId(),new CreatorService.Command("Nome anterior",null),new MockMultipartFile("photo","foto.png","image/png",png));
+        String originalPhoto=creatorRepository.findById(creator.getId()).orElseThrow().getPhotoFileName();
+        for(var file:List.of(new MockMultipartFile("photo","falso.png","image/png","não é imagem".getBytes()),new MockMultipartFile("photo","falso.jpg","image/jpeg",png),new MockMultipartFile("photo","foto.svg","image/svg+xml",png),new MockMultipartFile("photo","grande.png","image/png",new byte[5*1024*1024+1]))) {
+            mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart("/criadores").file(file).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("name","Cadastro inválido"))
+                    .andExpect(status().isOk()).andExpect(view().name("criadores/form"));
+            assertThat(creatorRepository.findByOwnerUserIdOrderByNormalizedNameAsc(owner.getId())).hasSize(1);
+            mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart("/criadores/"+creator.getId()+"/editar").file(file).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("name","Mudança não salva"))
+                    .andExpect(status().isOk()).andExpect(view().name("criadores/form"));
+            assertThat(creatorRepository.findById(creator.getId()).orElseThrow().getName()).isEqualTo("Nome anterior");
+            assertThat(creatorRepository.findById(creator.getId()).orElseThrow().getPhotoFileName()).isEqualTo(originalPhoto);
+            assertThat(java.nio.file.Files.exists(java.nio.file.Path.of("target/test-covers",originalPhoto))).isTrue();
+        }
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart("/criadores/"+creator.getId()+"/editar").file(new MockMultipartFile("photo","foto.png","image/png",png)).with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("name","Nome anterior"))
+                .andExpect(redirectedUrl("/criadores"));
+        String photo=creatorRepository.findById(creator.getId()).orElseThrow().getPhotoFileName();
+        mockMvc.perform(post("/criadores/"+creator.getId()+"/excluir").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())).andExpect(redirectedUrl("/criadores"));
+        assertThat(java.nio.file.Files.exists(java.nio.file.Path.of("target/test-covers",photo))).isFalse();
+    }
+
+    @Test void managesPrivateWishlistWithoutChangingCatalogOrExpenses() throws Exception {
+        var owner=userAccountRepository.save(UserAccount.create("wish-owner@example.com","hash",UserRole.USER));
+        var other=userAccountRepository.save(UserAccount.create("wish-other@example.com","hash",UserRole.USER));
+        var auth=SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
+        var foreign=SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(other));
+        var jdbc=new org.springframework.jdbc.core.JdbcTemplate(dataSource);
+        mockMvc.perform(post("/desejos").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                .param("title"," Livro desejado <script> ").param("publicationType","BOOK").param("priority","HIGH")
+                .param("estimatedPrice","49,90").param("author","Autor teste").param("notes","Notas <b>"))
+                .andExpect(redirectedUrl("/desejos"));
+        var id=jdbc.queryForObject("select id from wishlist_items where owner_user_id=?",java.util.UUID.class,owner.getId());
+        var html=mockMvc.perform(get("/desejos").with(auth)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertThat(html).contains("Lista de desejos","Livro desejado &lt;script&gt;","49,90","Prioridade alta","Notas &lt;b&gt;").doesNotContain("Livro desejado <script>");
+        mockMvc.perform(get("/desejos").with(foreign)).andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Livro desejado"))));
+        mockMvc.perform(get("/desejos/"+id+"/editar").with(foreign)).andExpect(status().isNotFound());
+        for(String path:List.of("/situacao","/excluir","/editar"))mockMvc.perform(post("/desejos/"+id+path).with(foreign).with(SecurityMockMvcRequestPostProcessors.csrf()).param("acquired","true").param("title","Invasão"))
+                .andExpect(status().isNotFound());
+        mockMvc.perform(post("/desejos/"+id+"/situacao").with(auth).param("acquired","true")).andExpect(status().isForbidden());
+        mockMvc.perform(post("/desejos/"+id+"/situacao").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("acquired","true")).andExpect(redirectedUrl("/desejos"));
+        assertThat(jdbc.queryForObject("select acquired from wishlist_items where id=?",Boolean.class,id)).isTrue();
+        mockMvc.perform(get("/desejos").with(auth)).andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Livro desejado"))));
+        mockMvc.perform(get("/desejos").with(auth).param("status","ACQUIRED")).andExpect(content().string(org.hamcrest.Matchers.containsString("Livro desejado")));
+        mockMvc.perform(post("/desejos/"+id+"/editar").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("title","Livro revisado").param("publicationType","BOOK").param("priority","NORMAL"))
+                .andExpect(redirectedUrl("/desejos"));
+        assertThat(jdbc.queryForObject("select acquired from wishlist_items where id=?",Boolean.class,id)).isTrue();
+        var summary=(br.com.minhagibiteca.dashboard.application.CollectionSummary)mockMvc.perform(get("/visao-geral").with(auth)).andReturn().getModelAndView().getModel().get("summary");
+        assertThat(summary.editions()).isZero();assertThat(summary.registeredPaid()).isNull();assertThat(summary.pricedEditions()).isZero();
+        mockMvc.perform(post("/desejos/"+id+"/situacao").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("acquired","false")).andExpect(redirectedUrl("/desejos"));
+        mockMvc.perform(post("/desejos/"+id+"/excluir").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())).andExpect(redirectedUrl("/desejos"));
+        assertThat(jdbc.queryForObject("select count(*) from wishlist_items where id=?",Long.class,id)).isZero();
+    }
+
+    @Test void validatesWishlistFieldsAndPaginatesPriorityAndLiteralSearch() throws Exception {
+        var owner=userAccountRepository.save(UserAccount.create("wish-pages@example.com","hash",UserRole.USER));
+        var auth=SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
+        for(var fields:List.of(java.util.Map.of("title","","estimatedPrice","10"),java.util.Map.of("title","Desejo","estimatedPrice","-1"),java.util.Map.of("title","Desejo","estimatedPrice","1,234"),java.util.Map.of("title","Desejo","estimatedPrice","abc"),java.util.Map.of("title","Desejo","priority","INVALID"))) {
+            var request=post("/desejos").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf());fields.forEach(request::param);
+            mockMvc.perform(request).andExpect(status().isOk()).andExpect(view().name("desejos/form"));
+        }
+        var jdbc=new org.springframework.jdbc.core.JdbcTemplate(dataSource);
+        assertThat(jdbc.queryForObject("select count(*) from wishlist_items where owner_user_id=?",Long.class,owner.getId())).isZero();
+        for(int i=0;i<25;i++)jdbc.update("insert into wishlist_items(id,owner_user_id,title,publication_type,priority) values(?,?,?,'COMIC','LOW')",java.util.UUID.randomUUID(),owner.getId(),"Desejo "+i);
+        jdbc.update("insert into wishlist_items(id,owner_user_id,title,publication_type,priority,isbn) values(?,?,'Z prioridade alta %','BOOK','HIGH','123')",java.util.UUID.randomUUID(),owner.getId());
+        var page=(org.springframework.data.domain.Page<?>)mockMvc.perform(get("/desejos").with(auth)).andExpect(status().isOk()).andReturn().getModelAndView().getModel().get("wishes");
+        assertThat(page.getTotalElements()).isEqualTo(26);assertThat(page.getNumberOfElements()).isEqualTo(20);
+        assertThat(((br.com.minhagibiteca.wishlist.domain.WishItem)page.getContent().getFirst()).priority()).isEqualTo(br.com.minhagibiteca.wishlist.domain.WishPriority.HIGH);
+        var second=(org.springframework.data.domain.Page<?>)mockMvc.perform(get("/desejos").with(auth).param("page","1")).andReturn().getModelAndView().getModel().get("wishes");
+        assertThat(second.getNumberOfElements()).isEqualTo(6);
+        var literal=(org.springframework.data.domain.Page<?>)mockMvc.perform(get("/desejos").with(auth).param("q","%")).andReturn().getModelAndView().getModel().get("wishes");
+        assertThat(literal.getTotalElements()).isEqualTo(1);
+        mockMvc.perform(get("/desejos/novo").with(auth).param("returnTo","/desejos?q=%25&status=ALL&page=1")).andExpect(content().string(org.hamcrest.Matchers.containsString("status=ALL")));
+        mockMvc.perform(get("/desejos")).andExpect(status().is3xxRedirection());
+    }
+
+    @Test void registersAndEditsBooksWithReadingPricesAndPublicationFilter() throws Exception {
+        var owner=userAccountRepository.save(UserAccount.create("books@example.com","hash",UserRole.USER));
+        var auth=SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
+        var created=mockMvc.perform(post("/edicoes").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                .param("title","Livro de teste").param("publicationType","BOOK").param("mediaType","DIGITAL")
+                .param("referencePaidPrice","25,90").param("totalPages","200").param("pagesRead","50"))
+                .andExpect(status().is3xxRedirection()).andReturn();
+        var book=editionRepository.findByOwnerUserIdAndNormalizedTitleContaining(owner.getId(),"livro de teste",org.springframework.data.domain.PageRequest.of(0,20)).getContent().getFirst();
+        assertThat(created.getResponse().getRedirectedUrl()).isEqualTo("/edicoes/"+book.getId());
+        assertThat(book.getPublicationType()).isEqualTo(br.com.minhagibiteca.catalog.domain.PublicationType.BOOK);
+        assertThat(book.getPagesRead()).isEqualTo(50);
+        assertThat(book.getReferencePaidPrice()).isEqualByComparingTo("25.90");
+        mockMvc.perform(get("/edicoes/"+book.getId()).with(auth)).andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Livro")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Minha Biblioteca")));
+        var edit=mockMvc.perform(get("/edicoes/"+book.getId()+"/editar").with(auth)).andExpect(status().isOk()).andReturn();
+        assertThat(((br.com.minhagibiteca.catalog.presentation.EditionForm)edit.getModelAndView().getModel().get("editionForm")).getPublicationType())
+                .isEqualTo(br.com.minhagibiteca.catalog.domain.PublicationType.BOOK);
+        editionService.create(owner.getId(),new EditionService.Command(null,null,"Quadrinho existente",null,null,null,null,null,null));
+        var filtered=mockMvc.perform(get("/edicoes").with(auth).param("publicationType","BOOK")).andExpect(status().isOk()).andReturn();
+        assertThat(filtered.getResponse().getContentAsString()).contains("Livro de teste","publicationType=BOOK").doesNotContain("Quadrinho existente");
+        var summary=(br.com.minhagibiteca.dashboard.application.CollectionSummary)mockMvc.perform(get("/visao-geral").with(auth))
+                .andExpect(status().isOk()).andReturn().getModelAndView().getModel().get("summary");
+        assertThat(summary.editions()).isEqualTo(2);assertThat(summary.registeredPaid()).isEqualByComparingTo("25.90");
+        assertThat(readingService.overall(owner.getId()).pagesUnread()).isEqualTo(150);
+        mockMvc.perform(post("/edicoes/"+book.getId()+"/editar").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                .param("title","Livro atualizado").param("publicationType","BOOK").param("mediaType","PHYSICAL")
+                .param("totalPages","200").param("pagesRead","200"))
+                .andExpect(redirectedUrl("/edicoes/"+book.getId()));
+        assertThat(editionService.findOwned(book.getId(),owner.getId()).getPublicationType()).isEqualTo(br.com.minhagibiteca.catalog.domain.PublicationType.BOOK);
+        assertThat(readingService.overall(owner.getId()).pagesUnread()).isZero();
+        mockMvc.perform(post("/edicoes").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                .param("title","Tipo inválido").param("publicationType","UNKNOWN"))
+                .andExpect(status().isOk()).andExpect(view().name("edicoes/form"));
+    }
+
+    @Test void paginatesBooksBeforeRenderingAndKeepsOwnerAndReturnContext() throws Exception {
+        var owner=userAccountRepository.save(UserAccount.create("book-pages@example.com","hash",UserRole.USER));
+        var other=userAccountRepository.save(UserAccount.create("book-other@example.com","hash",UserRole.USER));
+        var jdbc=new org.springframework.jdbc.core.JdbcTemplate(dataSource);
+        for(int i=1;i<=25;i++)jdbc.update("insert into editions(id,owner_user_id,title,normalized_title,editorial_number,publication_type) values(?,?,'Livro','livro',?,'BOOK')",java.util.UUID.randomUUID(),owner.getId(),String.valueOf(i));
+        jdbc.update("insert into editions(id,owner_user_id,title,normalized_title,publication_type) values(?,?,'Livro privado','livro privado','BOOK')",java.util.UUID.randomUUID(),other.getId());
+        editionService.create(owner.getId(),new EditionService.Command(null,null,"Quadrinho",null,null,null,null,null,null));
+        var auth=SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
+        var result=mockMvc.perform(get("/edicoes").with(auth).param("publicationType","BOOK").param("page","1")).andExpect(status().isOk()).andReturn();
+        var page=(org.springframework.data.domain.Page<?>)result.getModelAndView().getModel().get("editions");
+        assertThat(page.getTotalElements()).isEqualTo(25);assertThat(page.getNumberOfElements()).isEqualTo(5);
+        assertThat(result.getResponse().getContentAsString()).contains("Nº 21","Nº 25","publicationType=BOOK").doesNotContain("Livro privado");
+        var first=(br.com.minhagibiteca.catalog.application.EditionView)page.getContent().getFirst();
+        var detail=mockMvc.perform(get("/edicoes/"+first.id()).with(auth).param("returnTo","/edicoes?publicationType=BOOK&order=TITLE_NUMBER_ASC&page=1"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertThat(detail).contains("publicationType=BOOK","order=TITLE_NUMBER_ASC","page=1");
+        mockMvc.perform(get("/edicoes/"+first.id()).with(SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(other)))).andExpect(status().isNotFound());
+    }
+
+    @Test void migratesExistingPublicationsToComicsWithoutChangingTheirData() {
+        String schema="publication_type_upgrade";
+        org.flywaydb.core.Flyway.configure().dataSource(POSTGRES.getJdbcUrl(),POSTGRES.getUsername(),POSTGRES.getPassword())
+                .schemas(schema).defaultSchema(schema).target("20").load().migrate();
+        var jdbc=new org.springframework.jdbc.core.JdbcTemplate(dataSource);
+        var owner=java.util.UUID.randomUUID();var id=java.util.UUID.randomUUID();
+        jdbc.update("insert into publication_type_upgrade.users(id,email,password_hash,role) values(?,?,?,'USER')",owner,"legacy-book@example.com","hash");
+        jdbc.update("insert into publication_type_upgrade.editions(id,owner_user_id,title,normalized_title,rating,reference_paid_price) values(?,?,'Legado','legado',4,20.50)",id,owner);
+        org.flywaydb.core.Flyway.configure().dataSource(POSTGRES.getJdbcUrl(),POSTGRES.getUsername(),POSTGRES.getPassword())
+                .schemas(schema).defaultSchema(schema).load().migrate();
+        var row=jdbc.queryForMap("select publication_type,rating,reference_paid_price from publication_type_upgrade.editions where id=?",id);
+        assertThat(row.get("publication_type")).isEqualTo("COMIC");assertThat(row.get("rating")).isEqualTo(4);
+        assertThat((BigDecimal)row.get("reference_paid_price")).isEqualByComparingTo("20.50");
+        assertThatThrownBy(()->jdbc.update("update publication_type_upgrade.editions set publication_type='UNKNOWN' where id=?",id))
+                .isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class);
+    }
+
+    @Test void registersPublicUsersThenLogsInToHomeWithAnEmptyPrivateCatalog() throws Exception {
+        var existing=userAccountRepository.save(UserAccount.create("existing-registration@example.com","hash",UserRole.USER));
+        var privateEdition=editionService.create(existing.getId(),new EditionService.Command(null,null,"Coleção privada anterior",null,null,null,null,null,null));
+        var login=mockMvc.perform(get("/login")).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertThat(login).contains("href=\"/cadastro\"","Criar conta");
+        var page=mockMvc.perform(get("/cadastro")).andExpect(status().isOk()).andExpect(view().name("auth/register"))
+                .andReturn().getResponse().getContentAsString();
+        assertThat(page).contains("Crie sua conta","Confirmar senha","name=\"_csrf\"","autocomplete=\"new-password\"","Voltar para entrar");
+        String password="senha-exclusiva-123";
+        var created=mockMvc.perform(post("/cadastro").with(SecurityMockMvcRequestPostProcessors.csrf())
+                        .param("email","  NOVA@EXAMPLE.COM ").param("password",password).param("passwordConfirmation",password)
+                        .param("role","ADMIN").param("enabled","false").param("passwordHash","INJETADO"))
+                .andExpect(redirectedUrl("/login"))
+                .andExpect(org.springframework.security.test.web.servlet.response.SecurityMockMvcResultMatchers.unauthenticated())
+                .andReturn();
+        var account=userAccountRepository.findByEmail("nova@example.com").orElseThrow();
+        assertThat(account.getRole()).isEqualTo(UserRole.USER);assertThat(account.isEnabled()).isTrue();
+        assertThat(account.getPasswordHash()).isNotEqualTo(password).startsWith("$2");
+        assertThat(passwordEncoder.matches(password,account.getPasswordHash())).isTrue();
+        mockMvc.perform(get("/login").flashAttrs(created.getFlashMap())).andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Conta criada com sucesso")));
+        var signedIn=mockMvc.perform(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestBuilders.formLogin("/login")
+                        .user("username","NOVA@EXAMPLE.COM").password(password))
+                .andExpect(redirectedUrl("/dashboard"))
+                .andExpect(org.springframework.security.test.web.servlet.response.SecurityMockMvcResultMatchers.authenticated().withUsername("nova@example.com").withRoles("USER"))
+                .andReturn();
+        var session=(org.springframework.mock.web.MockHttpSession)signedIn.getRequest().getSession(false);
+        var catalog=mockMvc.perform(get("/edicoes").session(session)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertThat(catalog).contains("Seu catálogo começa aqui").doesNotContain("Coleção privada anterior");
+        mockMvc.perform(get("/edicoes/"+privateEdition.getId()).session(session)).andExpect(status().isNotFound());
+    }
+
+    @Test void validatesRegistrationWithoutRetainingPasswordsOrOverwritingExistingUsers() throws Exception {
+        var existing=userAccountRepository.save(UserAccount.create("taken@example.com","OLD_HASH",UserRole.ADMIN));
+        String valid="senha-exclusiva-123";
+        for(String[] values:new String[][]{
+                {"email-inválido",valid,valid},{"a".repeat(321)+"@example.com",valid,valid},
+                {"nova@example.com","curta","curta"},{"nova@example.com",valid,"outra-senha-123"},
+                {"nova@example.com","a".repeat(65),"a".repeat(65)},
+                {"nova@example.com","é".repeat(37),"é".repeat(37)},
+                {"nova@example.com","",""},{"  TAKEN@EXAMPLE.COM ",valid,valid}}) {
+            var result=mockMvc.perform(post("/cadastro").with(SecurityMockMvcRequestPostProcessors.csrf())
+                            .param("email",values[0]).param("password",values[1]).param("passwordConfirmation",values[2]))
+                    .andExpect(status().isOk()).andExpect(view().name("auth/register")).andReturn();
+            var form=(br.com.minhagibiteca.auth.presentation.RegistrationForm)result.getModelAndView().getModel().get("registrationForm");
+            assertThat(form.getPassword()).isNull();assertThat(form.getPasswordConfirmation()).isNull();
+            var errors=(org.springframework.validation.BindingResult)result.getModelAndView().getModel()
+                    .get(org.springframework.validation.BindingResult.MODEL_KEY_PREFIX+"registrationForm");
+            assertThat(errors.hasErrors()).isTrue();
+            assertThat(errors.getFieldErrors()).allMatch(e->e.getRejectedValue()==null);
+            var html=result.getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+            assertThat(html).contains("Confira os dados do cadastro","preencha novamente");
+            assertThat(html).contains("value=\""+br.com.minhagibiteca.auth.domain.UserAccount.normalizeEmail(values[0])+"\"");
+            if(!values[1].isEmpty()) assertThat(html).doesNotContain(values[1]);
+        }
+        assertThat(userAccountRepository.count()).isEqualTo(1);
+        assertThat(userAccountRepository.findById(existing.getId()).orElseThrow().getPasswordHash()).isEqualTo("OLD_HASH");
+    }
+
+    @Test void requiresCsrfAndKeepsAuthenticatedUsersOutsidePublicRegistration() throws Exception {
+        mockMvc.perform(post("/cadastro").param("email","nova@example.com").param("password","senha-exclusiva-123"))
+                .andExpect(status().isForbidden());
+        assertThat(userAccountRepository.count()).isZero();
+        mockMvc.perform(get("/edicoes")).andExpect(status().is3xxRedirection());
+        var existing=userAccountRepository.save(UserAccount.create("signed-in@example.com","hash",UserRole.USER));
+        var auth=SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(existing));
+        mockMvc.perform(get("/cadastro").with(auth)).andExpect(redirectedUrl("/dashboard"));
+        mockMvc.perform(post("/cadastro").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                        .param("email","nova@example.com").param("password","senha-exclusiva-123").param("passwordConfirmation","senha-exclusiva-123"))
+                .andExpect(redirectedUrl("/dashboard"));
+        assertThat(userAccountRepository.count()).isEqualTo(1);
+    }
+
+    @Test
+    void ratesEditionsWithStarsPersistsZeroAndClearsWithoutChangingReading() throws Exception {
+        var owner = userAccountRepository.save(UserAccount.create("rating@example.com", "hash", UserRole.USER));
+        var auth = SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner));
+        var edition = editionService.create(owner.getId(), new EditionService.Command(null, null, "HQ avaliada", "1", null, null, null, null, null));
+        String detail = "/edicoes/" + edition.getId();
+        mockMvc.perform(get(detail).with(auth)).andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Sem avaliação")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Avaliar com 5 de 5 estrelas")));
+        var jdbc = new org.springframework.jdbc.core.JdbcTemplate(dataSource);
+        for (int rating = 0; rating <= 5; rating++) {
+            mockMvc.perform(post(detail + "/avaliacao").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                            .param("rating", String.valueOf(rating)))
+                    .andExpect(redirectedUrl(detail));
+            assertThat(jdbc.queryForObject("select rating from editions where id=?", Integer.class, edition.getId())).isEqualTo(rating);
+            assertThat(editionService.viewOwned(edition.getId(), owner.getId()).read()).isFalse();
+            mockMvc.perform(get("/edicoes").with(auth)).andExpect(status().isOk())
+                    .andExpect(content().string(org.hamcrest.Matchers.containsString(rating + " de 5 estrelas")));
+        }
+        mockMvc.perform(get(detail).with(auth)).andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Remover avaliação")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("★★★★★")));
+        mockMvc.perform(post(detail + "/editar").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                        .param("title", "HQ alterada")).andExpect(status().is3xxRedirection());
+        assertThat(editionService.viewOwned(edition.getId(), owner.getId()).rating()).isEqualTo(5);
+        for (String value : List.of("-1", "6", "2.5", "abc", "", "999999999999999999999")) {
+            mockMvc.perform(post(detail + "/avaliacao").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()).param("rating", value))
+                    .andExpect(redirectedUrl(detail))
+                    .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash().attributeExists("errorMessage"));
+            assertThat(editionService.viewOwned(edition.getId(), owner.getId()).rating()).isEqualTo(5);
+        }
+        mockMvc.perform(post(detail + "/avaliacao").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(redirectedUrl(detail))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash().attributeExists("errorMessage"));
+        mockMvc.perform(post(detail + "/avaliacao").with(auth).param("rating", "1")).andExpect(status().isForbidden());
+        mockMvc.perform(post(detail + "/avaliacao/remover").with(auth)).andExpect(status().isForbidden());
+        var other = userAccountRepository.save(UserAccount.create("rating-other@example.com", "hash", UserRole.USER));
+        for (String path : List.of("/avaliacao", "/avaliacao/remover")) {
+            mockMvc.perform(post(detail + path).with(SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(other)))
+                            .with(SecurityMockMvcRequestPostProcessors.csrf()).param("rating", "inválido"))
+                    .andExpect(status().isNotFound());
+        }
+        assertThat(editionService.viewOwned(edition.getId(), owner.getId()).rating()).isEqualTo(5);
+        mockMvc.perform(post(detail + "/avaliacao").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf())
+                        .param("rating", "0").param("returnTo", "/edicoes?q=HQ&page=1"))
+                .andExpect(redirectedUrlPattern(detail + "?returnTo=/**"));
+        assertThat(editionService.viewOwned(edition.getId(), owner.getId()).rating()).isZero();
+        for (int invalid : new int[]{-1, 6}) {
+            assertThatThrownBy(() -> jdbc.update("update editions set rating=? where id=?", invalid, edition.getId()))
+                    .isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class);
+        }
+        mockMvc.perform(post(detail + "/avaliacao/remover").with(auth).with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(redirectedUrl(detail));
+        assertThat(editionService.viewOwned(edition.getId(), owner.getId()).rating()).isNull();
+    }
 
     @Test
     void savesCreatorFunctionsAndRendersThemAcrossCatalog() throws Exception {
@@ -1410,10 +1751,10 @@ class MinhaGibitecaApplicationTest {
         assertThat(html.split("name=\"_csrf\"", -1)).hasSize(10); // logout + leitura/exclusão por cartão
         assertThat(html).doesNotContain("class=\"edition-filter-details\" open", "class=\"edition-delete\" open");
         assertThat(html).contains("4 edições encontradas", "Exibindo 1–4", "Nº 1A", "2026", "Encadernado",
-                "Variante: Capa alternativa", "ISBN: 9786559601325", "39,50", "59,90", "0,00",
-                "Não informado", "Já li", "Não li", "Sem<br>capa", "Valor pago da edição", "Preço de capa",
+                "39,50", "0,00", "Sem avaliação",
+                "Não informado", "Já li", "Não li", "Sem<br>capa", "Valor pago da edição",
                 "&lt;script&gt;", "/edicoes/" + escaped.getId() + "/capa")
-                .doesNotContain("<script>alert(");
+                .doesNotContain("<script>alert(", "ISBN: 9786559601325", "Variante: Capa alternativa", "59,90");
         var preview = java.nio.file.Path.of("target/ui-catalog");
         java.nio.file.Files.createDirectories(preview.resolve("css"));
         java.nio.file.Files.writeString(preview.resolve("index.html"), html);
@@ -1737,7 +2078,7 @@ class MinhaGibitecaApplicationTest {
         var item = checklistService.create(series.getId(), owner.getId(), new br.com.minhagibiteca.collection.application.ChecklistService.Command("1A", "Descrição <script>", false, "Observações de um número especial"));
         checklistService.create(series.getId(), owner.getId(), new br.com.minhagibiteca.collection.application.ChecklistService.Command("Especial", "Edição comemorativa", true, null));
         String complete = mockMvc.perform(get("/series/{id}/checklist", series.getId()).with(auth)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
-        assertThat(complete).contains("Itens nesta consulta: 2", "checklist-owned", "checklist-missing", "Identifique o quadrinho", "Estado na coleção", "Não indica se você já leu a edição.", "Descrição &lt;script&gt;", "Batman &lt;script&gt;")
+        assertThat(complete).contains("Itens nesta consulta: 2", "checklist-owned", "checklist-missing", "Identifique a publicação", "Estado na coleção", "Não indica se você já leu a edição.", "Descrição &lt;script&gt;", "Batman &lt;script&gt;")
                 .doesNotContain("Descrição <script>", "Batman <script>");
         previews.put("checklist-completo", complete);
         String missing = mockMvc.perform(get("/series/{id}/faltantes", series.getId()).with(auth)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
@@ -1915,10 +2256,10 @@ class MinhaGibitecaApplicationTest {
             var result = mockMvc.perform(post(paths.get(i) + "/{id}/excluir", ids.get(i)).with(auth)
                     .with(SecurityMockMvcRequestPostProcessors.csrf()))
                     .andExpect(status().is3xxRedirection()).andExpect(redirectedUrl(paths.get(i))).andReturn();
-            assertThat(result.getFlashMap().get("errorMessage").toString()).contains("vinculad", "Nenhuma HQ foi apagada");
+            assertThat(result.getFlashMap().get("errorMessage").toString()).contains("vinculad", "Nenhuma edição foi apagada");
             mockMvc.perform(get(paths.get(i)).with(auth).flashAttrs(result.getFlashMap()))
                     .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("role=\"alert\"")))
-                    .andExpect(content().string(org.hamcrest.Matchers.containsString("Nenhuma HQ foi apagada")));
+                    .andExpect(content().string(org.hamcrest.Matchers.containsString("Nenhuma edição foi apagada")));
         }
         assertThat(editionRepository.existsById(edition.getId())).isTrue();
         assertThat(publisherRepository.existsById(publisher.getId())).isTrue();

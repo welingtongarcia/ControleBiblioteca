@@ -47,6 +47,97 @@ class InterfaceIntegrationTest {
         for(var css:List.of("main","dashboard","home-showcase"))Files.copy(Path.of("src/main/resources/static/css/"+css+".css"),PREVIEW.resolve("css/"+css+".css"),StandardCopyOption.REPLACE_EXISTING);
         for(var js:List.of("sidebar","home-banner","association-picker"))Files.copy(Path.of("src/main/resources/static/js/"+js+".js"),PREVIEW.resolve("js/"+js+".js"),StandardCopyOption.REPLACE_EXISTING);
     }
+    @Test void rendersCreatorPhotoInListAndEditForm() throws Exception {
+        byte[] png=Base64.getDecoder().decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=");
+        var auth=user(UserPrincipal.from(owner));
+        mvc.perform(multipart("/criadores/"+creator+"/editar").file(new org.springframework.mock.web.MockMultipartFile("photo","foto.png","image/png",png)).with(auth).with(csrf()).param("name","Criador com foto"))
+                .andExpect(status().is3xxRedirection());
+        for(var entry:Map.of("criador-foto","/criadores/"+creator+"/editar","criadores-fotos","/criadores","criador-novo-foto","/criadores/novo").entrySet()) {
+            var html=mvc.perform(get(entry.getValue()).with(auth)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+            audit(entry.getKey(),html);preview(entry.getKey(),html);
+        }
+        var invalid=mvc.perform(multipart("/criadores/"+creator+"/editar").file(new org.springframework.mock.web.MockMultipartFile("photo","errada.png","image/png",new byte[]{1,2,3})).with(auth).with(csrf()).param("name","Nome mantido no formulário"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+        assertThat(invalid).contains("Nome mantido no formulário","photo-error","aria-invalid=\"true\"");audit("criador-foto-erro",invalid);preview("criador-foto-erro",invalid);
+        Files.createDirectories(PREVIEW.resolve("criadores/"+creator));Files.write(PREVIEW.resolve("criadores/"+creator+"/foto"),png);
+    }
+
+    @Test void rendersWishlistAndValidatedFormWithLongContent() throws Exception {
+        jdbc.update("insert into wishlist_items(id,owner_user_id,title,publication_type,priority,estimated_price,notes) values(?,? ,?,'BOOK','HIGH',49.90,?)",UUID.randomUUID(),owner.getId(),"Título desejado "+"MuitoLongo".repeat(20),"Observações "+"TextoExtenso".repeat(90));
+        var auth=user(UserPrincipal.from(owner));
+        for(var path:Map.of("desejos","/desejos","desejo-novo","/desejos/novo").entrySet()){
+            String html=mvc.perform(get(path.getValue()).with(auth)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+            audit(path.getKey(),html);preview(path.getKey(),html);
+        }
+        String invalid=mvc.perform(post("/desejos").with(auth).with(csrf()).param("title","").param("estimatedPrice","-1")).andExpect(status().isOk()).andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+        audit("desejo-erros",invalid);assertThat(invalid).contains("Informe o título.","O preço não pode ser negativo.");preview("desejo-erros",invalid);
+    }
+
+    @Test void rendersBookFormsDetailsAndFilteredCatalogWithNewBrand() throws Exception {
+        jdbc.update("update editions set publication_type='BOOK',title='Um livro da minha biblioteca' where id=?",edition);
+        var auth=user(UserPrincipal.from(owner));
+        for(var entry:Map.of("livro-cadastro","/edicoes/nova","livro-editar","/edicoes/"+edition+"/editar","livro-detalhe","/edicoes/"+edition,"livros-catalogo","/edicoes?publicationType=BOOK").entrySet()) {
+            String html=mvc.perform(get(entry.getValue()).with(auth)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+            audit(entry.getKey(),html);assertThat(html).contains("Minha Biblioteca");preview(entry.getKey(),html);
+            if(entry.getKey().equals("livro-editar"))assertThat(html).contains("value=\"BOOK\" selected=\"selected\"");
+        }
+    }
+
+    @Test void rendersPublicRegistrationWithAccessibleFieldsAndSafeErrors() throws Exception {
+        for(String route:List.of("/login","/cadastro")) {
+            var html=mvc.perform(get(route)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+            audit(route.substring(1),html);
+            Files.writeString(PREVIEW.resolve(route.equals("/login")?"login-publico.html":"cadastro-publico.html"),html);
+        }
+        String secret="senha-sintetica-123";
+        var html=mvc.perform(post("/cadastro").with(csrf()).param("email","email-inválido")
+                        .param("password",secret).param("passwordConfirmation","confirmação-diferente"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+        audit("cadastro-erros",html);
+        assertThat(html).contains("Informe um e-mail válido.","As senhas devem ser iguais.","aria-invalid=\"true\"")
+                .doesNotContain(secret,"confirmação-diferente");
+        Files.writeString(PREVIEW.resolve("cadastro-erros.html"),html);
+        String success=mvc.perform(get("/login").flashAttr("registrationSuccess","Conta criada com sucesso! Entre com seu e-mail e senha para começar sua coleção."))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+        Files.writeString(PREVIEW.resolve("login-conta-criada.html"),success);
+    }
+
+    @Test void organizesEditionDetailsAndKeepsSecondaryDataOutsideCatalog() throws Exception {
+        jdbc.update("update editions set title='Batman: uma aventura',editorial_number='10',isbn='9786559601325',variant='Capa alternativa',publication_year=2026,format='Encadernado',cover_price=59.90,rating=4,notes=? where id=?", "Observação com <script> e duas linhas\nSegunda linha", edition);
+        var auth=user(UserPrincipal.from(owner));
+        String detail="/edicoes/"+edition;
+        String html=mvc.perform(get(detail).with(auth).param("returnTo","/edicoes?q=Batman&page=1"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+        int previous=-1;
+        for(String heading:List.of("cover-title","page-title","edition-reading-title","rating-title","edition-data-title","edition-finance-title","edition-content-title","copies-title","edition-notes-title","edition-delete-title")) {
+            int current=html.indexOf("id=\""+heading+"\"");
+            assertThat(current).as("ordem de %s",heading).isGreaterThan(previous);previous=current;
+        }
+        assertThat(html).contains("Dados da edição","Compra e valores","Conteúdo e créditos","Observações",
+                "9786559601325","Capa alternativa","59,90","39,90","4 de 5 estrelas","144","72",
+                "class=\"edition-cover-upload\" open", "class=\"action-delete\"", "Confirmar exclusão da edição",
+                "name=\"_csrf\"", "&lt;script&gt;").doesNotContain("class=\"action-delete\" open", "<script> e duas");
+        assertThat(html.indexOf("action=\""+detail+"/excluir\"")).isGreaterThan(html.indexOf("class=\"action-delete\""));
+        audit("edicao-organizada",html);Files.writeString(PREVIEW.resolve("edicao-organizada.html"),html);
+        String catalog=mvc.perform(get("/edicoes").with(auth)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+        assertThat(catalog).contains("Nº 10","4 de 5 estrelas","39,90","Ver edição","Editar")
+                .doesNotContain("9786559601325","Capa alternativa","59,90");
+        assertThat(catalog.indexOf("class=\"edition-card-personal\"")).isLessThan(catalog.indexOf("class=\"edition-card-prices\""));
+        Files.writeString(PREVIEW.resolve("catalogo-organizado.html"),catalog);
+        byte[] png=Base64.getDecoder().decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=");
+        mvc.perform(multipart(detail+"/capa").file(new org.springframework.mock.web.MockMultipartFile("cover","capa.png","image/png",png)).with(auth).with(csrf()))
+                .andExpect(status().is3xxRedirection());
+        String withCover=mvc.perform(get(detail).with(auth)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+        assertThat(withCover).contains("Alterar capa").doesNotContain("class=\"edition-cover-upload\" open");
+        Files.writeString(PREVIEW.resolve("edicao-com-capa.html"),withCover);
+        Files.createDirectories(PREVIEW.resolve("edicoes/"+edition));Files.write(PREVIEW.resolve("edicoes/"+edition+"/capa"),png);
+        jdbc.update("delete from physical_copies where id=?",copy);
+        jdbc.update("update editions set media_type='DIGITAL',total_pages=null,pages_read=0,rating=0 where id=?",edition);
+        String digital=mvc.perform(get(detail).with(auth)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+        assertThat(digital).contains("0 de 5 estrelas","Edição digital: não possui exemplares físicos.","Total de páginas não informado").doesNotContain(">Novo exemplar</a>");
+        Files.writeString(PREVIEW.resolve("edicao-digital.html"),digital);
+    }
+
     Map<String,String> routes(){var routes=new LinkedHashMap<String,String>();
         for(var path:List.of("dashboard","visao-geral","edicoes","series","editoras","obras","criadores","personagens","localizacoes","financeiro","relatorios","backup"))routes.put(path,"/"+path);
         routes.put("edicao-nova","/edicoes/nova");routes.put("edicao-editar","/edicoes/"+edition+"/editar");routes.put("edicao-detalhe","/edicoes/"+edition);
@@ -165,7 +256,7 @@ class InterfaceIntegrationTest {
         for(var field:fields){String id=field.get("id");int offset=Integer.parseInt(field.get("offset"));boolean implicit=html.lastIndexOf("<label",offset)>html.lastIndexOf("</label>",offset);
             assertThat(labels.contains(id)||implicit||field.containsKey("aria-label")||field.containsKey("aria-labelledby")).as(name+" unlabeled field "+id).isTrue();
         }
-        if(!name.startsWith("login"))assertThat(html).as(name).contains("Pular para o conteúdo","aria-label=\"Menu principal\"");
+        if(!name.startsWith("login") && !name.startsWith("cadastro"))assertThat(html).as(name).contains("Pular para o conteúdo","aria-label=\"Menu principal\"");
     }
     static int count(String html,String regex){var m=Pattern.compile(regex).matcher(html);int n=0;while(m.find())n++;return n;}
 }

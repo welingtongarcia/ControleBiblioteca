@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/head :: head('Entrar')}">
-    <title>Entrar | Minha Gibiteca</title>
+    <title>Entrar | Minha Biblioteca</title>
 </head>
 <body class="auth-page">
 <main class="auth-card" aria-labelledby="page-title">
-    <a class="brand" th:href="@{/login}" aria-label="Minha Gibiteca, página de login">Minha Gibiteca</a>
+    <a class="brand" th:href="@{/login}" aria-label="Minha Biblioteca, página de login">Minha Biblioteca</a>
     <h1 id="page-title">Entre na sua coleção</h1>
-    <p class="muted">Acesse seu catálogo particular de quadrinhos.</p>
+    <p class="muted">Acesse seu catálogo particular de livros e quadrinhos.</p>
 
     <div class="alert alert-error" th:if="${param.error}" role="alert">
         E-mail ou senha inválidos.
@@ -15,6 +15,7 @@
     <div class="alert alert-success" th:if="${param.logout}" role="status">
         Sessão encerrada com segurança.
     </div>
+    <p class="alert alert-success" th:if="${registrationSuccess}" th:text="${registrationSuccess}" role="status"></p>
 
     <form th:action="@{/login}" method="post" class="stack" novalidate>
         <div class="field">
@@ -27,7 +28,10 @@
         </div>
         <button type="submit">Entrar</button>
     </form>
-    <p class="help-text">O cadastro inicial será disponibilizado pelo administrador da coleção.</p>
+    <div class="auth-alternative">
+        <p>Ainda não tem uma conta?</p>
+        <a class="button-link auth-secondary" th:href="@{/cadastro}">Criar conta</a>
+    </div>
 </main>
 </body>
 </html>

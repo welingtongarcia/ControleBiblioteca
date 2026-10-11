@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Criar conta')}"><title>Criar conta | Minha Biblioteca</title></head>
+<body class="auth-page">
+<main class="auth-card" aria-labelledby="page-title">
+    <a class="brand" th:href="@{/login}" aria-label="Minha Biblioteca, página de login">Minha Biblioteca</a>
+    <h1 id="page-title">Crie sua conta</h1>
+    <p class="muted">Organize seus livros e quadrinhos em uma coleção particular.</p>
+    <form class="stack" method="post" th:action="@{/cadastro}" th:object="${registrationForm}" novalidate>
+        <div class="alert alert-error" th:if="${#fields.hasAnyErrors()}" role="alert" aria-labelledby="registration-errors-title">
+            <h2 id="registration-errors-title">Confira os dados do cadastro</h2>
+            <ul><li th:each="error : ${#fields.allErrors()}" th:text="${error}"></li></ul>
+            <p>Por segurança, preencha novamente a senha e sua confirmação.</p>
+        </div>
+        <div class="field">
+            <label for="email">E-mail</label>
+            <input id="email" name="email" type="email" th:value="${registrationForm.email}" autocomplete="email" maxlength="320" required aria-describedby="email-help" th:aria-invalid="${#fields.hasErrors('email')}">
+            <p id="email-help" class="help-text">Você usará este e-mail para entrar na sua coleção.</p>
+        </div>
+        <div class="field">
+            <label for="password">Senha</label>
+            <input id="password" name="password" type="password" autocomplete="new-password" minlength="12" maxlength="64" required aria-describedby="password-help" th:aria-invalid="${#fields.hasErrors('password') or #fields.hasErrors('passwordWithinByteLimit')}">
+            <p id="password-help" class="help-text">Use de 12 a 64 caracteres, até 72 bytes. Prefira uma frase longa e exclusiva. Acentos e emojis podem ocupar mais de um byte.</p>
+        </div>
+        <div class="field">
+            <label for="passwordConfirmation">Confirmar senha</label>
+            <input id="passwordConfirmation" name="passwordConfirmation" type="password" autocomplete="new-password" maxlength="64" required aria-describedby="confirmation-help" th:aria-invalid="${#fields.hasErrors('passwordConfirmation') or #fields.hasErrors('passwordsMatching')}">
+            <p id="confirmation-help" class="help-text">Digite a mesma senha novamente.</p>
+        </div>
+        <button type="submit">Criar conta</button>
+    </form>
+    <div class="auth-alternative"><p>Já tem uma conta?</p><a class="button-link auth-secondary" th:href="@{/login}">Voltar para entrar</a></div>
+</main>
+</body></html>

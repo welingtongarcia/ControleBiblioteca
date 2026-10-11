@@ -38,7 +38,7 @@ public class WorkService {
     @Transactional
     public void delete(UUID id, UUID ownerId) {
         var work = findOwned(id, ownerId);
-        if (works.hasReferences(id, ownerId)) throw new ReferencedCatalogException("Esta obra está vinculada a edições. Edite as edições para desvincular a obra antes de excluí-la. Nenhuma HQ foi apagada.");
+        if (works.hasReferences(id, ownerId)) throw new ReferencedCatalogException("Esta obra está vinculada a edições. Edite as edições para desvincular a obra antes de excluí-la. Nenhuma edição foi apagada.");
         works.delete(work); works.flush();
     }
     private void ensureUnique(UUID ownerId, String title) {

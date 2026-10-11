@@ -1,17 +1,17 @@
 <!DOCTYPE html>
 <html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/head :: head('Edições')}">
-    <title>Edições | Minha Gibiteca</title>
+    <title>Edições | Minha Biblioteca</title>
 </head>
 <body class="dashboard-page"><a class="skip-link" href="#main-content">Pular para o conteúdo</a><div class="dashboard-layout"><aside th:replace="~{fragments/navigation :: sidebar}"></aside>
 <main id="main-content" tabindex="-1" class="content page-content edition-catalog" aria-labelledby="page-title"
-      th:with="hasFilters=${filter.publisherId != null or filter.seriesId != null or !#strings.isEmpty(filter.format) or filter.mediaType != null}, hasSearch=${!#strings.isEmpty(filter.query)}">
+      th:with="hasFilters=${filter.publisherId != null or filter.seriesId != null or !#strings.isEmpty(filter.format) or filter.mediaType != null or filter.publicationType != null}, hasSearch=${!#strings.isEmpty(filter.query)}">
     <div th:replace="~{fragments/navigation :: breadcrumbs(${navigation.label}, null, null)}"></div>
     <div class="page-heading">
         <div>
             <p class="eyebrow">Catálogo</p>
             <h1 id="page-title">Edições</h1>
-            <p class="muted">Encontre seus quadrinhos e acompanhe suas leituras.</p>
+            <p class="muted">Encontre seus livros e quadrinhos e acompanhe suas leituras.</p>
         </div>
         <a class="button-link" th:href="@{/edicoes/nova(returnTo=${navigation.pageReturnUrl})}">Nova edição</a>
     </div>
@@ -34,6 +34,13 @@
         <details class="edition-filter-details" th:open="${hasFilters}">
             <summary>Filtrar catálogo <span th:if="${hasFilters}" class="edition-filter-indicator">Filtros ativos</span></summary>
             <div class="catalog-filters">
+                <div class="field">
+                    <label for="publicationType">Tipo de publicação</label>
+                    <select id="publicationType" name="publicationType">
+                        <option value="">Livros e quadrinhos</option>
+                        <option th:each="type : ${publicationTypes}" th:value="${type}" th:text="${type.label}" th:selected="${type == filter.publicationType}"></option>
+                    </select>
+                </div>
                 <div class="field">
                     <label for="publisherId">Editora</label>
                     <select id="publisherId" name="publisherId">
@@ -92,25 +99,25 @@
                         <span th:unless="${edition.coverFileName}">Sem<br>capa</span>
                     </div>
                     <div class="edition-card-info">
-                        <span class="edition-media" th:text="${edition.mediaLabel}"></span>
+                        <span class="edition-media" th:text="${edition.publicationTypeLabel + ' · ' + edition.mediaLabel}"></span>
                         <h3><a th:href="@{/edicoes/{id}(id=${edition.id},returnTo=${navigation.pageReturnUrl})}" th:text="${edition.title}">Título da edição</a></h3>
                         <p class="edition-card-meta" th:if="${edition.editorialNumber != null or edition.publicationYear != null or edition.format != null}">
                             <span th:if="${edition.editorialNumber}" th:text="|Nº ${edition.editorialNumber}|"></span>
                             <span th:if="${edition.publicationYear}" th:text="${edition.publicationYear}"></span>
                             <span th:if="${edition.format}" th:text="${edition.format}"></span>
                         </p>
-                        <p class="muted" th:if="${edition.variant}" th:text="|Variante: ${edition.variant}|"></p>
-                        <p class="edition-card-isbn" th:if="${edition.isbn}" th:text="|ISBN: ${edition.isbn}|"></p>
                     </div>
+                </div>
+                <div class="edition-card-personal">
+                <div th:replace="~{fragments/reading :: status(${edition}, true)}"></div>
+                <div th:replace="~{fragments/rating :: summary(${edition})}"></div>
                 </div>
                 <dl class="edition-card-prices">
                     <div><dt>Valor pago da edição</dt><dd th:text="${edition.formattedReferencePaidPrice}"></dd></div>
-                    <div><dt>Preço de capa</dt><dd th:text="${edition.formattedCoverPrice}"></dd></div>
                 </dl>
-                <div th:replace="~{fragments/reading :: status(${edition}, true)}"></div>
                 <div class="edition-card-actions">
-                    <a th:href="@{/edicoes/{id}(id=${edition.id},returnTo=${navigation.pageReturnUrl})}" th:aria-label="|Ver edição: ${edition.title}|">Ver edição</a>
-                    <a th:href="@{/edicoes/{id}/editar(id=${edition.id},returnTo=${navigation.pageReturnUrl})}" th:aria-label="|Editar: ${edition.title}|">Editar</a>
+                    <a class="button-link" th:href="@{/edicoes/{id}(id=${edition.id},returnTo=${navigation.pageReturnUrl})}" th:aria-label="|Ver edição: ${edition.title}|">Ver edição</a>
+                    <a class="button-link button-secondary" th:href="@{/edicoes/{id}/editar(id=${edition.id},returnTo=${navigation.pageReturnUrl})}" th:aria-label="|Editar: ${edition.title}|">Editar</a>
                     <details class="edition-delete">
                         <summary th:aria-label="|Opções de exclusão: ${edition.title}|">Excluir</summary>
                         <p>Esta ação remove a edição. Edições com exemplares não podem ser excluídas.</p>
@@ -122,11 +129,11 @@
                 </div>
             </li>
         </ul>
-        <p class="muted edition-price-note">Valores registrados por edição, não por exemplar. Preço de capa não é valor pago nem avaliação de mercado.</p>
+        <p class="muted edition-price-note">Valores registrados por edição, não por exemplar. Abra Ver edição para consultar ISBN, variante, preço de capa e demais dados.</p>
         <nav class="pagination" th:if="${editions.totalPages > 1}" aria-label="Paginação">
-            <a th:if="${editions.hasPrevious()}" th:href="@{/edicoes(q=${query},publisherId=${filter.publisherId},seriesId=${filter.seriesId},format=${filter.format},mediaType=${filter.mediaType},order=${selectedOrder},page=${editions.number - 1})}">Anterior</a>
+            <a th:if="${editions.hasPrevious()}" th:href="@{/edicoes(q=${query},publisherId=${filter.publisherId},seriesId=${filter.seriesId},format=${filter.format},mediaType=${filter.mediaType},publicationType=${filter.publicationType},order=${selectedOrder},page=${editions.number - 1})}">Anterior</a>
             <span th:text="|Página ${editions.number + 1} de ${editions.totalPages}|">Página 1 de 1</span>
-            <a th:if="${editions.hasNext()}" th:href="@{/edicoes(q=${query},publisherId=${filter.publisherId},seriesId=${filter.seriesId},format=${filter.format},mediaType=${filter.mediaType},order=${selectedOrder},page=${editions.number + 1})}">Próxima</a>
+            <a th:if="${editions.hasNext()}" th:href="@{/edicoes(q=${query},publisherId=${filter.publisherId},seriesId=${filter.seriesId},format=${filter.format},mediaType=${filter.mediaType},publicationType=${filter.publicationType},order=${selectedOrder},page=${editions.number + 1})}">Próxima</a>
         </nav>
     </section>
 </main></div>

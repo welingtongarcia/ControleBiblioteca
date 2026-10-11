@@ -4,7 +4,7 @@ public enum HomeShelf {
     RECENT("recentes", "Adicionados recentemente", "As últimas edições que chegaram ao seu catálogo.", "/edicoes?order=NEWEST"),
     UNREAD("nao-lidos", "Sua próxima leitura", "Histórias da sua coleção que você ainda não marcou como lidas.", "/edicoes"),
     PHYSICAL("fisicos", "Na sua estante", "Suas edições cadastradas com suporte físico.", "/edicoes?mediaType=PHYSICAL"),
-    DIGITAL("digitais", "Biblioteca digital", "Seus quadrinhos cadastrados com suporte digital.", "/edicoes?mediaType=DIGITAL"),
+    DIGITAL("digitais", "Biblioteca digital", "Seus livros e quadrinhos cadastrados com suporte digital.", "/edicoes?mediaType=DIGITAL"),
     READ("lidos", "Já lidos para revisitar", "Histórias que você já marcou como lidas.", "/edicoes");
 
     private final String key, title, description, catalogUrl;

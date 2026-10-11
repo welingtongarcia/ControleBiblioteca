@@ -11,7 +11,7 @@ public class ReportCsvExporter {
         row(out,"Relatório",catalog?"Catálogo do acervo":"Resumo da coleção");
         row(out,"Emitido em",data.emissionLabel());
         for(String filter:data.filters()) row(out,"Filtro",filter);
-        row(out,"Origem dos valores","Preço pago cadastrado na HQ; não inclui novamente valores dos exemplares nem valor de mercado.");
+        row(out,"Origem dos valores","Preço pago cadastrado na edição; não inclui novamente valores dos exemplares nem valor de mercado.");
         if(catalog) {
             row(out,"Título","Número","ISBN","Coleção","Editora","Criadores e funções gerais","Personagens","Suporte","Leitura","Páginas","Páginas lidas","Páginas restantes","Preço pago (R$)","Data da compra","Exemplares físicos","Localizações");
             for(var e:data.entries()) row(out,e.title(),e.number(),e.isbn(),e.series(),e.publisher(),e.creators(),e.characters(),e.media(),e.readingLabel(),

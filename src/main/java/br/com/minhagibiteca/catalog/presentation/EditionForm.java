@@ -10,6 +10,9 @@ public class EditionForm { private UUID publisherId,seriesId; private List<UUID>
  public boolean isPurchaseDateValid(){return purchaseDate==null || !purchaseDate.isBefore(java.time.LocalDate.of(1900,1,1));}
  public java.time.LocalDate getPurchaseDate(){return purchaseDate;} public void setPurchaseDate(java.time.LocalDate value){purchaseDate=value;}
  private MediaType mediaType = MediaType.PHYSICAL;
+ @NotNull(message="Informe o tipo de publicação.") private br.com.minhagibiteca.catalog.domain.PublicationType publicationType = br.com.minhagibiteca.catalog.domain.PublicationType.COMIC;
+ public br.com.minhagibiteca.catalog.domain.PublicationType getPublicationType(){return publicationType;}
+ public void setPublicationType(br.com.minhagibiteca.catalog.domain.PublicationType value){publicationType=value;}
  @Min(value=1,message="Informe pelo menos uma página.") @Max(value=100000,message="O total máximo é 100.000 páginas.") private Integer totalPages;
  @NotNull(message="Informe as páginas lidas, ou zero.") @Min(value=0,message="As páginas lidas não podem ser negativas.") @Max(value=100000,message="O máximo é 100.000 páginas.") private Integer pagesRead = 0;
  @AssertTrue(message="As páginas lidas não podem ultrapassar o total. Sem total informado, use zero páginas lidas.")

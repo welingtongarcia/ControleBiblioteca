@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: Minha Gibiteca — contrato de integrações
+  title: Minha Biblioteca — contrato de integrações
   version: 0.1.0-planning
   description: >-
     O MVP é uma aplicação Spring MVC renderizada no servidor e não publica API REST

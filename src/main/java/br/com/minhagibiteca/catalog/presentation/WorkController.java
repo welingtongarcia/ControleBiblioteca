@@ -39,7 +39,7 @@ public class WorkController {
     @PostMapping("/obras/{id}/excluir") String delete(@PathVariable UUID id, RedirectAttributes attributes) {
         try { works.delete(id, user.id()); attributes.addFlashAttribute("successMessage", "Obra excluída com sucesso."); }
         catch (br.com.minhagibiteca.catalog.application.ReferencedCatalogException error) { attributes.addFlashAttribute("errorMessage", error.getMessage()); }
-        catch (org.springframework.dao.DataIntegrityViolationException error) { attributes.addFlashAttribute("errorMessage", "Não foi possível excluir esta obra por um conflito com dados vinculados. Revise os vínculos nas edições e tente novamente. Nenhuma HQ foi apagada."); }
+        catch (org.springframework.dao.DataIntegrityViolationException error) { attributes.addFlashAttribute("errorMessage", "Não foi possível excluir esta obra por um conflito com dados vinculados. Revise os vínculos nas edições e tente novamente. Nenhuma edição foi apagada."); }
         return "redirect:/obras";
     }
     private String form(Model model, String title, String action) { model.addAttribute("pageTitle", title); model.addAttribute("formAction", action); return "obras/form"; }

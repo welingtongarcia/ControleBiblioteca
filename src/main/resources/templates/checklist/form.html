@@ -8,7 +8,7 @@
     <form th:fragment="entryForm" class="stack checklist-entry-form" th:action="${formAction}" th:object="${checklistForm}" method="post"><input type="hidden" name="returnTo" th:value="${navigation.pageReturnUrl}">
         <div th:replace="~{fragments/forms :: errors}"></div>
         <p class="help-text">O número editorial é obrigatório. A posse é informada manualmente.</p>
-        <fieldset class="series-panel"><legend>Identifique o quadrinho</legend><div class="series-fields">
+        <fieldset class="series-panel"><legend>Identifique a publicação</legend><div class="series-fields">
         <div class="field"><label for="editorialNumber">Número editorial <span aria-hidden="true">*</span></label>
             <input id="editorialNumber" th:field="*{editorialNumber}" required maxlength="40" placeholder="Ex.: 1A ou Especial" th:attr="aria-invalid=${#fields.hasErrors('editorialNumber')},aria-describedby=${#strings.trim('' + ' number-help' + (#fields.hasErrors('editorialNumber') ? ' number-error' : ''))}">
             <p id="number-help" class="help-text">Informe um número conhecido, como 0, 1A, 1/2 ou Especial. Nenhuma sequência será gerada.</p>
@@ -17,7 +17,7 @@
             <p id="label-error" class="field-error" th:if="${#fields.hasErrors('label')}" th:errors="*{label}"></p></div>
         </div></fieldset>
         <fieldset class="series-panel"><legend>Estado na coleção</legend><div class="series-fields">
-        <div class="field"><label for="owned">Você possui este quadrinho?</label><select id="owned" th:field="*{owned}" th:attr="aria-invalid=${#fields.hasErrors('owned') ? 'true' : null},aria-describedby=${#strings.trim('' + ' owned-help' + (#fields.hasErrors('owned') ? ' owned-error' : ''))}">
+        <div class="field"><label for="owned">Você possui esta publicação?</label><select id="owned" th:field="*{owned}" th:attr="aria-invalid=${#fields.hasErrors('owned') ? 'true' : null},aria-describedby=${#strings.trim('' + ' owned-help' + (#fields.hasErrors('owned') ? ' owned-error' : ''))}">
             <option value="false">Não possuo</option><option value="true">Possuo</option></select>
             <p id="owned-help" class="help-text">Estado manual, independente dos exemplares cadastrados. Não indica se você já leu a edição.</p>
             <p id="owned-error" class="field-error" th:if="${#fields.hasErrors('owned')}" th:errors="*{owned}"></p></div>

@@ -1,22 +1,50 @@
 <!DOCTYPE html>
 <html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/head :: head(${edition.title})}">
-    <title>Edição | Minha Gibiteca</title>
+    <title>Edição | Minha Biblioteca</title>
 </head>
 <body class="dashboard-page"><a class="skip-link" href="#main-content">Pular para o conteúdo</a><div class="dashboard-layout"><aside th:replace="~{fragments/navigation :: sidebar}"></aside>
 <main id="main-content" tabindex="-1" class="content page-content edition-detail-page" aria-labelledby="page-title">
 <div th:replace="~{fragments/navigation :: breadcrumbs(${edition.title}, null, null)}"></div>
 
 
-    <div class="page-heading">
-        <div>
-            <p class="eyebrow">Edição</p>
-            <h1 id="page-title" th:text="${edition.title}">Título da edição</h1>
-        </div>
-        <a class="button-link" th:href="@{/edicoes/{id}/editar(id=${edition.id},returnTo=${navigation.pageReturnUrl})}">Editar edição</a>
-    </div>
     <p class="alert alert-success" th:if="${successMessage}" role="status" th:text="${successMessage}"></p>
     <p class="alert alert-error" th:if="${errorMessage}" role="alert" th:text="${errorMessage}"></p>
+    <div class="edition-hero">
+        <section class="cover-section" aria-labelledby="cover-title">
+            <p id="cover-title" class="eyebrow">Capa</p>
+            <img class="edition-cover" th:if="${edition.coverFileName}" th:src="@{/edicoes/{id}/capa(id=${edition.id})}" alt="Capa da edição"/>
+            <div class="edition-cover-placeholder" th:unless="${edition.coverFileName}">Nenhuma capa cadastrada.</div>
+            <details class="edition-cover-upload" th:open="${edition.coverFileName == null}">
+                <summary th:text="${edition.coverFileName == null ? 'Adicionar capa' : 'Alterar capa'}">Adicionar capa</summary>
+                <form class="stack" th:action="@{/edicoes/{id}/capa(id=${edition.id})}" method="post" enctype="multipart/form-data">
+                    <input type="hidden" name="returnTo" th:value="${navigation.pageReturnUrl}">
+                    <div class="field"><label for="cover">Imagem da capa</label><input id="cover" name="cover" type="file" accept="image/png,image/jpeg" required aria-describedby="cover-help"><p id="cover-help" class="help-text">Envie um arquivo PNG ou JPEG de até 5 MB.</p></div>
+                    <button type="submit">Enviar capa</button>
+                </form>
+            </details>
+        </section>
+        <header class="edition-identification">
+            <p class="eyebrow"> <span th:text="${edition.publicationTypeLabel}"></span> · <span th:text="${edition.mediaLabel}"></span></p>
+            <h1 id="page-title" th:text="${edition.title}">Título da edição</h1>
+            <p class="edition-number" th:if="${edition.editorialNumber}" th:text="|Nº ${edition.editorialNumber}|"></p>
+            <dl class="details-list">
+                <dt>Editora</dt><dd th:text="${publisherName}"></dd>
+                <dt>Série</dt><dd th:text="${seriesName}"></dd>
+            </dl>
+            <a class="button-link" th:href="@{/edicoes/{id}/editar(id=${edition.id},returnTo=${navigation.pageReturnUrl})}">Editar edição</a>
+            <p class="help-text">Dados do cadastro, leitura e avaliação desta edição. Suas cópias físicas ficam em Exemplares.</p>
+            <nav class="edition-section-links" aria-label="Seções da edição">
+                <a href="#edition-reading-title">Leitura</a>
+                <a href="#rating-title">Avaliação</a>
+                <a href="#edition-data-title">Dados</a>
+                <a href="#edition-finance-title">Compra</a>
+                <a href="#edition-content-title">Conteúdo</a>
+                <a href="#copies-title">Exemplares</a>
+            </nav>
+        </header>
+    </div>
+    <div class="edition-experience">
     <section class="details-section" aria-labelledby="edition-reading-title">
         <h2 id="edition-reading-title">Minha leitura</h2>
         <div th:replace="~{fragments/reading :: status(${edition}, false)}"></div>
@@ -33,49 +61,53 @@
         </div>
         <p th:if="${edition.totalPages == null}">Total de páginas não informado. Use Editar edição para acompanhar sua leitura parcial.</p>
     </section>
-    <section class="cover-section" aria-labelledby="cover-title">
-        <h2 id="cover-title">Capa</h2>
-        <img class="edition-cover" th:if="${edition.coverFileName}" th:src="@{/edicoes/{id}/capa(id=${edition.id})}" alt="Capa da edição"/>
-        <p th:unless="${edition.coverFileName}">Nenhuma capa cadastrada.</p>
-        <form class="stack" th:action="@{/edicoes/{id}/capa(id=${edition.id})}" method="post" enctype="multipart/form-data"><input type="hidden" name="returnTo" th:value="${navigation.pageReturnUrl}">
-            <div class="field"><label for="cover">Imagem da capa</label><input id="cover" name="cover" type="file" accept="image/png,image/jpeg" required aria-describedby="cover-help"><p id="cover-help" class="help-text">Envie um arquivo PNG ou JPEG de até 5 MB.</p></div>
-            <button type="submit">Enviar capa</button>
-        </form>
-    </section>
-    <dl class="details-list">
-        <dt>Editora</dt><dd th:text="${publisherName}"></dd>
-        <dt>Série</dt><dd th:text="${seriesName}"></dd>
+    <div th:replace="~{fragments/rating :: controls(${edition})}"></div>
+    </div>
+    <div class="edition-data-grid">
+    <section class="details-section" aria-labelledby="edition-data-title">
+        <h2 id="edition-data-title">Dados da edição</h2>
+        <dl class="details-list">
         <dt>Número editorial</dt><dd th:text="${edition.editorialNumber ?: 'Não informado'}"></dd>
         <dt>Variação da edição</dt><dd th:text="${edition.variant ?: 'Não informada'}"></dd>
         <dt>ISBN</dt><dd th:text="${edition.isbn ?: 'Não informado'}"></dd>
         <dt>Ano de publicação</dt><dd th:text="${edition.publicationYear ?: 'Não informado'}"></dd>
         <dt>Formato</dt><dd th:text="${edition.format ?: 'Não informado'}"></dd>
-        <dt>Suporte do quadrinho</dt><dd th:text="${edition.mediaLabel}"></dd>
-        <dt>Preço de capa</dt><dd th:text="${edition.formattedCoverPrice}"></dd>
-        <dt>Valor pago</dt><dd th:text="${edition.formattedReferencePaidPrice}"></dd>
-        <dt>Data da compra</dt><dd th:text="${edition.purchaseDateLabel}"></dd>
-        <dt>Observações</dt><dd th:text="${edition.notes ?: 'Nenhuma observação cadastrada'}"></dd>
-    </dl>
+        <dt>Tipo de publicação</dt><dd th:text="${edition.publicationTypeLabel}"></dd>
+        <dt>Suporte da publicação</dt><dd th:text="${edition.mediaLabel}"></dd>
+        <dt>Total de páginas</dt><dd th:text="${edition.totalPages ?: 'Não informado'}"></dd>
+        </dl>
+    </section>
+    <section class="details-section" aria-labelledby="edition-finance-title">
+        <h2 id="edition-finance-title">Compra e valores</h2>
+        <dl class="details-list">
+            <dt>Valor pago da edição</dt><dd th:text="${edition.formattedReferencePaidPrice}"></dd>
+            <dt>Preço de capa</dt><dd th:text="${edition.formattedCoverPrice}"></dd>
+            <dt>Data da compra</dt><dd th:text="${edition.purchaseDateLabel}"></dd>
+        </dl>
+        <p class="help-text">O Financeiro usa o valor pago e a data da compra deste cadastro. Preço de capa não é valor pago nem avaliação de mercado. Altere-os em Editar edição.</p>
+        <a class="button-link" th:href="@{/financeiro}">Ver análises financeiras</a>
+    </section>
+    </div>
+    <section class="edition-content" aria-labelledby="edition-content-title">
+    <h2 id="edition-content-title">Conteúdo e créditos</h2>
+    <div class="edition-content-grid">
     <section class="details-section" aria-labelledby="works-title">
-        <h2 id="works-title">Obras</h2>
+        <h3 id="works-title">Obras</h3>
         <p th:if="${works.empty}">Nenhuma obra associada.</p>
         <ul th:unless="${works.empty}"><li th:each="work : ${works}" th:text="${work.title}"></li></ul>
     </section>
     <section class="details-section" aria-labelledby="creators-title">
-        <h2 id="creators-title">Criadores</h2>
+        <h3 id="creators-title">Criadores</h3>
         <p th:if="${creators.empty}">Nenhum criador associado.</p>
         <p class="help-text" th:unless="${creators.empty}">As funções indicam a atuação geral do criador, não os créditos específicos desta edição.</p>
         <ul th:unless="${creators.empty}"><li th:each="creator : ${creators}"><span th:text="${creator.name}"></span> — <span th:text="${creator.functionsDescription}"></span></li></ul>
     </section>
     <section class="details-section" aria-labelledby="characters-title">
-        <h2 id="characters-title">Personagens</h2>
+        <h3 id="characters-title">Personagens</h3>
         <p th:if="${characters.empty}">Nenhum personagem associado. Use Editar edição para vincular.</p>
         <ul th:unless="${characters.empty}"><li th:each="character : ${characters}" th:text="${character.name}"></li></ul>
     </section>
-    <section class="details-section" aria-labelledby="edition-finance-title">
-        <h2 id="edition-finance-title">Financeiro</h2>
-        <p>O Financeiro usa o valor pago e a data da compra deste cadastro. Altere-os em Editar edição.</p>
-        <a class="button-link" th:href="@{/financeiro}">Ver análises financeiras</a>
+    </div>
     </section>
     <section class="details-section" aria-labelledby="copies-title">
         <h2 id="copies-title">Exemplares físicos</h2>
@@ -105,10 +137,25 @@
             <a th:if="${copies.hasNext()}" th:href="@{/edicoes/{id}(id=${edition.id},copyPage=${copies.number + 1},returnTo=${navigation.pageReturnUrl})}">Próxima</a>
         </nav>
     </section>
-    <form th:action="@{/edicoes/{id}/excluir(id=${edition.id})}" method="post"><input type="hidden" name="returnTo" th:value="${navigation.pageReturnUrl}">
-        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-        <button class="link-button" type="submit">Excluir edição</button>
-    </form>
+    <section class="details-section" aria-labelledby="edition-notes-title">
+        <h2 id="edition-notes-title">Observações</h2>
+        <p class="edition-notes" th:text="${edition.notes ?: 'Nenhuma observação cadastrada'}"></p>
+    </section>
+    <section class="details-section edition-danger-zone" aria-labelledby="edition-delete-title">
+        <h2 id="edition-delete-title">Excluir edição</h2>
+        <p class="help-text">Use esta ação somente se quiser remover o cadastro. Edições com exemplares físicos não podem ser excluídas.</p>
+        <details class="action-delete">
+            <summary>Excluir esta edição</summary>
+            <div class="action-delete-panel">
+                <p>Confirma a exclusão de <strong th:text="${edition.title}"></strong>?</p>
+                <p class="help-text">A avaliação, a leitura e os vínculos desta edição também serão removidos. Feche esta confirmação para cancelar.</p>
+                <form th:action="@{/edicoes/{id}/excluir(id=${edition.id})}" method="post">
+                    <input type="hidden" name="returnTo" th:value="${navigation.pageReturnUrl}">
+                    <button class="button-danger" type="submit">Confirmar exclusão da edição</button>
+                </form>
+            </div>
+        </details>
+    </section>
 </main></div>
 </body>
 </html>

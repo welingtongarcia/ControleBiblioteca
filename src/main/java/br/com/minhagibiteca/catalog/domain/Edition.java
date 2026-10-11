@@ -22,6 +22,8 @@ public class Edition {
  @Column(name="is_read",nullable=false) private boolean read;
  @Column(name="total_pages") private Integer totalPages;
  @Column(name="pages_read",nullable=false) private int pagesRead;
+ @Column(name="rating") private Integer rating;
+ @Enumerated(EnumType.STRING) @Column(name="publication_type",nullable=false,length=20) private PublicationType publicationType = PublicationType.COMIC;
  @Column(name="cover_file_name",length=255) private String coverFileName; @Column(name="cover_content_type",length=100) private String coverContentType; @Column(name="cover_updated_at") private Instant coverUpdatedAt;
  @Column(name="created_at",nullable=false,updatable=false) private Instant createdAt; @Column(name="updated_at",nullable=false) private Instant updatedAt;
  protected Edition() { }
@@ -56,6 +58,14 @@ public class Edition {
  }
  public Integer getTotalPages() { return totalPages; }
  public int getPagesRead() { return pagesRead; }
+ public Integer getRating() { return rating; }
+ public PublicationType getPublicationType() { return publicationType; }
+ public void updatePublicationType(PublicationType type) { publicationType = java.util.Objects.requireNonNull(type, "Informe o tipo de publicação."); updatedAt = Instant.now(); }
+ public void rate(Integer rating) {
+     if (rating != null && (rating < 0 || rating > 5)) throw new IllegalArgumentException("Informe uma nota inteira de 0 a 5 estrelas.");
+     this.rating = rating;
+     updatedAt = Instant.now();
+ }
  public BigDecimal getCoverPrice() { return coverPrice; }
  public BigDecimal getReferencePaidPrice() { return referencePaidPrice; }
  private static String blank(String s){return s==null||s.isBlank()?null:s.trim();}

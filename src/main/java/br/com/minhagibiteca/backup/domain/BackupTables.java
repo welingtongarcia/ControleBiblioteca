@@ -6,7 +6,7 @@ import java.util.*;
 public final class BackupTables {
     private BackupTables() {}
     public static final List<String> OWNED = List.of("publishers", "series", "works", "creators", "comic_characters",
-            "storage_locations", "editions", "physical_copies", "series_checklist_items", "financial_purchases");
+            "storage_locations", "editions", "physical_copies", "series_checklist_items", "financial_purchases", "wishlist_items");
     public static final List<String> JOINS = List.of("creator_functions", "edition_works", "edition_creators", "edition_characters");
     public static List<String> all() { var result = new ArrayList<>(OWNED); result.addAll(JOINS); return List.copyOf(result); }
     public static Map<String, String> references(String table) {

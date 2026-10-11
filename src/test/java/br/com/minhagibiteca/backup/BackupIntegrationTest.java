@@ -58,6 +58,8 @@ class BackupIntegrationTest {
         var png=new ByteArrayOutputStream();ImageIO.write(new BufferedImage(2,2,BufferedImage.TYPE_INT_RGB),"png",png);image=png.toByteArray();Files.write(COVERS.resolve(cover),image);
         jdbc.update("insert into editions(id,owner_user_id,publisher_id,series_id,title,normalized_title,editorial_number,isbn,media_type,cover_price,reference_paid_price,purchase_date,total_pages,pages_read,is_read,cover_file_name,cover_content_type,cover_updated_at,notes) values (?,?,?,?,'HQ física','hq física','1','9786559601325','PHYSICAL',40.90,29.95,'2026-02-03',100,35,false,?,'image/png',now(),'Minha anotação')",physical,owner.getId(),publisher,series,cover);
         jdbc.update("insert into editions(id,owner_user_id,series_id,title,normalized_title,media_type,reference_paid_price,total_pages,pages_read,is_read) values (?,?,?,'HQ digital','hq digital','DIGITAL',0,20,20,true)",digital,owner.getId(),series);
+        jdbc.update("update editions set rating=4 where id=?",physical);
+        jdbc.update("update editions set rating=0,publication_type='BOOK' where id=?",digital);
         jdbc.update("insert into edition_works values (?,?,1)",physical,work);
         jdbc.update("insert into edition_creators values (?,?,'ROTEIRISTA',1), (?,?,'DESENHISTA',2)",physical,creator,physical,creator);
         jdbc.update("insert into edition_characters values (?,?,?)",owner.getId(),physical,character);
@@ -67,6 +69,31 @@ class BackupIntegrationTest {
         jdbc.update("insert into editions(id,owner_user_id,title,normalized_title) values (?,?,'SEGREDO DE OUTRA CONTA','segredo')",UUID.randomUUID(),other.getId());
     }
     byte[] export() throws Exception {try(var file=service.generate(owner.getId())){return Files.readAllBytes(file.zip());}}
+    @Test void restoresCreatorPhotoWithNewPrivateFileNameAndMetadata() throws Exception {
+        jdbc.update("insert into creator_functions(creator_id,function) values(?,'ESCRITOR')",creator);
+        String name=creator+"-"+UUID.randomUUID()+".png";
+        Files.write(COVERS.resolve(name),image);
+        jdbc.update("update creators set photo_file_name=?,photo_content_type='image/png',photo_updated_at=now() where id=?",name,creator);
+        var archive=export();assertThat(unzip(archive)).containsKey("fotos/"+name);
+        service.restore(destination.getId(),new ByteArrayInputStream(archive));
+        var restored=jdbc.queryForMap("select * from creators where owner_user_id=?",destination.getId());
+        assertThat(jdbc.queryForObject("select exists(select 1 from creator_functions where creator_id=? and function='ESCRITOR')",Boolean.class,restored.get("id"))).isTrue();
+        String newName=(String)restored.get("photo_file_name");assertThat(newName).isNotEqualTo(name);
+        assertThat(restored.get("photo_content_type")).isEqualTo("image/png");assertThat(restored.get("photo_updated_at")).isNotNull();
+        assertThat(Files.readAllBytes(COVERS.resolve(newName))).isEqualTo(image);
+        mvc.perform(get("/criadores/"+restored.get("id")+"/foto").with(user(UserPrincipal.from(destination)))).andExpect(status().isOk()).andExpect(content().bytes(image));
+        mvc.perform(get("/criadores/"+restored.get("id")+"/foto").with(user(UserPrincipal.from(other)))).andExpect(status().isNotFound());
+    }
+    @Test void transportsPrivateWishlistWithPriorityEstimateAndAcquiredState() throws Exception {
+        UUID id=UUID.randomUUID();
+        jdbc.update("insert into wishlist_items(id,owner_user_id,title,publication_type,priority,estimated_price,acquired,notes) values(?,?,'Livro desejado','BOOK','HIGH',49.90,true,'Desejo pessoal')",id,owner.getId());
+        jdbc.update("insert into wishlist_items(id,owner_user_id,title,publication_type,priority) values(?,?,'DESEJO SECRETO','COMIC','LOW')",UUID.randomUUID(),other.getId());
+        var archive=export();assertThat(new String(unzip(archive).get("dados.json"),java.nio.charset.StandardCharsets.UTF_8)).contains("Livro desejado").doesNotContain("DESEJO SECRETO");
+        service.restore(destination.getId(),new ByteArrayInputStream(archive));
+        var restored=jdbc.queryForMap("select * from wishlist_items where owner_user_id=?",destination.getId());
+        assertThat(restored.get("id")).isNotEqualTo(id);assertThat(restored.get("publication_type")).isEqualTo("BOOK");
+        assertThat(restored.get("priority")).isEqualTo("HIGH");assertThat(restored.get("estimated_price").toString()).isEqualTo("49.90");assertThat(restored.get("acquired")).isEqualTo(true);
+    }
     @Test void restoresCompletePortableCollectionWithoutCredentialsOrOtherOwners() throws Exception {
         var original=export();var unpacked=unzip(original);assertThat(unpacked.keySet()).containsExactlyInAnyOrder("manifesto.json","dados.json","LEIA-ME.txt","capas/"+cover);
         String json=new String(unpacked.get("dados.json"),java.nio.charset.StandardCharsets.UTF_8);
@@ -78,6 +105,10 @@ class BackupIntegrationTest {
         var restored=jdbc.queryForMap("select * from editions where id=?",edition);
         assertThat(restored.get("reference_paid_price").toString()).isEqualTo("29.95");assertThat(restored.get("purchase_date").toString()).isEqualTo("2026-02-03");
         assertThat(restored.get("total_pages")).isEqualTo(100);assertThat(restored.get("pages_read")).isEqualTo(35);assertThat(restored.get("is_read")).isEqualTo(false);
+        assertThat(((Number)restored.get("rating")).intValue()).isEqualTo(4);
+        assertThat(restored.get("publication_type")).isEqualTo("COMIC");
+        assertThat(jdbc.queryForObject("select publication_type from editions where owner_user_id=? and media_type='DIGITAL'",String.class,destination.getId())).isEqualTo("BOOK");
+        assertThat(jdbc.queryForObject("select rating from editions where owner_user_id=? and media_type='DIGITAL'",Integer.class,destination.getId())).isZero();
         assertThat(restored.get("created_at").toString()).isEqualTo(jdbc.queryForMap("select created_at from editions where id=?",physical).get("created_at").toString());
         assertThat(Files.readAllBytes(COVERS.resolve((String)restored.get("cover_file_name")))).isEqualTo(image);assertThat(restored.get("cover_file_name")).isNotEqualTo(cover);
         assertThat(jdbc.queryForObject("select count(*) from edition_creators where edition_id=?",Integer.class,edition)).isEqualTo(2);

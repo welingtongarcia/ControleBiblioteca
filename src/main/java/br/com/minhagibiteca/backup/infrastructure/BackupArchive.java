@@ -36,6 +36,13 @@ public class BackupArchive {
     public record Download(Path root, Path zip) implements AutoCloseable {
         @Override public void close() { cleanup(root); }
     }
+    public record ImageRecord(JsonNode row,String field,String prefix) { }
+    public static List<ImageRecord> images(ObjectNode data) {
+        var result=new ArrayList<ImageRecord>();
+        for(var row:data.withArray("editions"))result.add(new ImageRecord(row,"cover","capas/"));
+        for(var row:data.withArray("creators"))result.add(new ImageRecord(row,"photo","fotos/"));
+        return result;
+    }
     public Download generate(UUID owner, String schema, ObjectNode data) {
         Path root=temp();
         try {
@@ -45,19 +52,19 @@ public class BackupArchive {
             files.put("dados.json",write(root,json));
             byte[] instructions=guide().getBytes(StandardCharsets.UTF_8);
             files.put("LEIA-ME.txt",write(root,instructions));long total=json.length+instructions.length;
-            for (JsonNode edition:data.withArray("editions")) {
-                JsonNode name=edition.get("cover_file_name");
+            for (var image:images(data)) {
+                JsonNode name=image.row().get(image.field()+"_file_name");
                 if (name==null || name.isNull()) continue;
                 if (!name.isTextual() || !coverName(name.asText())) throw invalid("Nome de capa inválido. Corrija o cadastro antes de gerar o backup.");
                 Path source=storage.resolve(name.asText());
                 if (!Files.isRegularFile(source,LinkOption.NOFOLLOW_LINKS) || Files.size(source)>MAX_COVER)
                     throw invalid("Uma capa está ausente ou inválida. Corrija o cadastro e gere o backup novamente.");
-                String entry="capas/"+name.asText();
+                String entry=image.prefix()+name.asText();
                 if (files.containsKey(entry)) throw invalid("Há capas com nomes duplicados.");
                 if (files.size()+2>MAX_ENTRIES) throw invalid("O backup excede 20.000 arquivos.");
                 Path copy=Files.createTempFile(root,"entry-",".tmp");
                 try (var input=Files.newInputStream(source,LinkOption.NOFOLLOW_LINKS);var output=Files.newOutputStream(copy)) { total+=boundedCopy(input,output,Math.min(MAX_COVER,MAX_TOTAL-total)); }
-                validateImage(copy,edition.path("cover_content_type").asText(),name.asText());
+                validateImage(copy,image.row().path(image.field()+"_content_type").asText(),name.asText());
                 files.put(entry,copy);
             }
             if (files.size()+1>MAX_ENTRIES) throw invalid("O backup excede 20.000 arquivos.");
@@ -96,7 +103,7 @@ public class BackupArchive {
                     files.put(name,target);zip.closeEntry();
                 }
             }
-            if (!files.keySet().containsAll(Set.of("manifesto.json","dados.json","LEIA-ME.txt"))) throw invalid("O arquivo não é um backup completo da Minha Gibiteca.");
+            if (!files.keySet().containsAll(Set.of("manifesto.json","dados.json","LEIA-ME.txt"))) throw invalid("O arquivo não é um backup completo da Minha Biblioteca.");
             var manifest=object(files.get("manifesto.json"));var hashes=manifest.get("files");
             if (!(hashes instanceof ObjectNode) || !fields(hashes).equals(withoutManifest(files.keySet()))) throw invalid("Manifesto de arquivos inválido.");
             for(var entry:files.entrySet()) if (!entry.getKey().equals("manifesto.json")) {
@@ -133,7 +140,7 @@ public class BackupArchive {
             if (!(node instanceof ObjectNode object) || parser.nextToken()!=null) throw invalid("JSON inválido.");return object;
         }
     }
-    private static boolean allowed(String name) {return Set.of("manifesto.json","dados.json","LEIA-ME.txt").contains(name) || (name.startsWith("capas/") && coverName(name.substring(6)));}
+    private static boolean allowed(String name) {return Set.of("manifesto.json","dados.json","LEIA-ME.txt").contains(name) || ((name.startsWith("capas/") || name.startsWith("fotos/")) && coverName(name.substring(6)));}
     private static long entryLimit(String name) {return switch(name) {case "dados.json"->MAX_JSON;case "manifesto.json"->8L*1024*1024;case "LEIA-ME.txt"->64*1024;default->MAX_COVER;};}
     static long boundedCopy(InputStream in,OutputStream out,long limit) throws IOException {
         long count=0;byte[] buffer=new byte[8192];int size;
@@ -156,9 +163,9 @@ public class BackupArchive {
         @Override public int read(byte[] b,int off,int len) throws IOException {int n=in.read(b,off,len);if(n>0 && (count+=n)>limit)throw invalid("ZIP excede 250 MB.");return n;}
     }
     private static String guide() {return """
-            MINHA GIBITECA — BACKUP PORTÁTIL (formato 1)
+            MINHA BIBLIOTECA — BACKUP PORTÁTIL (formato 1)
 
-            Este ZIP contém os cadastros e capas da sua conta; não contém a aplicação,
+            Este ZIP contém os cadastros, capas e fotos de criadores da sua conta; não contém a aplicação,
             senhas, configurações de banco nem chaves de API. Ele não é criptografado.
             Guarde em um local privado e use somente backups de origem confiável.
 
@@ -170,14 +177,15 @@ public class BackupArchive {
                de outra instalação sem revisar os caminhos e proteger suas senhas.
             4. Inicie o sistema, entre em uma conta sem cadastros e abra Backup e migração.
             5. Selecione este ZIP, confirme que a conta está vazia e clique em Restaurar coleção.
-            6. Confira edições, capas, valores, leitura, exemplares, checklist e relatórios.
+            6. Confira edições, capas, fotos dos criadores, desejos, valores, leitura,
+               exemplares, checklist e relatórios.
                Só desative a instalação antiga depois de conferir a nova.
 
             A versão do formato e o esquema Flyway precisam ser compatíveis.
             IDs internos são recriados, preservando os vínculos. Nenhum dado é mesclado
             ou substituído. Contas e sessões de login não são transportadas.
             Não descompacte o ZIP na pasta do aplicativo: utilize a função Restaurar.
-            Limites: ZIP 250 MB; expansão 512 MB; dados 25 MB; capa 5 MB / 40 milhões
+            Limites: ZIP 250 MB; expansão 512 MB; dados 25 MB; imagem 5 MB / 40 milhões
             de pixels; 20.000 arquivos e 100.000 registros. Backup não é relatório PDF/CSV.
             """;}
 }

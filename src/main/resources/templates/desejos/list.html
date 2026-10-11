@@ -1,0 +1,34 @@
+<!DOCTYPE html><html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Lista de desejos')}"><title>Lista de desejos | Minha Biblioteca</title></head>
+<body class="dashboard-page"><a class="skip-link" href="#main-content">Pular para o conteúdo</a><div class="dashboard-layout"><aside th:replace="~{fragments/navigation :: sidebar}"></aside>
+<main id="main-content" tabindex="-1" class="content page-content" aria-labelledby="page-title">
+    <div th:replace="~{fragments/navigation :: breadcrumbs(${navigation.label}, null, null)}"></div>
+    <header class="page-heading"><div><p class="eyebrow">Planeje sua coleção</p><h1 id="page-title">Lista de desejos</h1><p class="muted">Livros e quadrinhos que você quer adquirir. Seus desejos são particulares.</p></div><a class="button-link" th:href="@{/desejos/novo(returnTo=${navigation.pageReturnUrl})}">Adicionar desejo</a></header>
+    <p class="alert alert-success" th:if="${successMessage}" role="status" th:text="${successMessage}"></p>
+    <form class="catalog-filters" method="get" th:action="@{/desejos}" aria-label="Buscar e filtrar desejos">
+        <div class="field"><label for="q">Buscar desejo</label><input id="q" name="q" type="search" maxlength="240" th:value="${query}" placeholder="Título, autor ou ISBN"></div>
+        <div class="field"><label for="status">Situação</label><select id="status" name="status"><option value="PENDING" th:selected="${selectedStatus == 'PENDING'}">Quero adquirir</option><option value="ACQUIRED" th:selected="${selectedStatus == 'ACQUIRED'}">Adquiridos</option><option value="ALL" th:selected="${selectedStatus == 'ALL'}">Todos os desejos</option></select></div>
+        <div class="form-actions"><button type="submit">Buscar</button><a th:href="@{/desejos}">Limpar filtros</a></div>
+    </form>
+    <p class="help-text">Prioridade alta aparece primeiro. Marcar como adquirido não registra uma edição ou despesa. Cadastre a publicação no catálogo para controlar valores e leitura.</p>
+    <p role="status" th:text="${wishes.totalElements == 1 ? '1 desejo encontrado' : wishes.totalElements + ' desejos encontrados'}"></p>
+    <section class="empty-state" th:if="${wishes.empty}"><h2>Nenhum desejo nesta seleção</h2><p>Adicione um desejo ou revise a busca e a situação selecionada.</p><a class="button-link" th:href="@{/desejos/novo}">Adicionar desejo</a></section>
+    <ul class="resource-list" th:unless="${wishes.empty}">
+        <li th:each="wish : ${wishes.content}">
+            <div class="wish-info">
+                <span class="edition-media" th:text="${wish.publicationType.label}"></span>
+                <h2 th:text="${wish.title}">Título desejado</h2>
+                <p><strong th:text="${wish.acquired ? 'Adquirido' : 'Quero adquirir'}"></strong> · <span th:text="${'Prioridade ' + #strings.toLowerCase(wish.priority.label)}"></span></p>
+                <dl class="details-list"><dt>Preço estimado</dt><dd th:text="${wish.priceLabel}"></dd><th:block th:if="${wish.author}"><dt>Autor ou criador</dt><dd th:text="${wish.author}"></dd></th:block><th:block th:if="${wish.publisher}"><dt>Editora</dt><dd th:text="${wish.publisher}"></dd></th:block><th:block th:if="${wish.isbn}"><dt>ISBN</dt><dd th:text="${wish.isbn}"></dd></th:block></dl>
+                <p class="wish-notes" th:if="${wish.notes}" th:text="${wish.notes}"></p>
+            </div>
+            <div class="resource-actions">
+                <a class="button-link button-secondary" th:href="@{/desejos/{id}/editar(id=${wish.id},returnTo=${navigation.pageReturnUrl})}" th:aria-label="|Editar desejo: ${wish.title}|">Editar</a>
+                <form method="post" th:action="@{/desejos/{id}/situacao(id=${wish.id})}"><input type="hidden" name="returnTo" th:value="${navigation.pageReturnUrl}"><input type="hidden" name="acquired" th:value="${!wish.acquired}"><button type="submit" th:text="${wish.acquired ? 'Quero adquirir novamente' : 'Marcar como adquirido'}"></button></form>
+                <a class="button-link button-secondary" th:if="${wish.acquired}" th:href="@{/edicoes/nova}">Cadastrar no catálogo</a>
+                <div th:replace="~{fragments/forms :: deleteConfirm(@{/desejos/{id}/excluir(id=${wish.id})}, ${navigation.pageReturnUrl}, ${wish.title})}"></div>
+            </div>
+        </li>
+    </ul>
+    <nav class="pagination" th:if="${wishes.totalPages > 1}" aria-label="Paginação dos desejos"><a th:if="${wishes.hasPrevious()}" th:href="@{/desejos(q=${query},status=${selectedStatus},page=${wishes.number - 1})}">Anterior</a><span th:text="|Página ${wishes.number + 1} de ${wishes.totalPages}|"></span><a th:if="${wishes.hasNext()}" th:href="@{/desejos(q=${query},status=${selectedStatus},page=${wishes.number + 1})}">Próxima</a></nav>
+</main></div></body></html>

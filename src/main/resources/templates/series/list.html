@@ -2,7 +2,7 @@
 <main id="main-content" tabindex="-1" class="content page-content" aria-labelledby="page-title">
 <div th:replace="~{fragments/navigation :: breadcrumbs(${navigation.label}, null, null)}"></div>
 
-<div class="page-heading"><div><p class="eyebrow">Catálogo</p><h1 id="page-title">Séries</h1><p class="muted">Agrupe edições e acompanhe sua leitura e os quadrinhos faltantes.</p></div><a class="button-link" th:href="@{/series/nova(returnTo=${navigation.pageReturnUrl})}">Nova série</a></div>
+<div class="page-heading"><div><p class="eyebrow">Catálogo</p><h1 id="page-title">Séries</h1><p class="muted">Agrupe edições e acompanhe sua leitura e as publicações faltantes.</p></div><a class="button-link" th:href="@{/series/nova(returnTo=${navigation.pageReturnUrl})}">Nova série</a></div>
 <p class="alert alert-success" th:if="${successMessage}" role="status" th:text="${successMessage}"></p>
 <p class="alert alert-error" th:if="${errorMessage}" role="alert" th:text="${errorMessage}"></p>
 <form class="search-form" method="get" th:action="@{/series}"><label for="q">Buscar série</label><input id="q" name="q" th:value="${query}" type="search" maxlength="180"><button type="submit">Buscar</button></form>

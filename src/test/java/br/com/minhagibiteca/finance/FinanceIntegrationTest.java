@@ -71,7 +71,7 @@ class FinanceIntegrationTest {
   assertThat(finance.report(a.getId(),f,0).summary().count()).isEqualTo(1);
   assertThat(finance.report(a.getId(),new FinanceFilter(null,null,null,null,null,null,null,true),0).summary().count()).isEqualTo(1);
   var html=mvc.perform(get("/financeiro").with(SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(a)))).andExpect(status().isOk()).andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
-  assertThat(html).contains("350,00","87,50","Edições sem valor pago: 1","Cobertura de valores: 4 de 5","Não informado","Editar HQ").doesNotContain("7777","Título alheio","Registrar compra","/financeiro/compras");
+  assertThat(html).contains("350,00","87,50","Edições sem valor pago: 1","Cobertura de valores: 4 de 5","Não informado","Editar edição").doesNotContain("7777","Título alheio","Registrar compra","/financeiro/compras");
   fixture("index.html",html);
   fixture("empty.html",mvc.perform(get("/financeiro").with(SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner("empty@example.com"))))).andExpect(status().isOk()).andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8));
  }

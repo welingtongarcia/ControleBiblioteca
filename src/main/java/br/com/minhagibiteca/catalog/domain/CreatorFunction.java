@@ -9,6 +9,7 @@ public enum CreatorFunction {
     CAPISTA("Capista"),
     EDITOR("Editor"),
     TRADUTOR("Tradutor"),
+    ESCRITOR("Escritor"),
     OUTRO("Outra função");
 
     private final String label;

@@ -1,0 +1,27 @@
+<!DOCTYPE html><html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"><body>
+<div th:fragment="summary(edition)" class="rating-summary">
+    <span class="rating-stars" aria-hidden="true" th:text="${edition.ratingStars}">☆☆☆☆☆</span>
+    <span th:text="${edition.ratingLabel}">Sem avaliação</span>
+</div>
+<section th:fragment="controls(edition)" class="details-section" aria-labelledby="rating-title">
+    <h2 id="rating-title">Minha avaliação</h2>
+    <div th:replace="~{fragments/rating :: summary(${edition})}"></div>
+    <p id="rating-help" class="help-text">Escolha uma estrela para salvar a nota correspondente. Zero estrelas é uma avaliação; remover deixa a edição sem avaliação.</p>
+    <form class="rating-form" method="post" th:action="@{/edicoes/{id}/avaliacao(id=${edition.id})}" aria-labelledby="rating-title" aria-describedby="rating-help">
+        <input type="hidden" name="returnTo" th:value="${navigation.pageReturnUrl}">
+        <div class="rating-options" role="group" aria-label="Escolher nota de 0 a 5 estrelas">
+            <button type="submit" name="rating" value="0" th:aria-pressed="${edition.rating != null and edition.rating == 0}" aria-label="Avaliar com 0 de 5 estrelas">0</button>
+            <button th:each="score : ${#numbers.sequence(1, 5)}" type="submit" name="rating" th:value="${score}"
+                    th:classappend="${edition.rating != null and score <= edition.rating ? 'rating-filled' : ''}"
+                    th:aria-pressed="${edition.rating != null and edition.rating == score}"
+                    th:aria-label="|Avaliar com ${score} de 5 estrelas|" th:title="|${score} de 5 estrelas|">
+                <span aria-hidden="true" th:text="${edition.rating != null and score <= edition.rating ? '★' : '☆'}">☆</span>
+            </button>
+        </div>
+    </form>
+    <form th:if="${edition.rating != null}" method="post" th:action="@{/edicoes/{id}/avaliacao/remover(id=${edition.id})}">
+        <input type="hidden" name="returnTo" th:value="${navigation.pageReturnUrl}">
+        <button type="submit" class="secondary">Remover avaliação</button>
+    </form>
+</section>
+</body></html>

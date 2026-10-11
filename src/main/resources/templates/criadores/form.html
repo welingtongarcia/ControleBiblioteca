@@ -1,9 +1,17 @@
 <!DOCTYPE html><html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"><head th:replace="~{fragments/head :: head(${pageTitle})}"><title>Criador</title></head><body class="dashboard-page"><a class="skip-link" href="#main-content">Pular para o conteúdo</a><div class="dashboard-layout"><aside th:replace="~{fragments/navigation :: sidebar}"></aside><main id="main-content" tabindex="-1" class="content form-content page-content" aria-labelledby="page-title">
 <div th:replace="~{fragments/navigation :: breadcrumbs(${pageTitle}, null, null)}"></div>
 <h1 id="page-title" th:text="${pageTitle}">Novo criador</h1><p class="help-text">O nome é obrigatório. Você pode informar o nome para ordenação e selecionar várias funções.</p>
-<form class="stack" th:action="${formAction}" th:object="${creatorForm}" method="post">
+<p class="alert alert-success" th:if="${successMessage}" role="status" th:text="${successMessage}"></p>
+<form class="stack" th:action="${formAction}" th:object="${creatorForm}" method="post" enctype="multipart/form-data">
     <input type="hidden" name="returnTo" th:value="${navigation.pageReturnUrl}">
         <div th:replace="~{fragments/forms :: errors}"></div>
+    <section class="creator-photo-section" aria-labelledby="creator-photo-title">
+        <h2 id="creator-photo-title">Foto do criador</h2>
+        <img class="creator-photo-preview" th:if="${photoPresent == true}" th:src="@{/criadores/{id}/foto(id=${creatorId})}" th:alt="|Foto de ${creatorForm.name}|" width="144" height="144">
+        <p class="help-text" th:unless="${photoPresent == true}">Foto não cadastrada.</p>
+        <div class="field"><label for="photo" th:text="${photoPresent == true ? 'Substituir foto (opcional)' : 'Enviar foto (opcional)'}"></label><input id="photo" name="photo" type="file" accept="image/png,image/jpeg" th:attr="aria-invalid=${photoError != null},aria-describedby=${'photo-help' + (photoError != null ? ' photo-error' : '')}"><p id="photo-help" class="help-text">PNG ou JPEG, até 5 MB e 40 milhões de pixels. A foto será salva ao clicar em Salvar criador. Deixe sem arquivo para manter a foto atual. Após um erro, selecione o arquivo novamente.</p><p id="photo-error" class="field-error" th:if="${photoError}" role="alert" th:text="${photoError}"></p></div>
+        <button th:if="${photoPresent == true}" type="submit" form="remove-creator-photo" class="button-secondary">Remover foto</button>
+    </section>
     <div class="field">
         <label for="name">Nome <span aria-hidden="true">*</span></label>
         <input id="name" th:field="*{name}" maxlength="180" required th:attr="aria-invalid=${#fields.hasErrors('name')},aria-describedby=${#fields.hasErrors('name') ? 'name-error' : null}">
@@ -27,4 +35,4 @@
         <p id="functions-error" class="field-error" th:if="${#fields.hasErrors('functions')}">Selecione apenas as funções disponíveis na lista.</p>
     </fieldset>
     <div class="form-actions"><button type="submit">Salvar criador</button><a th:href="@{${navigation.returnUrl}}">Cancelar</a></div>
-</form></main></div></body></html>
+</form><form id="remove-creator-photo" th:if="${photoPresent == true}" th:action="@{/criadores/{id}/foto/remover(id=${creatorId})}" method="post"><input type="hidden" name="returnTo" th:value="${navigation.pageReturnUrl}"></form></main></div></body></html>

@@ -43,7 +43,7 @@ public class CreatorService {
     @Transactional
     public void delete(UUID id, UUID ownerId) {
         var creator = findOwned(id, ownerId);
-        if (creators.hasReferences(id, ownerId)) throw new ReferencedCatalogException("Este criador está vinculado a edições. Edite as edições para desvincular o criador antes de excluí-lo. Nenhuma HQ foi apagada.");
+        if (creators.hasReferences(id, ownerId)) throw new ReferencedCatalogException("Este criador está vinculado a edições. Edite as edições para desvincular o criador antes de excluí-lo. Nenhuma edição foi apagada.");
         creators.delete(creator); creators.flush();
     }
     private void ensureUnique(UUID ownerId, String name) {

@@ -23,7 +23,7 @@
             <div class="field"><label for="start">Compra a partir de</label><input id="start" type="date" th:field="*{start}" min="1900-01-01" aria-describedby="period-help"></div>
             <div class="field"><label for="end">Compra até</label><input id="end" type="date" th:field="*{end}" min="1900-01-01" aria-describedby="period-help"></div>
         </div>
-        <p id="period-help" class="help-text">Informe as duas datas ou deixe ambas vazias. O período usa a data da compra da HQ; edições sem data ficam de fora quando há período.</p>
+        <p id="period-help" class="help-text">Informe as duas datas ou deixe ambas vazias. O período usa a data da compra da edição; edições sem data ficam de fora quando há período.</p>
         <p id="function-help" class="help-text">Funções são áreas de atuação do criador, não créditos por edição. Ao combinar criador e função, ambos devem corresponder à mesma pessoa.</p>
         <div class="form-actions"><button type="submit">Gerar prévia</button><a th:href="@{/relatorios}">Limpar filtros</a></div>
     </form>
@@ -43,12 +43,12 @@
             <article><h3>Páginas informadas</h3><strong th:text="${s.totalPages}"></strong><p>Somente edições com total de páginas preenchido.</p></article>
             <article><h3>Páginas lidas / restantes</h3><strong th:text="|${s.pagesRead} / ${s.pagesUnread()}|"></strong><p>Não estimamos páginas de edições com quantidade desconhecida.</p></article>
         </div>
-        <p class="help-text">Total gasto usa somente o preço pago registrado nas HQs, como no Financeiro. Valores de exemplares não são somados novamente. Não representa valor de mercado.</p>
+        <p class="help-text">Total gasto usa somente o preço pago registrado nas edições, como no Financeiro. Valores de exemplares não são somados novamente. Não representa valor de mercado.</p>
         <p class="alert finance-data-warning" role="status" th:if="${report.summary.unpriced() > 0}" th:text="|${report.summary.unpriced()} edição(ões) sem preço pago. O gasto registrado pode estar incompleto. Zero informado significa gratuita; vazio significa desconhecido.|"></p>
         <p class="alert finance-data-warning" role="status" th:if="${report.summary.unpaged() > 0}" th:text="|${report.summary.unpaged()} edição(ões) sem quantidade de páginas. Os totais de páginas não incluem essas edições.|"></p>
     </section>
     <section aria-labelledby="report-catalog"><h2 id="report-catalog">Edições do recorte</h2>
-        <div class="empty-state" th:if="${report.entries.empty}"><h3>Nenhuma edição nesta seleção</h3><p>Revise os filtros ou cadastre sua primeira HQ.</p><a class="button-link" th:href="@{/edicoes/nova}">Cadastrar edição</a></div>
+        <div class="empty-state" th:if="${report.entries.empty}"><h3>Nenhuma edição nesta seleção</h3><p>Revise os filtros ou cadastre sua primeira edição.</p><a class="button-link" th:href="@{/edicoes/nova}">Cadastrar edição</a></div>
         <ul class="report-entries" th:unless="${report.entries.empty}">
             <li th:each="entry : ${report.entries}"><article>
                 <div class="page-heading"><div><h3><a th:href="@{/edicoes/{id}(id=${entry.id},returnTo=${navigation.pageReturnUrl})}" th:text="${entry.title}"></a></h3><p class="muted" th:text="|${entry.series} · ${entry.publisher}|"></p></div><span class="report-reading" th:text="${entry.readingLabel()}"></span></div>
