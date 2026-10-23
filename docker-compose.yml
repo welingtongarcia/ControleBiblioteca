@@ -27,9 +27,17 @@ services:
       BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:?Configure BOOTSTRAP_ADMIN_EMAIL em .env}
       BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:?Configure BOOTSTRAP_ADMIN_PASSWORD em .env}
       GOOGLE_BOOKS_API_KEY: ${GOOGLE_BOOKS_API_KEY:-}
+      ONEDRIVE_ENABLED: ${ONEDRIVE_ENABLED:-false}
+      ONEDRIVE_CLIENT_ID: ${ONEDRIVE_CLIENT_ID:-}
+      ONEDRIVE_CLIENT_SECRET: ${ONEDRIVE_CLIENT_SECRET:-}
+      ONEDRIVE_REDIRECT_URI: ${ONEDRIVE_REDIRECT_URI:-}
+      ONEDRIVE_TOKEN_KEY: ${ONEDRIVE_TOKEN_KEY:-}
+      RCLONE_ENABLED: ${RCLONE_ENABLED:-false}
+      RCLONE_CONFIG_DIRECTORY: /app/data/rclone
       COVER_STORAGE_PATH: /app/data/capas
     volumes:
       - covers-data:/app/data/capas
+      - rclone-data:/app/data/rclone
     ports:
       - "8080:8080"
     depends_on:
@@ -45,3 +53,4 @@ services:
 volumes:
   postgres-data:
   covers-data:
+  rclone-data:

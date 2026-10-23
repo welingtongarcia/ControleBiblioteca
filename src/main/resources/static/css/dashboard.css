@@ -335,3 +335,10 @@
 .creator-list-identity > div { min-width:0;overflow-wrap:anywhere; }
 .creator-photo-thumbnail { width:64px;height:64px;object-fit:cover;border-radius:50%;flex-shrink:0; }
 .creator-photo-section h2 { font-size:1.15rem; }
+.digital-panel { background:var(--surface);border:1px solid #414954;border-radius:.85rem;padding:1.25rem;margin:1.5rem 0; }
+.digital-panel h2 { font-size:1.25rem; }
+.digital-file-info, .digital-file-name { min-width:0;overflow-wrap:anywhere; }
+.digital-file-info h3 { margin:.5rem 0; }
+.digital-sync, .digital-folder-list { margin:1.25rem 0; }
+.digital-library .resource-actions { max-width:100%; }
+.digital-panel code { overflow-wrap:anywhere; }

@@ -13,6 +13,7 @@ Sistema web para organizar coleções particulares de **livros e quadrinhos**, d
 - Financeiro com filtros, gráficos e comparações por período; relatórios em PDF e CSV.
 - Backup portátil dos dados e imagens da conta.
 - Consulta opcional de metadados por ISBN/título; cadastro manual funciona sem integrações.
+- Biblioteca digital OneDrive opcional: seleção de pastas, indexação manual de arquivos e vínculo com edições, sem alterar arquivos remotos. Use rclone sem aplicativo Azure próprio ou OAuth direto; requer configuração e autorização Microsoft e não inclui leitor interno. Veja o [guia rclone](docs/onedrive-rclone.md).
 
 ## Requisitos
 
@@ -149,7 +150,7 @@ Alterar o bootstrap depois de existir um usuário não redefine a senha de nenhu
 ./mvnw clean verify
 ```
 
-No Windows: `.\mvnw.cmd clean verify`. Os testes exigem JDK 21 e Docker acessível para iniciar PostgreSQL isolado pelo Testcontainers. A última verificação da implementação, em 11/10/2026, passou com **239 testes**.
+No Windows: `.\mvnw.cmd clean verify`. Os testes exigem JDK 21 e Docker acessível para iniciar PostgreSQL isolado pelo Testcontainers. A última verificação da implementação, em 23/10/2026, passou com **267 testes**. A integração OneDrive foi testada com respostas Microsoft/rclone simuladas e subprocessos locais sintéticos, sem credenciais ou arquivos pessoais reais.
 
 O Flyway aplica migrações na inicialização. Não use `ddl-auto=update` e não edite migrações já aplicadas em um banco existente.
 
@@ -188,6 +189,7 @@ Não use `docker-compose.local.yml` nesse ambiente. Antes de permitir cadastro p
 ## Documentação
 
 - [Instalação detalhada e integrações opcionais](docs/installation.md)
+- [Configurar a biblioteca digital OneDrive](docs/onedrive.md)
 - [Financeiro e regras de cálculo](docs/financeiro.md)
 - [Backup e migração](docs/backup-migracao.md)
 - [Especificações e decisões](specs)

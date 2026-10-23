@@ -15,11 +15,12 @@
         <a th:href="@{/relatorios}" th:classappend="${navigation.key == 'relatorios'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'relatorios' ? 'page' : null}"><span aria-hidden="true">▤</span>Relatórios</a>
         <a th:href="@{/backup}" th:classappend="${navigation.key == 'backup'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'backup' ? 'page' : null}"><span aria-hidden="true">⇩</span>Backup e migração</a>
         </div></details>
-        <details class="nav-group" id="nav-collection" th:open="${#lists.contains({'edicoes','series','localizacoes','desejos'}, navigation.key)}">
+        <details class="nav-group" id="nav-collection" th:open="${#lists.contains({'edicoes','series','localizacoes','desejos','biblioteca-digital'}, navigation.key)}">
         <summary class="nav-group-toggle">Minha coleção</summary>
         <div class="nav-group-links">
         <a th:href="@{/edicoes}" th:classappend="${navigation.key == 'edicoes'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'edicoes' ? 'page' : null}"><span aria-hidden="true">▤</span>Catálogo de edições</a>
         <a th:href="@{/desejos}" th:classappend="${navigation.key == 'desejos'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'desejos' ? 'page' : null}"><span aria-hidden="true">♡</span>Lista de desejos</a>
+        <a th:href="@{/biblioteca-digital}" th:classappend="${navigation.key == 'biblioteca-digital'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'biblioteca-digital' ? 'page' : null}"><span aria-hidden="true">☁</span>Biblioteca digital</a>
         <a th:href="@{/series}" th:classappend="${navigation.key == 'series'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'series' ? 'page' : null}"><span aria-hidden="true">✓</span>Séries e checklist</a>
         <a th:href="@{/localizacoes}" th:classappend="${navigation.key == 'localizacoes'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'localizacoes' ? 'page' : null}"><span aria-hidden="true">▦</span>Localizações</a>
         </div></details>

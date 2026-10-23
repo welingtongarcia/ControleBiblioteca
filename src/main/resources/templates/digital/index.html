@@ -1,0 +1,48 @@
+<!DOCTYPE html><html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Biblioteca digital')}"><title>Biblioteca digital | Minha Biblioteca</title></head>
+<body class="dashboard-page"><a class="skip-link" href="#main-content">Pular para o conteúdo</a><div class="dashboard-layout"><aside th:replace="~{fragments/navigation :: sidebar}"></aside>
+<main id="main-content" tabindex="-1" class="content page-content digital-library" aria-labelledby="page-title">
+    <div th:replace="~{fragments/navigation :: breadcrumbs('Biblioteca digital', null, null)}"></div>
+    <header class="page-heading"><div><p class="eyebrow">Seus arquivos na nuvem</p><h1 id="page-title">Biblioteca digital</h1><p class="muted">Encontre livros e quadrinhos no OneDrive, sem copiar os arquivos para o sistema.</p></div></header>
+    <p class="alert alert-success" role="status" th:if="${successMessage}" th:text="${successMessage}"></p>
+    <p class="alert alert-error" role="alert" th:if="${errorMessage}" th:text="${errorMessage}"></p>
+    <section class="digital-panel" aria-labelledby="connection-title">
+        <h2 id="connection-title">Conexão com o OneDrive</h2>
+        <div th:unless="${driveStatus.configured}"><p>A integração ainda não foi configurada nesta instalação.</p><p class="help-text">Você pode usar rclone sem registrar um aplicativo próprio no Azure. A alternativa OAuth direta continua disponível em <code>docs/onedrive.md</code>. Não envie senhas ou segredos pelo chat.</p></div>
+        <h3>Conectar com rclone — sem registro próprio no Azure</h3>
+        <p class="help-text">O responsável pela instalação deve instalar o rclone e autorizar sua conta na Microsoft, usando um arquivo exclusivo. Sua senha não é informada ao Minha Biblioteca. Consulte <code>docs/onedrive-rclone.md</code>.</p>
+        <p>Identificador da sua conta para configuração: <code th:text="${rcloneAccountId}"></code></p>
+        <p class="help-text" th:unless="${rcloneEnabled}">O responsável precisa habilitar o modo rclone na configuração da instalação e reiniciar o sistema.</p>
+        <p th:if="${driveStatus.rclone and driveStatus.connected}">Conectado ao OneDrive via rclone.</p>
+        <form method="post" th:if="${rcloneEnabled}" th:action="@{/biblioteca-digital/rclone/conectar}"><button type="submit" th:text="${driveStatus.connected ? 'Verificar e reconectar via rclone' : 'Verificar e conectar via rclone'}"></button></form>
+        <p class="help-text" th:if="${driveStatus.connected}">Reconectar ou trocar o modo de conexão limpa a seleção de pastas, o índice e seus vínculos. A autorização externa do rclone fica no computador, protegida pelo responsável pela instalação.</p>
+        <p class="help-text">O sistema só consulta metadados: não baixa conteúdo, altera arquivos ou cria links públicos. No modo rclone, não há botão para abrir o arquivo na Web; use seu OneDrive para leitura.</p>
+        <details th:if="${oauthEnabled}">
+            <summary>Alternativa: aplicativo Microsoft próprio</summary>
+            <p th:text="${driveStatus.connected and !driveStatus.rclone ? 'Conectado: ' + driveStatus.driveName : 'Disponível para quem já configurou um aplicativo Microsoft próprio.'}"></p>
+            <p class="help-text">A autorização solicita leitura dos arquivos da sua conta e renovação do acesso. O aplicativo consulta somente as pastas selecionadas e suas subpastas; não move, exclui ou baixa o conteúdo dos arquivos. A permissão Microsoft não é limitada a uma única pasta.</p>
+            <div class="form-actions"><form method="post" th:action="@{/biblioteca-digital/onedrive/conectar}"><button th:text="${driveStatus.connected ? 'Reconectar OneDrive' : 'Conectar OneDrive'}"></button></form>
+            </div>
+            <p class="help-text" th:if="${driveStatus.connected}">Reconectar limpa a seleção de pastas e o índice local, inclusive os vínculos de arquivos. Escolha as pastas e sincronize novamente após reconectar.</p>
+        </details>
+        <details class="action-delete" th:if="${driveStatus.connected}"><summary>Desconectar da biblioteca</summary><p>Remove a conexão, pastas e listagem no banco. Seus arquivos e edições não serão apagados. A configuração externa do rclone permanece no computador; para revogar o consentimento utilize as configurações da sua conta Microsoft.</p><form method="post" th:action="@{/biblioteca-digital/onedrive/desconectar}"><button type="submit" class="button-danger">Confirmar desconexão</button></form></details>
+    </section>
+    <section class="digital-panel" th:if="${driveStatus.connected and driveStatus.configured}" aria-labelledby="folders-title">
+        <div class="page-heading"><h2 id="folders-title">Pastas selecionadas</h2><a class="button-link button-secondary" th:href="@{/biblioteca-digital/pastas}">Escolher pastas</a></div>
+        <p class="help-text">Até 20 pastas. Subpastas são incluídas; atalhos compartilhados não são percorridos nesta versão. Escolha pastas específicas de leitura para não indexar documentos pessoais sem necessidade.</p>
+        <p th:if="${folders.empty}">Nenhuma pasta selecionada.</p>
+        <ul class="resource-list"><li th:each="folder : ${folders}"><strong th:text="${folder.name}"></strong><form method="post" th:action="@{/biblioteca-digital/pastas/{id}/remover(id=${folder.id})}"><button type="submit" class="button-secondary" th:aria-label="|Remover pasta da seleção: ${folder.name}|">Remover da seleção</button></form></li></ul>
+        <div class="form-actions digital-sync"><form method="post" th:action="@{/biblioteca-digital/sincronizar}"><button type="submit">Sincronizar agora</button></form><span th:text="|Última sincronização: ${driveStatus.lastSync}|"></span></div>
+        <p class="help-text" th:if="${folders.empty}">Sem pastas selecionadas, sincronizar marca os resultados anteriores como não encontrados na seleção, sem apagar arquivos ou edições.</p>
+        <p class="alert alert-error" th:if="${driveStatus.error}" th:text="${driveStatus.error}"></p>
+        <p class="help-text">Aguarde o término. Limites: 10.000 itens, 1.000 pastas, 200 consultas e orçamento de 90 segundos, podendo exceder por uma consulta em andamento. No rclone, cada consulta tem limite de 20 segundos e 16 MiB. Se um limite ou erro ocorrer, a listagem anterior é mantida.</p>
+    </section>
+    <section aria-labelledby="files-title"><h2 id="files-title">Arquivos digitais</h2>
+        <form class="catalog-filters" method="get" th:action="@{/biblioteca-digital}"><div class="field"><label for="q">Buscar arquivo ou pasta</label><input id="q" name="q" th:value="${query}" type="search" maxlength="240"></div><div class="field"><label for="extension">Formato</label><select id="extension" name="extension"><option value="">Todos os formatos</option><option th:each="item : ${extensions}" th:value="${item}" th:text="${#strings.toUpperCase(item)}" th:selected="${item == selectedExtension}"></option></select></div><div class="form-actions"><button>Buscar</button><a th:href="@{/biblioteca-digital}">Limpar filtros</a></div></form>
+        <p class="help-text">A identificação considera a extensão, não o conteúdo: um PDF pode não ser um quadrinho. A listagem não cria edições ou despesas. A leitura interna desses formatos não está incluída.</p>
+        <p role="status" th:text="${files.totalElements == 1 ? '1 arquivo nesta consulta' : files.totalElements + ' arquivos nesta consulta'}"></p>
+        <div class="empty-state" th:if="${files.empty}"><h3>Nenhum arquivo encontrado</h3><p>Conecte o OneDrive, selecione uma pasta e sincronize. Se já fez isso, revise os filtros.</p></div>
+        <ul class="resource-list"><li th:each="file : ${files.content}"><div class="digital-file-info"><span class="edition-media" th:text="${#strings.toUpperCase(file.extension)}"></span><h3 th:text="${file.name}"></h3><p th:text="${file.folderPath}"></p><p><span th:text="${file.sizeLabel}"></span> · <strong th:text="${file.available ? 'Disponível na última sincronização' : 'Não encontrado na última sincronização'}"></strong></p><p th:if="${file.editionId}">Edição: <a th:href="@{/edicoes/{id}(id=${file.editionId})}" th:text="${file.editionTitle}"></a></p></div><div class="resource-actions"><a class="button-link" th:if="${file.webUrl != null and file.available}" th:href="${file.webUrl}" target="_blank" rel="noopener noreferrer">Abrir no OneDrive ↗</a><a class="button-link button-secondary" th:href="@{/biblioteca-digital/arquivos/{id}/vincular(id=${file.id})}" th:text="${file.editionId != null ? 'Alterar vínculo' : 'Vincular edição'}"></a></div></li></ul>
+        <nav class="pagination" th:if="${files.totalPages > 1}" aria-label="Paginação dos arquivos"><a th:if="${files.hasPrevious()}" th:href="@{/biblioteca-digital(q=${query},extension=${selectedExtension},page=${files.number - 1})}">Anterior</a><span th:text="|Página ${files.number + 1} de ${files.totalPages}|"></span><a th:if="${files.hasNext()}" th:href="@{/biblioteca-digital(q=${query},extension=${selectedExtension},page=${files.number + 1})}">Próxima</a></nav>
+    </section>
+</main></div></body></html>

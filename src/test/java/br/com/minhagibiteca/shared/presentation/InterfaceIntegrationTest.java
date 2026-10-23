@@ -61,6 +61,11 @@ class InterfaceIntegrationTest {
         assertThat(invalid).contains("Nome mantido no formulário","photo-error","aria-invalid=\"true\"");audit("criador-foto-erro",invalid);preview("criador-foto-erro",invalid);
         Files.createDirectories(PREVIEW.resolve("criadores/"+creator));Files.write(PREVIEW.resolve("criadores/"+creator+"/foto"),png);
     }
+    @Test void rendersOneDriveSetupWithoutRequiringCredentials() throws Exception {
+        String html=mvc.perform(get("/biblioteca-digital").with(user(UserPrincipal.from(owner)))).andExpect(status().isOk()).andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+        audit("onedrive-configurar",html);assertThat(html).contains("A integração ainda não foi configurada", "docs/onedrive.md").doesNotContain("ONEDRIVE_CLIENT_SECRET=");preview("onedrive-configurar",html);
+        mvc.perform(post("/biblioteca-digital/onedrive/conectar").with(user(UserPrincipal.from(owner))).with(csrf())).andExpect(redirectedUrl("/biblioteca-digital"));
+    }
 
     @Test void rendersWishlistAndValidatedFormWithLongContent() throws Exception {
         jdbc.update("insert into wishlist_items(id,owner_user_id,title,publication_type,priority,estimated_price,notes) values(?,? ,?,'BOOK','HIGH',49.90,?)",UUID.randomUUID(),owner.getId(),"Título desejado "+"MuitoLongo".repeat(20),"Observações "+"TextoExtenso".repeat(90));

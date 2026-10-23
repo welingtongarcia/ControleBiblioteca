@@ -52,6 +52,16 @@ springdoc:
     enabled: false
 
 app:
+  rclone:
+    enabled: ${RCLONE_ENABLED:false}
+    executable: ${RCLONE_EXECUTABLE:rclone}
+    config-directory: ${RCLONE_CONFIG_DIRECTORY:./data/rclone}
+  onedrive:
+    enabled: ${ONEDRIVE_ENABLED:false}
+    client-id: ${ONEDRIVE_CLIENT_ID:}
+    client-secret: ${ONEDRIVE_CLIENT_SECRET:}
+    redirect-uri: ${ONEDRIVE_REDIRECT_URI:}
+    token-key: ${ONEDRIVE_TOKEN_KEY:}
   isbn:
     user-agent: ${ISBN_USER_AGENT:MinhaGibiteca/0.1}
     google-books-api-key: ${GOOGLE_BOOKS_API_KEY:}

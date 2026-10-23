@@ -13,7 +13,7 @@ public record NavigationContext(String key, String label, String listUrl, String
     private static final Map<String, String> LABELS = Map.ofEntries(Map.entry("edicoes", "Catálogo de edições"), Map.entry("series", "Séries e checklist"),
             Map.entry("localizacoes", "Localizações"), Map.entry("editoras", "Editoras"), Map.entry("obras", "Obras"), Map.entry("criadores", "Criadores"),
             Map.entry("dashboard", "Início"), Map.entry("financeiro", "Financeiro"), Map.entry("personagens", "Personagens"),
-            Map.entry("visao-geral", "Visão geral"), Map.entry("relatorios", "Relatórios"), Map.entry("backup", "Backup e migração"), Map.entry("desejos", "Lista de desejos"));
+            Map.entry("visao-geral", "Visão geral"), Map.entry("relatorios", "Relatórios"), Map.entry("backup", "Backup e migração"), Map.entry("desejos", "Lista de desejos"), Map.entry("biblioteca-digital", "Biblioteca digital"));
 
     public static NavigationContext from(HttpServletRequest request) {
         String path = request.getServletPath();
@@ -47,6 +47,7 @@ public record NavigationContext(String key, String label, String listUrl, String
         return path != null && (path.equals("/" + key) || (key.equals("series") && path.matches("/series/" + UUID_PATTERN + "/(checklist|faltantes)")));
     }
     private static List<String> parameters(String path) {
+        if (path.equals("/biblioteca-digital")) return List.of("q", "extension", "page");
         if (path.equals("/desejos")) return List.of("q", "status", "page");
         if (path.equals("/edicoes")) return List.of("q", "publisherId", "seriesId", "format", "mediaType", "publicationType", "order", "page");
         if (path.equals("/financeiro")) return List.of("start", "end", "seriesId", "creatorId", "characterId", "publisherId", "mediaType", "ranking", "page");
