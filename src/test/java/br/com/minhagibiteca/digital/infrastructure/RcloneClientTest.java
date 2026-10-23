@@ -79,7 +79,7 @@ class RcloneClientTest {
         Files.writeString(temp.resolve(owner+".conf"),"synthetic");
         var real=fixtureRunner("args");
         String output=real.run(owner,List.of("lsjson","onedrive:HQ $(touch nope)","--no-mimetype"));
-        assertThat(output).contains("onedrive:HQ $(touch nope)"+System.lineSeparator(),"--dry-run","Files.Read offline_access",temp.resolve(owner+".conf").toString());
+        assertThat(output).contains("onedrive:HQ $(touch nope)"+System.lineSeparator(),"--dry-run","Files.Read offline_access","--onedrive-disable-site-permission=false",temp.resolve(owner+".conf").toString());
         assertThatThrownBy(()->real.run(owner,List.of("delete","onedrive:"))).isInstanceOf(IllegalArgumentException.class);
     }
 

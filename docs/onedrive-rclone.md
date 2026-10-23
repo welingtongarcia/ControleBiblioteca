@@ -29,17 +29,19 @@ Linux/macOS:
 mkdir -p data/rclone
 chmod 700 data/rclone
 umask 077
-rclone --config "data/rclone/SEU-UUID.conf" --onedrive-access-scopes "Files.Read offline_access" --onedrive-disable-site-permission config
+rclone --config "data/rclone/SEU-UUID.conf" --onedrive-access-scopes "Files.Read offline_access" --onedrive-disable-site-permission=false config
 ```
 
 Windows (PowerShell):
 
 ```powershell
 New-Item -ItemType Directory -Force data/rclone
-rclone --config "data/rclone/SEU-UUID.conf" --onedrive-access-scopes "Files.Read offline_access" --onedrive-disable-site-permission config
+rclone --config "data/rclone/SEU-UUID.conf" --onedrive-access-scopes "Files.Read offline_access" --onedrive-disable-site-permission=false config
 ```
 
 No assistente:
+
+A opção `disable_site_permission` deve permanecer **false**. No rclone 1.60.1, ativá-la substitui os escopos personalizados por permissões amplas, incluindo escrita. A lista explícita `Files.Read offline_access` já exclui o acesso a sites SharePoint.
 
 1. Escolha `n` (nova conexão). Se já existe o remote desta conta, edite-o em vez de criar outro com nome diferente.
 2. Nome: **onedrive**, exatamente assim.
@@ -77,7 +79,7 @@ A imagem inclui rclone. Ative `RCLONE_ENABLED=true` no `.env` e recrie a aplica�
 Com a aplicação iniciada, execute no terminal do servidor, como o mesmo usuário da aplicação (padrão do container):
 
 ```bash
-docker compose exec app rclone --config /app/data/rclone/SEU-UUID.conf --onedrive-access-scopes "Files.Read offline_access" --onedrive-disable-site-permission config
+docker compose exec app rclone --config /app/data/rclone/SEU-UUID.conf --onedrive-access-scopes "Files.Read offline_access" --onedrive-disable-site-permission=false config
 ```
 
 O container normalmente não tem navegador. Escolha **não** quando perguntar sobre abrir o navegador local e siga o procedimento de autorização remota mostrado pelo rclone. Faça o login em computador confiável com a mesma versão do rclone; a resposta de autorização contém tokens e deve ser colada somente no terminal do assistente, nunca no chat. Consulte o [guia de configuração remota](https://rclone.org/remote_setup/). Não exponha um servidor de controle rclone na rede.

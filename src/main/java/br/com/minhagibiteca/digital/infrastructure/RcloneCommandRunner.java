@@ -20,7 +20,7 @@ public class RcloneCommandRunner {
         args.add(settings.executable());
         args.addAll(operation);
         args.addAll(List.of("--config", settings.config(owner).toString(), "--dry-run",
-                "--onedrive-access-scopes", "Files.Read offline_access", "--onedrive-disable-site-permission",
+                "--onedrive-access-scopes", "Files.Read offline_access", "--onedrive-disable-site-permission=false",
                 "--retries", "1", "--low-level-retries", "1", "--contimeout", "5s", "--timeout", "15s",
                 "--log-level", "ERROR"));
         Process process = null;
