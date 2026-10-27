@@ -25,6 +25,32 @@
                 <span th:if="${error.global}" th:text="${error.message}"></span>
             </li></ul>
         </section>
+        <fieldset class="edition-form-section amazon-import" th:if="${editionId == null}">
+            <legend>Importar pelo link da Amazon <span class="edition-optional">opcional</span></legend>
+            <p id="amazon-help" class="help-text">Cole o endereço completo de um livro ou quadrinho da Amazon Brasil. Buscaremos os dados públicos disponíveis, sem acessar sua conta Amazon. Links curtos precisam ser abertos antes para copiar o endereço completo.</p>
+            <div class="field"><label for="amazonLink">Link do produto na Amazon Brasil</label><input id="amazonLink" type="url" name="amazonLink" th:value="${amazonLink}" maxlength="2048" placeholder="https://www.amazon.com.br/dp/655448244X" aria-describedby="amazon-help"></div>
+            <button type="submit" th:formaction="@{/edicoes/amazon/buscar}" formnovalidate>Buscar dados pelo link</button>
+            <p class="alert" th:if="${amazonMessage}" th:text="${amazonMessage}" role="status"></p>
+            <section class="isbn-suggestions" th:if="${amazonPreview}" aria-labelledby="amazon-preview-title">
+                <h2 id="amazon-preview-title">Confira os dados antes de aplicar</h2>
+                <dl class="details-list">
+                    <dt>Fonte</dt><dd th:text="${amazonPreview.metadata.sourceName}"></dd>
+                    <dt>Título</dt><dd th:text="${amazonPreview.metadata.title ?: 'Não encontrado'}"></dd>
+                    <dt>ISBN</dt><dd th:text="${amazonPreview.metadata.isbn ?: 'Não encontrado'}"></dd>
+                    <dt>Editora(s)</dt><dd th:text="${amazonPreview.metadata.publishers.empty ? 'Não encontrada' : #strings.listJoin(amazonPreview.metadata.publishers, ', ')}"></dd>
+                    <dt>Criador(es)</dt><dd th:text="${amazonPreview.metadata.authors.empty ? 'Não encontrados' : #strings.listJoin(amazonPreview.metadata.authors, ', ')}"></dd>
+                    <dt>Ano</dt><dd th:text="${amazonPreview.metadata.year ?: 'Não encontrado'}"></dd>
+                    <dt>Páginas</dt><dd th:text="${amazonPreview.metadata.pages ?: 'Não encontradas'}"></dd>
+                    <dt>Formato</dt><dd th:text="${amazonPreview.metadata.format ?: 'Não encontrado'}"></dd>
+                    <dt>Sinopse</dt><dd th:text="${amazonPreview.metadata.summary ?: 'Não encontrada'}"></dd>
+                </dl>
+                <div class="form-actions"><a th:href="${amazonPreview.metadata.sourceUrl}" target="_blank" rel="noopener noreferrer">Conferir na fonte ↗</a><a th:if="${amazonPreview.metadata.coverUrl}" th:href="${amazonPreview.metadata.coverUrl}" target="_blank" rel="noopener noreferrer">Consultar capa ↗</a></div>
+                <input type="hidden" name="amazonToken" th:value="${amazonPreview.token}">
+                <button th:if="${amazonPreview.metadata.title != null or amazonPreview.metadata.isbn != null}" type="submit" th:formaction="@{/edicoes/amazon/aplicar}" formnovalidate>Aplicar sugestões nos campos vazios</button>
+            </section>
+            <p class="help-text" th:if="${amazonApplied}">Sugestões aplicadas a partir de <span th:text="${amazonApplied.metadata.sourceName}"></span>. O cadastro só será concluído ao salvar.</p>
+            <p class="help-text">A Amazon pode bloquear consultas ou não fornecer todos os dados. Nesse caso, tentaremos as fontes bibliográficas pelo ISBN válido, quando disponível. Editora e criadores só são vinculados se já existirem na sua conta com nome único. A sinopse vai para observações apenas se estiverem vazias. Capa não é baixada: envie-a após salvar. Preço, data da compra, suporte, tipo de publicação e leitura não são importados.</p>
+        </fieldset>
         <fieldset class="edition-form-section" th:if="${editionId == null}">
             <legend>Buscar dados pelo título <span class="edition-optional">opcional</span></legend>
             <p class="help-text">Sem ISBN ou sem resultado? Pesquise em fontes gratuitas e escolha a edição. Somente o texto da busca é enviado à fonte escolhida.</p>

@@ -2,21 +2,6 @@ package br.com.minhagibiteca.catalog.presentation;
 import br.com.minhagibiteca.auth.application.CurrentAuthenticatedUser; import br.com.minhagibiteca.inventory.application.CopyService; import br.com.minhagibiteca.catalog.application.*; import br.com.minhagibiteca.catalog.domain.MediaType; import java.math.BigDecimal; import java.beans.PropertyEditorSupport; import org.springframework.web.bind.WebDataBinder; import jakarta.validation.Valid; import java.util.UUID; import org.springframework.core.io.Resource; import org.springframework.data.domain.*; import org.springframework.http.CacheControl; import org.springframework.http.ResponseEntity; import org.springframework.stereotype.Controller; import org.springframework.ui.Model; import org.springframework.validation.BindingResult; import org.springframework.web.bind.annotation.*; import org.springframework.web.multipart.MultipartFile; import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @Controller public class EditionController { private final EditionService editions; private final PublisherService publishers; private final ComicSeriesService series; private final WorkService works; private final CreatorService creators; private final EditionAssociationService associations; private final EditionCoverService covers; private final EditionCatalogViewService catalogViews; private final CopyService copies; private final CurrentAuthenticatedUser user; private final IsbnLookupService isbnLookup; private final CharacterService characters; private final EditionRegistrationService registration; private final MetadataSearchService metadataSearch; private final AssociationOptionsService options; public EditionController(EditionService e,PublisherService p,ComicSeriesService s,WorkService w,CreatorService c,EditionAssociationService a,EditionCoverService coverService,EditionCatalogViewService views,CopyService copyService,CurrentAuthenticatedUser u,IsbnLookupService isbnLookup,CharacterService characters,EditionRegistrationService registration,MetadataSearchService metadataSearch,AssociationOptionsService options){editions=e;publishers=p;series=s;works=w;creators=c;associations=a;covers=coverService;catalogViews=views;copies=copyService;user=u;this.isbnLookup=isbnLookup;this.characters=characters;this.registration=registration;this.metadataSearch=metadataSearch;this.options=options;}
 
- @InitBinder("editionForm")
- void bindMoney(WebDataBinder binder) {
-     binder.setAllowedFields("title", "editorialNumber", "variant", "isbn", "publicationYear", "format", "notes", "publicationType", "mediaType", "coverPrice", "referencePaidPrice", "publisherId", "seriesId", "workIds", "creatorIds", "characterIds", "purchaseDate", "totalPages", "pagesRead");
-     binder.registerCustomEditor(BigDecimal.class, new PropertyEditorSupport() {
-         @Override public void setAsText(String text) {
-             if (text == null || text.isBlank()) { setValue(null); return; }
-             String value = text.trim();
-             if (!value.matches("-?[0-9]+([.,][0-9]+)?")) throw new IllegalArgumentException("Valor monetário inválido.");
-             setValue(new BigDecimal(value.replace(',', '.')));
-         }
-         @Override public String getAsText() {
-             return getValue() == null ? "" : ((BigDecimal) getValue()).toPlainString().replace('.', ',');
-         }
-     });
- }
  @GetMapping("/edicoes")
  String list(@RequestParam(defaultValue="") String q,@RequestParam(defaultValue="0") int page,
          @RequestParam(required=false) UUID publisherId,@RequestParam(required=false) UUID seriesId,

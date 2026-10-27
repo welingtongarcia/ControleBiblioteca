@@ -13,6 +13,7 @@ Sistema web para organizar coleções particulares de **livros e quadrinhos**, d
 - Financeiro com filtros, gráficos e comparações por período; relatórios em PDF e CSV.
 - Backup portátil dos dados e imagens da conta.
 - Consulta opcional de metadados por ISBN/título; cadastro manual funciona sem integrações.
+- Importação por link de produto da Amazon Brasil, com prévia e aplicação apenas em campos vazios; consulta pública de melhor esforço, sem API paga. Veja o [guia de importação](docs/importacao-amazon.md).
 - Biblioteca digital OneDrive opcional: seleção de pastas, indexação manual de arquivos e vínculo com edições, sem alterar arquivos remotos. Use rclone sem aplicativo Azure próprio ou OAuth direto; requer configuração e autorização Microsoft e não inclui leitor interno. Veja o [guia rclone](docs/onedrive-rclone.md).
 
 ## Requisitos
@@ -150,7 +151,7 @@ Alterar o bootstrap depois de existir um usuário não redefine a senha de nenhu
 ./mvnw clean verify
 ```
 
-No Windows: `.\mvnw.cmd clean verify`. Os testes exigem JDK 21 e Docker acessível para iniciar PostgreSQL isolado pelo Testcontainers. A última verificação da implementação, em 23/10/2026, passou com **267 testes**. A integração OneDrive foi testada com respostas Microsoft/rclone simuladas e subprocessos locais sintéticos, sem credenciais ou arquivos pessoais reais.
+No Windows: `.\mvnw.cmd clean verify`. Os testes exigem JDK 21 e Docker acessível para iniciar PostgreSQL isolado pelo Testcontainers. A última verificação da implementação, em 27/10/2026, passou com **281 testes**. A integração OneDrive foi testada com respostas Microsoft/rclone simuladas e subprocessos locais sintéticos, sem credenciais ou arquivos pessoais reais. A importação Amazon possui testes simulados de segurança e fluxo; o link Thorgal fornecido também foi consultado com sucesso pelo cliente Java 21, sem salvar dados no acervo.
 
 O Flyway aplica migrações na inicialização. Não use `ddl-auto=update` e não edite migrações já aplicadas em um banco existente.
 

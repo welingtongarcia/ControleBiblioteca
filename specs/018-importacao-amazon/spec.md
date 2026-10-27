@@ -20,8 +20,21 @@ Aplicam-se a constituição e AGENTS.md: monólito MVC Java 21, pt-BR, CSRF, PRG
 3. Seção Importar pelo link da Amazon no formulário de nova edição, prévia, confirmação e referências.
 4. Testes de segurança e fluxo; verificação Maven sem sobreposição, conferência da interface e documentação das limitações.
 
-- [ ] AM-01/02/03/05: link, HTTP e extração.
-- [ ] AM-04/06: serviço, rotas, interface e testes.
-- [ ] Verificação, arquivos, resultados, pendências e riscos registrados.
+- [x] AM-01/02/03/05: link, HTTP e extração.
+- [x] AM-04/06: serviço, rotas, interface e testes.
+- [x] Verificação, arquivos, resultados, pendências e riscos registrados.
 
 Análise: nenhuma alteração de esquema/Flyway necessária. API oficial Amazon possui requisitos e restrições de uso; esta consulta pública não garante disponibilidade ou estabilidade. Acesso negado é condição normal e deve resultar em aviso, não evasão. jsoup é apenas parser Java; não introduz runtime frontend. Chaves Google Books existentes não serão criadas nem alteradas. Não haverá indexação de outro site nem importação via Maratona.
+
+## Verificação — 27/10/2026
+
+- `JAVA_HOME=/usr/lib/jvm/java-1.21.0-openjdk-amd64 ./mvnw -q clean verify`: saída 0; 34 suítes, **281 testes**, zero falhas/erros/ignorados. Empacotamento JAR concluído. Novos testes: 6 de URLs/cache/fallback, 6 de parser/HTTP/gzip/limites e 2 fluxos MockMvc com PostgreSQL isolado. Verificados CSRF/autenticação, token de outro proprietário, expiração, consulta sem persistir, confirmação explícita, edição de campos manuais, dinheiro pt-BR, associações da própria conta, XSS, páginas inválidas, redirects e resposta não HTML.
+- Consulta real do cliente Java 21 ao produto `655448244X`: título Thorgal: Série Clássica (Vol. 1 de 4), ISBN `9786554482448`, 420 páginas, ano 2025, editora Pipoca e Nanquim, nomes de criadores, sinopse e referência de capa encontrados. Sem login Amazon, imagens baixadas ou dados pessoais enviados. O resultado real não foi gravado no acervo do usuário.
+- Prévia sintética renderizada por MockMvc e inspecionada no navegador: seção de importação, prévia e botão de aplicação presentes; larguras 320/390/768/1280 px sem transbordamento horizontal. Valores sintéticos escapados corretamente. Servidor/aba temporários encerrados após a inspeção.
+- `git diff --check`: saída 0. Teste de interface com integração OneDrive desativada agora declara essa configuração explicitamente, sem depender do `.env` local do usuário.
+
+Arquivos: `AmazonProductLink`, `AmazonMetadata`, `AmazonPageProvider`, `AmazonImportService`, `AmazonPageClient`, `AmazonImportController`; binder de formulário extraído para `EditionFormBinding` e compartilhado com `EditionController`, sem alterar campos permitidos ou conversão monetária; template `edicoes/form.html`; dependência jsoup 1.23.2; testes acima; README e `docs/importacao-amazon.md`. Nenhuma migração ou modificação de `.env` foi necessária.
+
+Evidências temporárias: `/tmp/amazon-verify.log`, relatórios `target/surefire-reports/`, prévia `target/ui-review/amazon-preview.html`. Rodadas intermediárias corrigiram uma asserção de teste que não compilava e a limpeza de FKs do banco de teste; somente a rodada limpa final foi considerada concluída.
+
+Pendências e riscos: a disponibilidade futura depende da Amazon e da cobertura das fontes bibliográficas; links curtos/outros países não são suportados; ISBN ausente/ASIN Kindle não será inventado. Capa é referência, sem importação automática. Autores/editora sem correspondência local exigem cadastro manual. A sinopse preenche observações apenas quando vazias. A instância do usuário não foi reiniciada nem foi realizada publicação no GitHub; reiniciar pelo IntelliJ para carregar as classes novas. Não se afirma suporte a todos os produtos ou layouts Amazon.

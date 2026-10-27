@@ -21,7 +21,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /** Renderiza todas as famílias de telas com acervo sintético e conta vazia. */
-@SpringBootTest @AutoConfigureMockMvc @Testcontainers
+@SpringBootTest(properties={"app.rclone.enabled=false","app.onedrive.enabled=false"}) @AutoConfigureMockMvc @Testcontainers
 class InterfaceIntegrationTest {
     @Container static final PostgreSQLContainer<?> POSTGRES=new PostgreSQLContainer<>("postgres:16-alpine");
     @DynamicPropertySource static void database(DynamicPropertyRegistry r){r.add("spring.datasource.url",POSTGRES::getJdbcUrl);r.add("spring.datasource.username",POSTGRES::getUsername);r.add("spring.datasource.password",POSTGRES::getPassword);r.add("app.cover-storage-path",()->"target/ui-review-covers");}
