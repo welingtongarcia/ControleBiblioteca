@@ -13,7 +13,8 @@ Constituição v1 mantida. Pedido aprovado: resumo e catálogo do acervo com fil
 
 ## Plan → tasks → analyze
 
-- [ ] REL-007: oferecer barras e pizza selecionáveis na prévia de Resumo e Catálogo. Visualizar suporte, situação de leitura e progresso de páginas com totais de todo o recorte filtrado. Exibir legenda textual com contagens e tratar ausência de dados, incluindo páginas sem quantidade informada. Reutilizar os agregados da prévia e CSS local, sem dependências, consultas novas ou alteração das exportações.
+- [x] REL-007: oferecer barras e pizza selecionáveis na prévia de Resumo e Catálogo. Visualizar suporte, situação de leitura e progresso de páginas com totais de todo o recorte filtrado. Exibir legenda textual com contagens e tratar ausência de dados, incluindo páginas sem quantidade informada. Reutilizar os agregados da prévia e CSS local, sem dependências, consultas novas ou alteração das exportações.
+- Verificação REL-007: `relatorios/index.html`, `relatorios/chart.html` e `dashboard.css` implementam a seleção e as proporções. `./mvnw -q -Dtest=ReportIntegrationTest,ReportExportTest,InterfaceIntegrationTest verify` passou com 27 testes, incluindo resumo, catálogo filtrado, recorte vazio e exportações. `git diff --check` aprovado.
 
 - [x] REL-T1 Criar módulo reports com filtros/DTOs/serviço e consultas JDBC, contagens/agregados sem N+1. Usar índices existentes por proprietário/título/série/editora/data e vínculos; Flyway V19 para índice creator_functions(function, creator_id), usado pelo filtro de atuação.
 - [x] REL-T2 Tela, navegação/retorno e links de emissão com filtros intactos. Sem frontend novo.

@@ -1,0 +1,15 @@
+<article xmlns:th="http://www.thymeleaf.org" th:fragment="breakdown(title, labels, values, total)" class="finance-panel report-chart">
+    <h3 th:text="${title}"></h3>
+    <p class="help-text" th:if="${total == 0}">Nenhuma edição da seleção tem total de páginas informado.</p>
+    <div th:if="${total > 0}">
+        <div class="report-pie" aria-hidden="true"
+             th:style="|--cut-first:${100.0 * values[0] / total}%;--cut-second:${100.0 * (values[0] + values[1]) / total}%|"></div>
+        <dl class="report-chart-values">
+            <div th:each="label, row : ${labels}">
+                <dt><span class="report-chart-swatch" aria-hidden="true"></span><span th:text="${label}"></span></dt>
+                <dd th:text="${values[row.index]}"></dd>
+                <dd class="finance-bar report-chart-bar" aria-hidden="true"><span th:style="|width:${100.0 * values[row.index] / total}%|"></span></dd>
+            </div>
+        </dl>
+    </div>
+</article>

@@ -47,6 +47,22 @@
         <p class="alert finance-data-warning" role="status" th:if="${report.summary.unpriced() > 0}" th:text="|${report.summary.unpriced()} edição(ões) sem preço pago. O gasto registrado pode estar incompleto. Zero informado significa gratuita; vazio significa desconhecido.|"></p>
         <p class="alert finance-data-warning" role="status" th:if="${report.summary.unpaged() > 0}" th:text="|${report.summary.unpaged()} edição(ões) sem quantidade de páginas. Os totais de páginas não incluem essas edições.|"></p>
     </section>
+    <section class="report-visuals" aria-labelledby="report-charts" th:with="s=${report.summary}">
+        <h2 id="report-charts">Gráficos da seleção</h2>
+        <p class="help-text" th:if="${s.editions == 0}">Nenhuma edição nesta seleção para gerar gráficos.</p>
+        <div th:if="${s.editions > 0}">
+            <fieldset class="report-chart-format">
+                <legend>Formato do gráfico</legend>
+                <label><input type="radio" name="report-chart-format" id="report-chart-bars" checked> Barras</label>
+                <label><input type="radio" name="report-chart-format" id="report-chart-pie"> Pizza</label>
+            </fieldset>
+            <div class="report-chart-grid">
+                <article th:replace="~{relatorios/chart :: breakdown('Edições por suporte', ${ {'Físicas', 'Digitais', 'Não informado'} }, ${ {s.physical, s.digital, s.unknownMedia} }, ${s.editions})}"></article>
+                <article th:replace="~{relatorios/chart :: breakdown('Situação de leitura', ${ {'Lidas', 'Não lidas'} }, ${ {s.read, s.editions - s.read} }, ${s.editions})}"></article>
+                <article th:replace="~{relatorios/chart :: breakdown('Progresso por páginas', ${ {'Lidas', 'Restantes'} }, ${ {s.pagesRead, s.pagesUnread()} }, ${s.totalPages})}"></article>
+            </div>
+        </div>
+    </section>
     <section aria-labelledby="report-catalog"><h2 id="report-catalog">Edições do recorte</h2>
         <div class="empty-state" th:if="${report.entries.empty}"><h3>Nenhuma edição nesta seleção</h3><p>Revise os filtros ou cadastre sua primeira edição.</p><a class="button-link" th:href="@{/edicoes/nova}">Cadastrar edição</a></div>
         <ul class="report-entries" th:unless="${report.entries.empty}">

@@ -70,9 +70,14 @@ class ReportIntegrationTest {
                 .andExpect(status().isOk()).andExpect(header().string("Cache-Control","no-store")).andReturn();
         assertThat(result.getResponse().getContentAsString()).contains("Baixar PDF","Baixar CSV","15,50","Função geral do criador","Maria (Desenhista)")
                 .doesNotContain("SEGREDO DE OUTRO USUÁRIO");
+        var charts = org.jsoup.Jsoup.parse(result.getResponse().getContentAsString());
+        assertThat(charts.select(".report-chart-format label").eachText()).containsExactly("Barras", "Pizza");
+        assertThat(charts.select(".report-chart dd:not(.report-chart-bar)").eachText()).containsExactly("1", "1", "1", "1", "2", "30", "30");
+        assertThat(charts.select(".report-pie").last().attr("style")).isEqualTo("--cut-first:50.0%;--cut-second:100.0%");
         preview("filled",result.getResponse().getContentAsString());
         var empty=mvc.perform(get("/relatorios").param("q","Nada encontrado").with(SecurityMockMvcRequestPostProcessors.user(UserPrincipal.from(owner))))
                 .andExpect(status().isOk()).andReturn();
+        assertThat(org.jsoup.Jsoup.parse(empty.getResponse().getContentAsString()).select(".report-chart-grid")).isEmpty();
         preview("empty",empty.getResponse().getContentAsString());
     }
     @Test void combinesCreatorFunctionsAndAllBibliographicAndPeriodFilters() throws Exception {
@@ -89,6 +94,8 @@ class ReportIntegrationTest {
         var data=(ReportData)result.getModelAndView().getModel().get("report");assertThat(data.summary().editions()).isEqualTo(1);
         assertThat(data.filters()).contains("Coleção: Coleção do relatório","Criador: João","Função geral: Roteirista");
         assertThat(result.getResponse().getContentAsString()).contains("creatorFunction=ROTEIRISTA","type=CATALOG","returnTo=");
+        assertThat(org.jsoup.Jsoup.parse(result.getResponse().getContentAsString()).select(".report-chart dd:not(.report-chart-bar)").eachText())
+                .containsExactly("1", "0", "0", "0", "1", "10", "30");
         preview("filtered",result.getResponse().getContentAsString());
         assertThat(reports.preview(owner.getId(),filter("%",null,null),0).summary().editions()).isZero();
         assertThat(reports.preview(owner.getId(),new ReportFilter("",null,null,null,null,null,"UNSPECIFIED","ALL",null,null),0).summary().editions()).isEqualTo(1);

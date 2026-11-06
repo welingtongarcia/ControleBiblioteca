@@ -184,6 +184,23 @@
 .report-page { min-width:0; overflow-wrap:anywhere; }
 .report-page section { margin-bottom:1.75rem; }
 .report-page .page-heading h2,.report-page .page-heading h3 { margin-top:0; }
+.report-chart-format { display:flex; flex-wrap:wrap; gap:1rem; margin:0 0 1rem; border:0; padding:0; }
+.report-chart-format legend { margin-bottom:.35rem; }
+.report-chart-format label { display:inline-flex; align-items:center; gap:.5rem; min-height:44px; cursor:pointer; }
+.report-chart-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr)); gap:1rem; }
+.report-chart { --slice-first:#edc06a; --slice-second:#7dcdd1; --slice-third:#c6aff0; min-width:0; margin:0; }
+.report-chart h3 { margin-top:0; }
+.report-pie { display:none; width:min(100%,9rem); aspect-ratio:1; border-radius:50%; margin:0 auto 1rem; background:conic-gradient(var(--slice-first) 0 var(--cut-first),var(--slice-second) var(--cut-first) var(--cut-second),var(--slice-third) var(--cut-second) 100%); }
+.report-visuals:has(#report-chart-pie:checked) .report-pie { display:block; }
+.report-visuals:has(#report-chart-pie:checked) .report-chart-bar { display:none; }
+.report-chart-values { display:grid; gap:.75rem; margin:0; }
+.report-chart-values > div { --chart-color:var(--slice-first); display:grid; grid-template-columns:minmax(0,1fr) auto; column-gap:.5rem; }
+.report-chart-values > div:nth-child(2) { --chart-color:var(--slice-second); }
+.report-chart-values > div:nth-child(3) { --chart-color:var(--slice-third); }
+.report-chart-values dt { display:flex; align-items:center; gap:.5rem; min-width:0; }
+.report-chart-values dd { margin:0; font-variant-numeric:tabular-nums; }
+.report-chart-swatch { flex:0 0 .7rem; height:.7rem; border-radius:50%; background:var(--chart-color); }
+.report-chart-values .report-chart-bar { grid-column:1 / -1; margin-top:.35rem; }
 .report-filter-summary { padding-left:1.25rem; line-height:1.7; }
 .report-entries { list-style:none; padding:0; display:grid; gap:1rem; }
 .report-entries article { padding:1.25rem; border:1px solid #414954; border-radius:.85rem; background:var(--surface); }
