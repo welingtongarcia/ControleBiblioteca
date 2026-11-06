@@ -11,6 +11,9 @@ MVC/Thymeleaf/PostgreSQL preservados; JavaScript próprio como melhoria progress
 
 ## Plan → tasks → analyze
 
+- [ ] SEL-005: no cadastro e na edição de volumes, oferecer atalhos junto a editora, série, obras (histórias), criadores e personagens. Abrir os formulários existentes em outra aba para preservar o rascunho. Ao voltar, permitir atualizar editoras e séries sem recarregar a página e usar a busca existente para os demais vínculos. A atualização é autenticada, restrita à própria conta e mantém a seleção atual. Para séries, incluir as 20 mais recentes na atualização para alcançar cadastros fora das primeiras 200 em ordem alfabética.
+- [ ] Verificar os cinco atalhos nos dois formulários, a atualização com série nova fora das primeiras 200 e o isolamento entre contas. Sem alteração de esquema.
+
 - [x] T1 Implementar repositório paginado e serviço de opções/seleções; controlador JSON e integração ao formulário.
 - [x] T2 Fragmento reutilizável, JS próprio, filtro de criadores e CSS responsivo; fallback honesto.
 - [x] T3 Testcontainers/MockMvc: limites, acentos, proprietário, função, paginação, seleção fora da primeira página, erros/edição. QA navegador e clean verify.
