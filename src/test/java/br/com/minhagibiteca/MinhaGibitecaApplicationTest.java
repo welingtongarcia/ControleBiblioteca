@@ -2384,6 +2384,8 @@ class MinhaGibitecaApplicationTest {
         var previews = new java.util.LinkedHashMap<String, String>();
         previews.put("inicio-vazio", empty.getResponse().getContentAsString());
         assertThat(empty.getResponse().getContentAsString()).contains("Toda grande coleção começa com uma história.", "Visão geral").doesNotContain("id=\"home-overview\"", "class=\"showcase-rail\"");
+        assertThat(org.jsoup.Jsoup.parse(empty.getResponse().getContentAsString()).select(".showcase-summary dd").eachText())
+                .containsExactly("0", "0", "0", "0", "R$ 0,00");
         var foreign = Edition.create(other.getId(), null, null, "SEGREDO OUTRO USUÁRIO", null, null, null, null, null, null);
         foreign.updatePricingAndMedia(br.com.minhagibiteca.catalog.domain.MediaType.DIGITAL, null, new BigDecimal("9999.99"));
         foreign.markRead(true);
@@ -2431,6 +2433,10 @@ class MinhaGibitecaApplicationTest {
                 if (shelf.category() == br.com.minhagibiteca.dashboard.application.HomeShelf.DIGITAL) assertThat(shelf.editions()).allMatch(e -> e.media() == br.com.minhagibiteca.catalog.domain.MediaType.DIGITAL);
             }
             var html = result.getResponse().getContentAsString();
+            var topSummary = org.jsoup.Jsoup.parse(html).selectFirst("header.showcase-header + .showcase-summary");
+            assertThat(topSummary).isNotNull();
+            assertThat(topSummary.select("dd").eachText()).containsExactly("10", "20", "140", "160", "R$ 25,50");
+            assertThat(topSummary.text()).contains("edições com total informado");
             assertThat(html).contains("id=\"home-banner\"", "id=\"banner-reading\"", "id=\"banner-collection\"", "id=\"banner-finance\"", "Sua jornada de leitura", "33,3%", bannerSummary.registeredPaidLabel(), "O total pode estar incompleto.", "data-banner-play", "aria-live=\"polite\"", "/js/home-banner.js", "href=\"/financeiro\"").doesNotContain("9.999,99");
             previews.put("inicio-com-capa", html);
             assertThat(html).contains("Seu universo de histórias", "Adicionados recentemente", "Sua próxima leitura", "Biblioteca digital", "Já lidos para revisitar", "tabindex=\"0\"", "loading=\"lazy\"", "returnTo=/dashboard", "/css/home-showcase.css", "/edicoes/" + owned.get(29).getId() + "/capa").doesNotContain("SEGREDO OUTRO USUÁRIO", "Sua coleção em números", "cover_file_name");

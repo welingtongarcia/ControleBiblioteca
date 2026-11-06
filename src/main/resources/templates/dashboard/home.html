@@ -13,6 +13,16 @@
                 <input id="home-query" name="q" type="search" maxlength="240" placeholder="Encontre uma história…"><button type="submit">Buscar</button>
             </form>
         </header>
+        <section class="showcase-summary" aria-label="Resumo da coleção">
+            <dl>
+                <div><dt>Edições lidas</dt><dd th:text="${bannerReading.read}">0</dd></div>
+                <div><dt>Edições não lidas</dt><dd th:text="${bannerReading.total - bannerReading.read}">0</dd></div>
+                <div><dt>Páginas lidas</dt><dd th:text="${bannerReading.pagesRead}">0</dd></div>
+                <div><dt>Páginas não lidas</dt><dd th:text="${bannerReading.pagesUnread()}">0</dd></div>
+                <div><dt>Total pago informado</dt><dd th:text="${bannerSummary.registeredPaidLabel()}">R$ 0,00</dd></div>
+            </dl>
+            <p th:if="${bannerReading.knownPageEditions < bannerReading.total}">A contagem de páginas considera as edições com total informado.</p>
+        </section>
         <nav class="showcase-quicklinks" aria-label="Explorar a coleção">
             <a class="showcase-nav-current" href="#home-shelves" th:if="${showcase.featured != null}">Explorar histórias</a>
             <a th:href="@{/visao-geral}">Visão geral <span aria-hidden="true">↗</span></a>
@@ -47,7 +57,7 @@
             </div>
         </section>
         <section id="banner-highlight" class="showcase-empty banner-slide" data-banner-title="Comece sua coleção" th:if="${showcase.featured == null}" aria-labelledby="empty-title" aria-roledescription="painel">
-            <div><p class="showcase-eyebrow">O próximo capítulo é seu</p><h2 id="empty-title">Toda grande coleção começa com uma história.</h2><p>Cadastre seu primeiro livro ou quadrinho e veja suas capas ganharem espaço aqui. Seus números e valores continuam na Visão geral.</p>
+            <div><p class="showcase-eyebrow">O próximo capítulo é seu</p><h2 id="empty-title">Toda grande coleção começa com uma história.</h2><p>Cadastre seu primeiro livro ou quadrinho e veja suas capas ganharem espaço aqui. Acompanhe os detalhes da coleção na Visão geral.</p>
             <div class="showcase-feature-actions"><a class="button-link" th:href="@{/edicoes/nova(returnTo='/dashboard')}">Cadastrar minha primeira edição</a><a class="showcase-secondary" th:href="@{/edicoes}">Abrir catálogo</a></div></div>
             <div class="showcase-empty-art" aria-hidden="true"><span>MG</span><span>Uma coleção.<br>Infinitas histórias.</span></div>
         </section>

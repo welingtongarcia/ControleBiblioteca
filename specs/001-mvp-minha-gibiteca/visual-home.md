@@ -12,7 +12,8 @@ Constituição mantida. Pedido: transferir o painel atual para a aba **Visão ge
 
 ## Plan → tasks
 
-- [ ] VHOME-006: exibir abaixo do cabeçalho uma faixa discreta e responsiva com edições lidas e não lidas, páginas lidas e não lidas e total pago informado nas edições. Reutilizar os dados do banner, excluir páginas de edições sem total informado e manter os critérios financeiros da Visão geral. Verificar renderização nas duas rotas iniciais, conta vazia e coleção com leitura parcial e valores informados.
+- [x] VHOME-006: exibir abaixo do cabeçalho uma faixa discreta e responsiva com edições lidas e não lidas, páginas lidas e não lidas e total pago informado nas edições. Reutilizar os dados do banner, excluir páginas de edições sem total informado e manter os critérios financeiros da Visão geral. Verificar renderização nas duas rotas iniciais, conta vazia e coleção com leitura parcial e valores informados.
+- VHOME-006 foi implementado em `dashboard/home.html` e `home-showcase.css`. A execução focada de `MinhaGibitecaApplicationTest#separatesVisualHomeFromOverviewAndShowsOnlyBoundedOwnedShelves` e `InterfaceIntegrationTest` com Maven verify passou. O caso de início verifica o resumo vazio, leitura parcial, valores em reais e exclusão de dados de outra conta. Sem novas consultas ou migrações.
 
 - [x] VH-T1 DTOs e serviço de vitrine, consultas JDBC parametrizadas com joins restritos ao proprietário e LIMIT 12; índices Flyway de proprietário/suporte/leitura/data.
 - [x] VH-T2 Separar rotas/template do painel e Início; adicionar Visão geral à navegação e retornos locais seguros; criar destaque, fileiras e estados vazios com CSS próprio.
