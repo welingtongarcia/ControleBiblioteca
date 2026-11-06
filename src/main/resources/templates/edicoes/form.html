@@ -163,13 +163,35 @@
         </fieldset>
         <fieldset id="edition-associations" tabindex="-1" class="edition-form-section">
             <legend>Vínculos bibliográficos</legend>
-            <p class="help-text">Associe os registros que você já cadastrou. Todos os vínculos são opcionais.</p>
+            <p class="help-text">Todos os vínculos são opcionais. Se faltar algum registro, use o atalho ao lado do campo. Depois de salvar na outra aba, volte aqui e use <strong>Atualizar lista</strong> ou <strong>Buscar</strong> para encontrar o novo registro.</p>
             <div class="edition-form-grid">
-                <div class="field"><label for="publisherId">Editora</label><select id="publisherId" th:field="*{publisherId}" th:attr="aria-invalid=${#fields.hasErrors('publisherId') ? 'true' : null},aria-describedby=${#fields.hasErrors('publisherId') ? 'publisherId-error' : null}"><option value="">Não informada</option><option th:each="item : ${publishers}" th:value="${item.id}" th:text="${item.name}"></option></select><p id="publisherId-error" class="field-error" th:if="${#fields.hasErrors('publisherId')}" th:errors="*{publisherId}"></p></div>
-                <div class="field"><label for="seriesId">Série</label><select id="seriesId" th:field="*{seriesId}" th:attr="aria-invalid=${#fields.hasErrors('seriesId') ? 'true' : null},aria-describedby=${#fields.hasErrors('seriesId') ? 'seriesId-error' : null}"><option value="">Não informada</option><option th:each="item : ${seriesPage.content}" th:value="${item.id}" th:text="${item.name}"></option></select><p id="seriesId-error" class="field-error" th:if="${#fields.hasErrors('seriesId')}" th:errors="*{seriesId}"></p></div>
-                <div th:replace="~{fragments/association-picker :: picker('workIds', 'Obras desta edição', 'WORK', ${works})}"></div>
-                <div th:replace="~{fragments/association-picker :: picker('creatorIds', 'Criadores desta edição', 'CREATOR', ${creators})}"></div>
-                <div class="edition-full-width"><div th:replace="~{fragments/association-picker :: picker('characterIds', 'Personagens desta edição', 'CHARACTER', ${characters})}"></div></div>
+                <div class="field association-refresh" th:data-url="@{/edicoes/vinculos/editoras}">
+                    <label for="publisherId">Editora</label>
+                    <select id="publisherId" th:field="*{publisherId}" th:attr="aria-invalid=${#fields.hasErrors('publisherId') ? 'true' : null},aria-describedby=${#fields.hasErrors('publisherId') ? 'publisherId-error' : null}">
+                        <option value="">Não informada</option><option th:each="item : ${publishers}" th:value="${item.id}" th:text="${item.name}"></option>
+                    </select>
+                    <p id="publisherId-error" class="field-error" th:if="${#fields.hasErrors('publisherId')}" th:errors="*{publisherId}"></p>
+                    <div class="association-actions">
+                        <a th:replace="~{fragments/association-picker :: createShortcut(@{/editoras/nova}, 'Nova editora')}"></a>
+                        <button type="button" hidden aria-label="Atualizar lista de editoras">Atualizar lista</button>
+                    </div>
+                    <span class="help-text" role="status"></span>
+                </div>
+                <div class="field association-refresh" th:data-url="@{/edicoes/vinculos/series-recentes}">
+                    <label for="seriesId">Série</label>
+                    <select id="seriesId" th:field="*{seriesId}" th:attr="aria-invalid=${#fields.hasErrors('seriesId') ? 'true' : null},aria-describedby=${#fields.hasErrors('seriesId') ? 'seriesId-error' : null}">
+                        <option value="">Não informada</option><option th:each="item : ${seriesOptions}" th:value="${item.id}" th:text="${item.name}"></option>
+                    </select>
+                    <p id="seriesId-error" class="field-error" th:if="${#fields.hasErrors('seriesId')}" th:errors="*{seriesId}"></p>
+                    <div class="association-actions">
+                        <a th:replace="~{fragments/association-picker :: createShortcut(@{/series/nova}, 'Nova série')}"></a>
+                        <button type="button" hidden aria-label="Atualizar lista de séries">Atualizar lista</button>
+                    </div>
+                    <span class="help-text" role="status"></span>
+                </div>
+                <div th:replace="~{fragments/association-picker :: picker('workIds', 'Obras e histórias desta edição', 'WORK', ${works}, @{/obras/nova}, 'Nova obra ou história')}"></div>
+                <div th:replace="~{fragments/association-picker :: picker('creatorIds', 'Criadores desta edição', 'CREATOR', ${creators}, @{/criadores/novo}, 'Novo criador')}"></div>
+                <div class="edition-full-width"><div th:replace="~{fragments/association-picker :: picker('characterIds', 'Personagens desta edição', 'CHARACTER', ${characters}, @{/personagens/novo}, 'Novo personagem')}"></div></div>
             </div>
         </fieldset>
         <fieldset id="edition-notes" tabindex="-1" class="edition-form-section">

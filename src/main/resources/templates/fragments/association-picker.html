@@ -1,7 +1,8 @@
 <!DOCTYPE html><html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"><body>
-<fieldset th:fragment="picker(field, title, kind, items)" th:id="${field}" tabindex="-1" class="edition-choice-group association-picker"
+<fieldset th:fragment="picker(field, title, kind, items, createUrl, createLabel)" th:id="${field}" tabindex="-1" class="edition-choice-group association-picker"
           th:attr="data-field=${field},data-url=@{/edicoes/vinculos/{kind}(kind=${kind})},aria-invalid=${#fields.hasErrors(field) ? 'true' : null},aria-describedby=${field + '-help' + (#fields.hasErrors(field) ? ' ' + field + '-error' : '')}">
     <legend th:text="${title}"></legend>
+    <a th:replace="~{fragments/association-picker :: createShortcut(${createUrl}, ${createLabel})}"></a>
     <p th:id="${field + '-help'}" class="help-text">Pesquise e adicione um ou mais registros. As seleções são mantidas ao mudar a busca. Todos os vínculos são opcionais.</p>
     <input type="hidden" th:name="${'_' + field}" value="on">
     <div class="picker-selected" hidden><h3>Selecionados <span class="picker-count">0</span></h3><div class="picker-chips"></div></div>
@@ -12,7 +13,7 @@
         <button type="button" class="picker-search">Buscar</button>
     </div>
     <p class="picker-status help-text" tabindex="-1" role="status" aria-live="polite" aria-atomic="true" th:attr="aria-label=${title}"></p>
-    <p class="help-text" th:if="${items.empty}" th:text="${kind == 'WORK' ? 'Nenhuma obra cadastrada. Você pode salvar sem vincular obras.' : (kind == 'CREATOR' ? 'Nenhum criador cadastrado. Você pode salvar sem vincular criadores.' : 'Nenhum personagem cadastrado. Você pode salvar sem vincular personagens.')}"></p>
+    <p class="help-text picker-initial-empty" th:if="${items.empty}" th:text="${kind == 'WORK' ? 'Nenhuma obra cadastrada. Você pode salvar sem vincular obras.' : (kind == 'CREATOR' ? 'Nenhum criador cadastrado. Você pode salvar sem vincular criadores.' : 'Nenhum personagem cadastrado. Você pode salvar sem vincular personagens.')}"></p>
     <div class="edition-choice-list picker-results">
         <label class="edition-choice" th:each="item : ${items}" th:attr="data-id=${item.id},data-label=${item.label},data-description=${item.description}">
             <input type="checkbox" th:field="*{__${field}__}" th:value="${item.id}"><span><span th:text="${item.label}"></span><small class="help-text" th:if="${!#strings.isEmpty(item.description)}" th:text="${item.description}"></small></span>
@@ -22,4 +23,6 @@
     <noscript><p class="help-text">Você pode marcar os registros exibidos e manter vínculos existentes. Habilite JavaScript para pesquisar todos os cadastros e acessar outras páginas.</p></noscript>
     <p th:id="${field + '-error'}" class="field-error" th:if="${#fields.hasErrors(field)}" th:errors="*{__${field}__}"></p>
 </fieldset>
+<a th:fragment="createShortcut(url, label)" th:href="${url}" target="_blank" rel="noopener noreferrer"
+   class="association-create"><span th:text="${label}"></span> <small>(nova aba)</small></a>
 </body></html>

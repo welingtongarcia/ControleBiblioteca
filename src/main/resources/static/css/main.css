@@ -179,6 +179,8 @@ select { background: #11151d; border: 1px solid #657084; border-radius: .5rem; c
 .creator-function-list { max-height: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); }
 .edition-choice small.help-text { display: block; margin-top: .25rem; }
 .edition-choice-empty { color: var(--muted); font-size: .85rem; border: 1px dashed #657084; border-radius: .5rem; padding: 1rem; line-height: 1.5; }
+.association-actions { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.association-create { display: inline-flex; flex-wrap: wrap; align-items: center; gap: .25rem; min-height: 2.75rem; width: fit-content; }
 .edition-form-footer { border-top: 1px solid #3a4251; padding-top: 1rem; }
 .edition-form-footer .form-actions { justify-content: flex-end; }
 .edition-form-footer a, .edition-errors a, .edition-form .isbn-suggestions > a { display: inline-flex; align-items: center; min-height: 2.75rem; overflow-wrap: anywhere; }

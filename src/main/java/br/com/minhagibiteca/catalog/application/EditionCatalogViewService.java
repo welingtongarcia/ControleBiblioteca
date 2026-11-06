@@ -1,5 +1,6 @@
 package br.com.minhagibiteca.catalog.application;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
@@ -32,6 +33,19 @@ public class EditionCatalogViewService {
     public Page<NamedOption> series(UUID owner) {
         return series.list(owner, "", PageRequest.of(0, 200, Sort.by("normalizedName")))
                 .map(s -> new NamedOption(s.getId(), s.getName()));
+    }
+    public List<NamedOption> recentSeries(UUID owner) {
+        return series.list(owner, "", PageRequest.of(0, 20, Sort.by(Sort.Order.desc("createdAt"), Sort.Order.asc("id"))))
+                .map(item -> new NamedOption(item.getId(), item.getName())).getContent();
+    }
+
+    public List<NamedOption> seriesForForm(UUID owner, UUID selectedId) {
+        var choices = new ArrayList<>(series(owner).getContent());
+        if (selectedId != null && choices.stream().noneMatch(item -> item.id().equals(selectedId))) {
+            choices.addAll(jdbc.query("select id, name from series where owner_user_id = ? and id = ?",
+                    (row, index) -> new NamedOption(row.getObject("id", UUID.class), row.getString("name")), owner, selectedId));
+        }
+        return choices;
     }
     public List<WorkOption> works(UUID owner) {
         return works.options(owner).stream().map(w -> new WorkOption(w.getId(), w.getTitle())).toList();

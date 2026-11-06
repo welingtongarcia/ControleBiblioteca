@@ -11,8 +11,8 @@ MVC/Thymeleaf/PostgreSQL preservados; JavaScript próprio como melhoria progress
 
 ## Plan → tasks → analyze
 
-- [ ] SEL-005: no cadastro e na edição de volumes, oferecer atalhos junto a editora, série, obras (histórias), criadores e personagens. Abrir os formulários existentes em outra aba para preservar o rascunho. Ao voltar, permitir atualizar editoras e séries sem recarregar a página e usar a busca existente para os demais vínculos. A atualização é autenticada, restrita à própria conta e mantém a seleção atual. Para séries, incluir as 20 mais recentes na atualização para alcançar cadastros fora das primeiras 200 em ordem alfabética.
-- [ ] Verificar os cinco atalhos nos dois formulários, a atualização com série nova fora das primeiras 200 e o isolamento entre contas. Sem alteração de esquema.
+- [x] SEL-005: no cadastro e na edição de volumes, oferecer atalhos junto a editora, série, obras (histórias), criadores e personagens. Abrir os formulários existentes em outra aba para preservar o rascunho. Ao voltar, permitir atualizar editoras e séries sem recarregar a página e usar a busca existente para os demais vínculos. A atualização é autenticada, restrita à própria conta e mantém a seleção atual. Para séries, incluir as 20 mais recentes na atualização para alcançar cadastros fora das primeiras 200 em ordem alfabética.
+- [x] Verificar os cinco atalhos nos dois formulários, a atualização com série nova fora das primeiras 200 e o isolamento entre contas. Sem alteração de esquema.
 
 - [x] T1 Implementar repositório paginado e serviço de opções/seleções; controlador JSON e integração ao formulário.
 - [x] T2 Fragmento reutilizável, JS próprio, filtro de criadores e CSS responsivo; fallback honesto.
@@ -21,6 +21,9 @@ MVC/Thymeleaf/PostgreSQL preservados; JavaScript próprio como melhoria progress
 Análise: listas atuais carregam todo o acervo; opções de criadores podem provocar consultas adicionais de funções. Usar JDBC com agregação de funções em uma consulta por conjunto, índices existentes de proprietário e creator_functions; busca por substring normalizada fará scan do recorte do proprietário, sem extensão unaccent ou alteração de esquema. Não alegar benchmark. ISBN/metadados mantêm métodos de correspondência existentes fora deste escopo.
 
 ## Implementação → verificação
+
+- SEL-005: atalhos em `edicoes/form.html` e `association-picker.html`, atualização em `association-picker.js`, `AssociationOptionsController` e `EditionCatalogViewService`. A atualização de editoras e séries precisa de JavaScript. Os atalhos abrem em outra aba com ou sem JavaScript, e o vínculo é escolhido no formulário da edição. Sem migração.
+- `./mvnw -q -Dtest=InterfaceIntegrationTest,MinhaGibitecaApplicationTest verify`: 90 testes aprovados. MockMvc verificou os cinco destinos no cadastro e na edição, respostas restritas à conta e a seleção da série fora das primeiras 200 após erro de validação. `node --check` e exercício do JavaScript com resposta simulada verificaram sintaxe, preservação da seleção e falha de rede. `git diff --check` aprovado.
 
 - SEL-001/003: `AssociationOptionsRepository`, `AssociationOptionsService` e `AssociationOptionsController` entregam GET `/edicoes/vinculos/{WORK|CREATOR|CHARACTER}` autenticado e no-store. SQL parametrizado, tabela/colunas determinadas exclusivamente pelo enum, LIMIT 21 (20 retornados + indicador de próxima página), normalização de acentos via translate/lower, escapes literais e filtro de função com EXISTS. Funções agregadas numa consulta, sem N+1 de leitura de entidades.
 - SEL-002: `EditionController.form` carrega somente primeira página mais seleções autorizadas por ID. Fragmento `association-picker.html`, `association-picker.js` e CSS compartilhado exibem contador, chips com remoção e inputs ocultos com nomes originais; marcadores Spring preservados. POST/CSRF/validações de proprietário e transação existentes não foram modificados. Edição e erros de validação reconstroem escolhas mesmo fora da primeira página.

@@ -1,5 +1,38 @@
 (() => {
     'use strict';
+    document.querySelectorAll('.association-refresh').forEach(field => {
+        const select = field.querySelector('select');
+        const button = field.querySelector('button');
+        const status = field.querySelector('[role=status]');
+        button.hidden = false;
+        button.addEventListener('click', async () => {
+            button.disabled = true;
+            status.textContent = 'Atualizando lista…';
+            try {
+                const response = await fetch(field.dataset.url, {
+                    headers: { Accept: 'application/json' }, cache: 'no-store'
+                });
+                if (!response.ok || !response.headers.get('content-type')?.includes('application/json')) {
+                    throw new Error('refresh');
+                }
+                const items = await response.json();
+                const value = select.value;
+                const options = new Map(Array.from(select.options, option => [option.value, option.text]));
+                items.forEach(item => options.set(item.id, item.name));
+                const placeholder = options.get('');
+                options.delete('');
+                const sorted = [...options].sort((a, b) => a[1].localeCompare(b[1], 'pt-BR'));
+                select.replaceChildren(new Option(placeholder, ''), ...sorted.map(([id, name]) => new Option(name, id)));
+                select.value = value;
+                status.textContent = 'Lista atualizada. Escolha o registro que deseja vincular.';
+            } catch {
+                status.textContent = 'Não foi possível atualizar a lista. Tente novamente.';
+            } finally {
+                button.disabled = false;
+            }
+        });
+    });
+
     document.querySelectorAll('.association-picker').forEach(picker => {
         const field = picker.dataset.field;
         const results = picker.querySelector('.picker-results');
@@ -84,6 +117,7 @@
             } finally { if (request === generation) results.removeAttribute('aria-busy'); }
         }
         picker.querySelector('.picker-controls').hidden = false;
+        picker.querySelector('.picker-initial-empty')?.remove();
         picker.querySelector('.picker-selected').hidden = false;
         search.addEventListener('input', () => {
             clearTimeout(timer); ++generation; if (controller) controller.abort();

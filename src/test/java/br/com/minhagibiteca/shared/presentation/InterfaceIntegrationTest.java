@@ -189,6 +189,46 @@ class InterfaceIntegrationTest {
         }
     }
     static void preview(String name,String html) throws Exception {Files.writeString(PREVIEW.resolve(name+".html"),html);}
+    @Test void editionFormsLinkToRelatedRegistrationAndOfferPrivateRefresh() throws Exception {
+        var auth = user(UserPrincipal.from(owner));
+        var shortcuts = List.of("/editoras/nova", "/series/nova", "/obras/nova", "/criadores/novo", "/personagens/novo");
+        for (var path : List.of("/edicoes/nova", "/edicoes/" + edition + "/editar")) {
+            var html = mvc.perform(get(path).with(auth)).andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+            var page = org.jsoup.Jsoup.parse(html);
+            assertThat(page.select("#edition-associations a[target=_blank][rel~=noopener]").eachAttr("href"))
+                    .containsExactlyElementsOf(shortcuts);
+        }
+
+        jdbc.update("""
+                insert into series(id, owner_user_id, name, normalized_name)
+                select gen_random_uuid(), ?, 'A Série ' || n, 'a série ' || n
+                from generate_series(1, 201) n
+                """, owner.getId());
+        var newSeries = UUID.randomUUID();
+        jdbc.update("insert into series(id, owner_user_id, name, normalized_name) values (?, ?, ?, ?)",
+                newSeries, owner.getId(), "Última série", "última série");
+        var privateSeries = UUID.randomUUID();
+        jdbc.update("insert into series(id, owner_user_id, name, normalized_name) values (?, ?, ?, ?)",
+                privateSeries, empty.getId(), "Série privada", "série privada");
+
+        var refresh = mvc.perform(get("/edicoes/vinculos/series-recentes").with(auth)).andExpect(status().isOk())
+                .andExpect(header().string("Cache-Control", "no-store"))
+                .andExpect(jsonPath("$.length()").value(20)).andReturn().getResponse().getContentAsString();
+        assertThat(refresh).contains(newSeries.toString()).doesNotContain(privateSeries.toString());
+        mvc.perform(get("/edicoes/vinculos/editoras").with(auth)).andExpect(status().isOk())
+                .andExpect(header().string("Cache-Control", "no-store"))
+                .andExpect(jsonPath("$[0].id").value(publisher.toString()));
+        mvc.perform(get("/edicoes/vinculos/editoras").with(user(UserPrincipal.from(empty))))
+                .andExpect(jsonPath("$.length()").value(0));
+
+        var invalid = mvc.perform(post("/edicoes").with(auth).with(csrf()).param("seriesId", newSeries.toString()))
+                .andExpect(status().isOk()).andExpect(model().attributeHasFieldErrors("editionForm", "title"))
+                .andReturn().getResponse().getContentAsString();
+        assertThat(org.jsoup.Jsoup.parse(invalid).select("#seriesId option[selected]").eachAttr("value"))
+                .containsExactly(newSeries.toString());
+    }
+
     @Test void associationSearchIsPaginatedAccentInsensitiveLiteralAndPrivate() throws Exception {
         for (var kind : List.of("WORK", "CREATOR", "CHARACTER")) {
             String table = kind.equals("WORK") ? "works" : kind.equals("CREATOR") ? "creators" : "comic_characters";
