@@ -12,6 +12,8 @@ Constituição mantida. Pedido: transferir o painel atual para a aba **Visão ge
 
 ## Plan → tasks
 
+- [ ] VHOME-006: exibir abaixo do cabeçalho uma faixa discreta e responsiva com edições lidas e não lidas, páginas lidas e não lidas e total pago informado nas edições. Reutilizar os dados do banner, excluir páginas de edições sem total informado e manter os critérios financeiros da Visão geral. Verificar renderização nas duas rotas iniciais, conta vazia e coleção com leitura parcial e valores informados.
+
 - [x] VH-T1 DTOs e serviço de vitrine, consultas JDBC parametrizadas com joins restritos ao proprietário e LIMIT 12; índices Flyway de proprietário/suporte/leitura/data.
 - [x] VH-T2 Separar rotas/template do painel e Início; adicionar Visão geral à navegação e retornos locais seguros; criar destaque, fileiras e estados vazios com CSS próprio.
 - [x] VH-T3 JUnit/Mockito, MockMvc e PostgreSQL: seleção/limites/isolamento, rotas privadas, estatísticas preservadas, links de capa/detalhe, retornos seguros, atualização e XSS. Atualizar testes existentes para a nova rota do painel.
