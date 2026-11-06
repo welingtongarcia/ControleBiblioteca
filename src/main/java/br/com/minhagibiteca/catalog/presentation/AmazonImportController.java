@@ -24,6 +24,8 @@ public class AmazonImportController {
         if(errors.hasErrors()) { flash.addFlashAttribute("amazonMessage","Corrija os campos com valores inválidos antes de importar. Seus dados foram preservados.");return "redirect:/edicoes/nova"; }
         try {
             var preview=imports.search(user.id(),amazonLink);
+            form.setAmazonCoverToken(null);
+            form.setUseAmazonCover(false);
             flash.addFlashAttribute("amazonPreview",preview);
             flash.addFlashAttribute("amazonLink",preview.productUrl());
             flash.addFlashAttribute("amazonMessage",preview.message());
@@ -37,6 +39,7 @@ public class AmazonImportController {
         if(errors.hasErrors()) { flash.addFlashAttribute("amazonMessage","Corrija os campos com valores inválidos e consulte o link novamente. Seus dados foram preservados.");return "redirect:/edicoes/nova"; }
         try {
             var preview=imports.select(user.id(),amazonToken);var found=preview.metadata();
+            form.setAmazonCoverToken(found.coverUrl() == null ? null : preview.token().toString());
             if(blank(form.getTitle())) form.setTitle(found.title());
             if(blank(form.getIsbn())) form.setIsbn(found.isbn());
             if(form.getPublicationYear()==null) form.setPublicationYear(found.year());

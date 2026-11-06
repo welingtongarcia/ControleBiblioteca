@@ -31,6 +31,14 @@
             <div class="field"><label for="amazonLink">Link do produto na Amazon Brasil</label><input id="amazonLink" type="url" name="amazonLink" th:value="${amazonLink}" maxlength="2048" placeholder="https://www.amazon.com.br/dp/655448244X" aria-describedby="amazon-help"></div>
             <button type="submit" th:formaction="@{/edicoes/amazon/buscar}" formnovalidate>Buscar dados pelo link</button>
             <p class="alert" th:if="${amazonMessage}" th:text="${amazonMessage}" role="status"></p>
+            <div class="field" th:if="${amazonPreview?.metadata?.coverUrl != null or editionForm.amazonCoverToken != null}">
+                <input type="hidden" name="amazonCoverToken" th:value="${amazonPreview != null ? amazonPreview.token : editionForm.amazonCoverToken}">
+                <label class="edition-choice">
+                    <input type="checkbox" th:field="*{useAmazonCover}" aria-describedby="amazon-cover-help">
+                    <span>Usar capa da Amazon</span>
+                </label>
+                <p id="amazon-cover-help" class="help-text">A capa será baixada ao salvar a edição. Se a imagem estiver indisponível, você poderá enviar uma capa depois.</p>
+            </div>
             <section class="isbn-suggestions" th:if="${amazonPreview}" aria-labelledby="amazon-preview-title">
                 <h2 id="amazon-preview-title">Confira os dados antes de aplicar</h2>
                 <dl class="details-list">
@@ -49,7 +57,7 @@
                 <button th:if="${amazonPreview.metadata.title != null or amazonPreview.metadata.isbn != null}" type="submit" th:formaction="@{/edicoes/amazon/aplicar}" formnovalidate>Aplicar sugestões nos campos vazios</button>
             </section>
             <p class="help-text" th:if="${amazonApplied}">Sugestões aplicadas a partir de <span th:text="${amazonApplied.metadata.sourceName}"></span>. O cadastro só será concluído ao salvar.</p>
-            <p class="help-text">A Amazon pode bloquear consultas ou não fornecer todos os dados. Nesse caso, tentaremos as fontes bibliográficas pelo ISBN válido, quando disponível. Editora e criadores só são vinculados se já existirem na sua conta com nome único. A sinopse vai para observações apenas se estiverem vazias. Capa não é baixada: envie-a após salvar. Preço, data da compra, suporte, tipo de publicação e leitura não são importados.</p>
+            <p class="help-text">A Amazon pode bloquear consultas ou não fornecer todos os dados. Nesse caso, tentaremos as fontes bibliográficas pelo ISBN válido, quando disponível. Editora e criadores só são vinculados se já existirem na sua conta com nome único. A sinopse vai para observações apenas se estiverem vazias. Preço, data da compra, suporte, tipo de publicação e leitura não são importados.</p>
         </fieldset>
         <fieldset class="edition-form-section" th:if="${editionId == null}">
             <legend>Buscar dados pelo título <span class="edition-optional">opcional</span></legend>

@@ -4,7 +4,7 @@ Em **Minha coleção → Catálogo de edições → Nova edição**, use **Impor
 
 1. Cole o endereço completo do produto na Amazon Brasil.
 2. Clique em **Buscar dados pelo link**.
-3. Confira a prévia, a fonte, ISBN, editora e demais campos disponíveis.
+3. Confira a prévia, a fonte, ISBN, editora e demais campos disponíveis. Marque **Usar capa da Amazon** se quiser aproveitar a imagem encontrada.
 4. Clique em **Aplicar sugestões nos campos vazios**.
 5. Revise o formulário e clique em salvar para realmente cadastrar a edição.
 
@@ -16,7 +16,7 @@ Título, ISBN, ano, páginas, formato e sinopse (no campo observações, apenas 
 
 Tipo de publicação (Livro/Quadrinho), suporte (físico/digital), preço, data da compra, número editorial, personagens, avaliação e progresso de leitura continuam manuais. O preço anunciado não representa o valor pago e não entra no financeiro.
 
-A capa, quando identificada, aparece como **Consultar capa**. Não é baixada ou salva automaticamente. Depois de salvar a edição, o envio de capa continua disponível pelos mecanismos existentes.
+A capa identificada pode ser conferida em **Consultar capa**. Ao salvar com **Usar capa da Amazon** marcado, a aplicação baixa a imagem e a guarda junto às demais capas. A prévia expira em dez minutos. Se a prévia expirar ou a imagem falhar, a edição é cadastrada e você pode enviar a capa pela tela de detalhes.
 
 ## Links aceitos
 
@@ -38,4 +38,4 @@ Se nenhuma fonte retornar dados, o ISBN identificado ainda pode ser aplicado, ou
 
 Somente a URL canônica/ASIN e, no fallback, o ISBN são enviados aos serviços; seu rascunho, preços, observações e identidade da conta não são enviados. HTTP sem redirects ou cookies de conta, com timeout e resposta HTML limitada a 2 MiB descompactados. Consultas novas têm intervalo mínimo de dois segundos; até 200 prévias ficam em memória por dez minutos. Reiniciar a aplicação invalida as prévias, não os cadastros salvos.
 
-O HTML externo nunca é exibido diretamente. Capas só recebem link para hosts HTTPS permitidos da Amazon; nenhuma imagem é requisitada automaticamente pelo navegador na prévia. O recurso não garante a presença de todos os campos nem a estabilidade do serviço da loja.
+O HTML externo nunca é exibido diretamente. O download opcional de capa aceita apenas hosts HTTPS permitidos da Amazon, com imagens PNG ou JPEG de até 5 MB e 40 milhões de pixels. A disponibilidade depende da ficha do produto e do servidor de imagens.

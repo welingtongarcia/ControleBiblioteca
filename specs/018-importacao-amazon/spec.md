@@ -2,7 +2,7 @@
 
 ## Constituição, escopo e esclarecimentos
 
-Aplicam-se a constituição e AGENTS.md: monólito MVC Java 21, pt-BR, CSRF, PRG, dados privados por proprietário e nenhuma persistência sem confirmação. Somente cadastro de nova edição; edição existente, compras, leitura e uploads não mudam. Sem API paga, credenciais Amazon, sessão de cliente, automação de navegador, proxy, solução de CAPTCHA ou contorno de bloqueios.
+Aplicam-se a constituição e AGENTS.md: monólito MVC Java 21, pt-BR, CSRF, PRG, dados privados por proprietário e nenhuma persistência sem confirmação. A importação é exclusiva do cadastro de nova edição. A validação de conteúdo e dimensões da capa é compartilhada com o envio manual. Sem API paga, credenciais Amazon, sessão de cliente, automação de navegador, proxy, solução de CAPTCHA ou contorno de bloqueios.
 
 ## Requisitos
 
@@ -16,7 +16,7 @@ Aplicam-se a constituição e AGENTS.md: monólito MVC Java 21, pt-BR, CSRF, PRG
 
 ## Plano e tarefas
 
-- [ ] AM-07: preservar opção no formulário, validar token ao salvar e reutilizar o serviço de capas com download limitado. Verificar fluxo MVC, conteúdo rejeitado e falha sem perder a edição. Sem alteração de esquema.
+- [x] AM-07: preservar opção no formulário, validar token ao salvar e reutilizar o serviço de capas com download limitado. Verificar fluxo MVC, conteúdo rejeitado e falha sem perder a edição. Sem alteração de esquema.
 
 1. Parser de link e DTO de sugestões na aplicação, cliente HTTP restrito e parser HTML jsoup na infraestrutura.
 2. Serviço com fallback ISBN, cache de prévias isolado por usuário e expiração; duas rotas no controller existente para preservar binder/rascunho.
@@ -29,7 +29,7 @@ Aplicam-se a constituição e AGENTS.md: monólito MVC Java 21, pt-BR, CSRF, PRG
 
 Análise: nenhuma alteração de esquema/Flyway necessária. API oficial Amazon possui requisitos e restrições de uso; esta consulta pública não garante disponibilidade ou estabilidade. Acesso negado é condição normal e deve resultar em aviso, não evasão. jsoup é apenas parser Java; não introduz runtime frontend. Chaves Google Books existentes não serão criadas nem alteradas. Não haverá indexação de outro site nem importação via Maratona.
 
-## Verificação — 27/10/2026
+## Verificação da entrega inicial — 27/10/2026
 
 - `JAVA_HOME=/usr/lib/jvm/java-1.21.0-openjdk-amd64 ./mvnw -q clean verify`: saída 0; 34 suítes, **281 testes**, zero falhas/erros/ignorados. Empacotamento JAR concluído. Novos testes: 6 de URLs/cache/fallback, 6 de parser/HTTP/gzip/limites e 2 fluxos MockMvc com PostgreSQL isolado. Verificados CSRF/autenticação, token de outro proprietário, expiração, consulta sem persistir, confirmação explícita, edição de campos manuais, dinheiro pt-BR, associações da própria conta, XSS, páginas inválidas, redirects e resposta não HTML.
 - Consulta real do cliente Java 21 ao produto `655448244X`: título Thorgal: Série Clássica (Vol. 1 de 4), ISBN `9786554482448`, 420 páginas, ano 2025, editora Pipoca e Nanquim, nomes de criadores, sinopse e referência de capa encontrados. Sem login Amazon, imagens baixadas ou dados pessoais enviados. O resultado real não foi gravado no acervo do usuário.
@@ -41,3 +41,10 @@ Arquivos: `AmazonProductLink`, `AmazonMetadata`, `AmazonPageProvider`, `AmazonIm
 Evidências temporárias: `/tmp/amazon-verify.log`, relatórios `target/surefire-reports/`, prévia `target/ui-review/amazon-preview.html`. Rodadas intermediárias corrigiram uma asserção de teste que não compilava e a limpeza de FKs do banco de teste; somente a rodada limpa final foi considerada concluída.
 
 Pendências e riscos: a disponibilidade futura depende da Amazon e da cobertura das fontes bibliográficas; links curtos/outros países não são suportados; ISBN ausente/ASIN Kindle não será inventado. Capa é referência, sem importação automática. Autores/editora sem correspondência local exigem cadastro manual. A sinopse preenche observações apenas quando vazias. A instância do usuário não foi reiniciada nem foi realizada publicação no GitHub; reiniciar pelo IntelliJ para carregar as classes novas. Não se afirma suporte a todos os produtos ou layouts Amazon.
+
+## Verificação da opção de capa — 06/11/2026
+
+- `./mvnw -q clean verify` com Java 21 e `git diff --check` retornaram código 0. Foram 282 testes em 34 suítes, com zero falhas, erros ou testes ignorados.
+- MockMvc e PostgreSQL isolado verificaram prévia com opção desmarcada, seleção preservada, validação antes do download, token de outro proprietário, imagem salva e servida pela rota de capa e edição preservada quando o formato real diverge do declarado. O cliente foi testado com host indevido, redirecionamento, resposta HTML e tamanho excedido.
+- O cliente baixou e decodificou a capa JPEG de 1159 × 1500 pixels do produto `655448244X` sem gravá-la no acervo. O download depende da disponibilidade da imagem e da validade da prévia.
+- Arquivos principais: `AmazonCoverImportService`, `AmazonCoverProvider`, `AmazonCoverClient`, `EditionCoverService`, formulário e controllers de cadastro, testes de importação e guia `docs/importacao-amazon.md`.

@@ -67,6 +67,27 @@ class AmazonPageClientTest {
             assertThat(connection.disconnected).isTrue();
         }
     }
+    @Test void downloadsCoverOnlyFromApprovedHostsAndRejectsInvalidResponses() {
+        String url = "https://m.media-amazon.com/images/I/capa.jpg";
+        var ok = new FakeConnection(200, "image/jpeg", null, new byte[]{1, 2});
+        var client = new AmazonCoverClient(uri -> {
+            assertThat(uri.toString()).isEqualTo(url);
+            return ok;
+        });
+        assertThat(client.download(url + "?tracking=private").bytes()).containsExactly(1, 2);
+        assertThat(ok.getInstanceFollowRedirects()).isFalse();
+        assertThat(ok.disconnected).isTrue();
+        assertThatThrownBy(() -> client.download("https://m.media-amazon.com.evil.example/capa.jpg"))
+                .isInstanceOf(AmazonImportService.ImportException.class);
+        for (var rejected : List.of(new FakeConnection(302, "image/jpeg", null, new byte[0]),
+                new FakeConnection(200, "text/html", null, new byte[0]),
+                new FakeConnection(200, "image/png", null, new byte[5 * 1024 * 1024 + 1]))) {
+            assertThatThrownBy(() -> new AmazonCoverClient(uri -> rejected).download(url))
+                    .isInstanceOf(AmazonImportService.ImportException.class);
+            assertThat(rejected.disconnected).isTrue();
+        }
+    }
+
     static class FakeConnection extends HttpURLConnection {
         final int status;final String type,encoding;final byte[] body;boolean disconnected;
         FakeConnection(int status,String type,String encoding,byte[] body) { super(url());this.status=status;this.type=type;this.encoding=encoding;this.body=body; }

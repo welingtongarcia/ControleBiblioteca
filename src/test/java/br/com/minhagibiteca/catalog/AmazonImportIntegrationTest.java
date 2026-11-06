@@ -23,12 +23,14 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest @AutoConfigureMockMvc @Testcontainers
+@SpringBootTest(properties = "app.cover-storage-path=target/test-amazon-covers") @AutoConfigureMockMvc @Testcontainers
 class AmazonImportIntegrationTest {
+    private static final String IMAGE_URL = "https://m.media-amazon.com/images/I/capa.png";
     @Container static final PostgreSQLContainer<?> POSTGRES=new PostgreSQLContainer<>("postgres:16-alpine");
     @DynamicPropertySource static void database(DynamicPropertyRegistry r) { r.add("spring.datasource.url",POSTGRES::getJdbcUrl);r.add("spring.datasource.username",POSTGRES::getUsername);r.add("spring.datasource.password",POSTGRES::getPassword); }
     @Autowired MockMvc mvc;@Autowired JdbcTemplate jdbc;@Autowired UserAccountRepository users;
     @MockitoBean AmazonPageProvider page;@MockitoBean IsbnLookupService isbn;
+    @MockitoBean AmazonCoverProvider coverProvider;
     UserAccount owner,other;
     @BeforeEach void setup() {
         jdbc.update("delete from editions");
@@ -43,7 +45,7 @@ class AmazonImportIntegrationTest {
         UUID publisher=UUID.randomUUID(),foreignPublisher=UUID.randomUUID(),creator=UUID.randomUUID();
         jdbc.update("insert into publishers(id,owner_user_id,name,normalized_name) values(?,?,'Editora Amazon','editora amazon'),(?,?,'Editora Amazon','editora amazon')",publisher,owner.getId(),foreignPublisher,other.getId());
         jdbc.update("insert into creators(id,owner_user_id,name,normalized_name) values(?,?,'Criador Amazon','criador amazon')",creator,owner.getId());
-        var metadata=new AmazonMetadata(product.isbn(),"Thorgal <especial>",2025,420,"Capa dura",List.of("Editora Amazon"),List.of("Criador Amazon"),"Sinopse encontrada",null,"Amazon Brasil",product.url());
+        var metadata=new AmazonMetadata(product.isbn(),"Thorgal <especial>",2025,420,"Capa dura",List.of("Editora Amazon"),List.of("Criador Amazon"),"Sinopse encontrada",IMAGE_URL,"Amazon Brasil",product.url());
         when(page.lookup(product)).thenReturn(Optional.of(metadata));
         mvc.perform(post("/edicoes/amazon/buscar").with(auth).param("amazonLink",product.url())).andExpect(status().isForbidden());
         mvc.perform(post("/edicoes/amazon/buscar").with(csrf()).param("amazonLink",product.url())).andExpect(status().is3xxRedirection());
@@ -55,7 +57,7 @@ class AmazonImportIntegrationTest {
         assertThat(draft.getTitle()).isNull();assertThat(draft.getReferencePaidPrice()).isEqualByComparingTo("19.50");
         assertThat(jdbc.queryForObject("select count(*) from editions",Long.class)).isZero();
         String html=mvc.perform(get("/edicoes/nova").with(auth).flashAttrs(search.getFlashMap())).andExpect(status().isOk()).andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
-        assertThat(html).contains("Confira os dados antes de aplicar","Thorgal &lt;especial&gt;","name=\"_csrf\"","/edicoes/amazon/aplicar").doesNotContain("Thorgal <especial>","tracking=private");
+        assertThat(html).contains("Confira os dados antes de aplicar","Thorgal &lt;especial&gt;","name=\"_csrf\"","/edicoes/amazon/aplicar","Usar capa da Amazon").doesNotContain("Thorgal <especial>","tracking=private");
         Files.createDirectories(Path.of("target/ui-review"));Files.writeString(Path.of("target/ui-review/amazon-preview.html"),html);
         mvc.perform(post("/edicoes/amazon/aplicar").with(auth).param("amazonToken",preview.token().toString())).andExpect(status().isForbidden());
         mvc.perform(post("/edicoes/amazon/aplicar").with(user(UserPrincipal.from(other))).with(csrf()).param("amazonToken",preview.token().toString())).andExpect(flash().attributeExists("amazonMessage"));
@@ -74,10 +76,11 @@ class AmazonImportIntegrationTest {
         var manual=(EditionForm)preserved.getFlashMap().get("editionForm");
         assertThat(manual.getTitle()).isEqualTo("Título manual");assertThat(manual.getIsbn()).isEqualTo("manual");assertThat(manual.getPublicationYear()).isEqualTo(2020);
         assertThat(manual.getTotalPages()).isEqualTo(500);assertThat(manual.getFormat()).isEqualTo("Meu formato");assertThat(manual.getNotes()).isEqualTo("Minhas notas");
-        mvc.perform(post("/edicoes").with(auth).with(csrf()).param("title",form.getTitle()).param("isbn",form.getIsbn()).param("totalPages","420"))
+        mvc.perform(post("/edicoes").with(auth).with(csrf()).param("title",form.getTitle()).param("isbn",form.getIsbn()).param("totalPages","420").param("amazonCoverToken",preview.token().toString()))
                 .andExpect(status().is3xxRedirection());
         assertThat(jdbc.queryForObject("select count(*) from editions where owner_user_id=?",Long.class,owner.getId())).isEqualTo(1);
         verifyNoInteractions(isbn);
+        verifyCoverSelection(preview.token().toString());
     }
     @Test void invalidLinkAndBindingErrorsPreserveDraftWithoutRequests() throws Exception {
         var auth=user(UserPrincipal.from(owner));
@@ -92,5 +95,38 @@ class AmazonImportIntegrationTest {
             assertThat(((EditionForm)result.getFlashMap().get("editionForm")).getNotes()).isEqualTo("Não perder");
         }
         verifyNoInteractions(page,isbn);
+    }
+
+    private void verifyCoverSelection(String token) throws Exception {
+        var auth = user(UserPrincipal.from(owner));
+        var applied = mvc.perform(post("/edicoes/amazon/aplicar").with(auth).with(csrf())
+                .param("amazonToken", token).param("useAmazonCover", "true"))
+                .andExpect(redirectedUrl("/edicoes/nova")).andReturn();
+        var draft = (EditionForm) applied.getFlashMap().get("editionForm");
+        assertThat(draft.isUseAmazonCover()).isTrue();
+        assertThat(draft.getAmazonCoverToken()).isEqualTo(token);
+        mvc.perform(post("/edicoes").with(auth).with(csrf()).param("amazonCoverToken", token).param("useAmazonCover", "true"))
+                .andExpect(status().isOk()).andExpect(model().attributeHasFieldErrors("editionForm", "title"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(token)));
+        mvc.perform(post("/edicoes").with(user(UserPrincipal.from(other))).with(csrf())
+                .param("title", "Outra edição").param("amazonCoverToken", token).param("useAmazonCover", "true"))
+                .andExpect(flash().attribute("successMessage", org.hamcrest.Matchers.containsString("Não foi possível importar")));
+        verifyNoInteractions(coverProvider);
+
+        var buffer = new java.io.ByteArrayOutputStream();
+        javax.imageio.ImageIO.write(new java.awt.image.BufferedImage(2, 2, java.awt.image.BufferedImage.TYPE_INT_RGB), "png", buffer);
+        byte[] png = buffer.toByteArray();
+        when(coverProvider.download(IMAGE_URL)).thenReturn(new AmazonCoverProvider.Image(png, "image/png"));
+        var saved = mvc.perform(post("/edicoes").with(auth).with(csrf())
+                .param("title", draft.getTitle()).param("amazonCoverToken", token).param("useAmazonCover", "true"))
+                .andExpect(flash().attribute("successMessage", "Edição cadastrada com a capa da Amazon.")).andReturn();
+        mvc.perform(get(saved.getResponse().getRedirectedUrl() + "/capa").with(auth))
+                .andExpect(status().isOk()).andExpect(content().contentType("image/png")).andExpect(content().bytes(png));
+
+        when(coverProvider.download(IMAGE_URL)).thenReturn(new AmazonCoverProvider.Image(png, "image/jpeg"));
+        mvc.perform(post("/edicoes").with(auth).with(csrf())
+                .param("title", "Capa inválida").param("amazonCoverToken", token).param("useAmazonCover", "true"))
+                .andExpect(flash().attribute("successMessage", org.hamcrest.Matchers.containsString("Não foi possível importar")));
+        assertThat(jdbc.queryForObject("select count(*) from editions where cover_file_name is null", Long.class)).isEqualTo(3);
     }
 }

@@ -10,6 +10,12 @@ public class EditionForm { private UUID publisherId,seriesId; private List<UUID>
  public boolean isPurchaseDateValid(){return purchaseDate==null || !purchaseDate.isBefore(java.time.LocalDate.of(1900,1,1));}
  public java.time.LocalDate getPurchaseDate(){return purchaseDate;} public void setPurchaseDate(java.time.LocalDate value){purchaseDate=value;}
  private MediaType mediaType = MediaType.PHYSICAL;
+ private String amazonCoverToken;
+ private boolean useAmazonCover;
+ public String getAmazonCoverToken() { return amazonCoverToken; }
+ public void setAmazonCoverToken(String value) { amazonCoverToken = value; }
+ public boolean isUseAmazonCover() { return useAmazonCover; }
+ public void setUseAmazonCover(boolean value) { useAmazonCover = value; }
  @NotNull(message="Informe o tipo de publicação.") private br.com.minhagibiteca.catalog.domain.PublicationType publicationType = br.com.minhagibiteca.catalog.domain.PublicationType.COMIC;
  public br.com.minhagibiteca.catalog.domain.PublicationType getPublicationType(){return publicationType;}
  public void setPublicationType(br.com.minhagibiteca.catalog.domain.PublicationType value){publicationType=value;}
