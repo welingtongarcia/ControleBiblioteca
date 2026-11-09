@@ -54,6 +54,24 @@ public final class EditionSpecifications {
             if (filter.mediaType() != null) predicates.add(cb.equal(root.get("mediaType"), filter.mediaType()));
             if (filter.publicationType() != null) predicates.add(cb.equal(root.get("publicationType"), filter.publicationType()));
             if (!filter.format().isBlank()) predicates.add(cb.equal(cb.lower(root.get("format")), filter.format().toLowerCase(Locale.ROOT)));
+            switch (filter.reading()) {
+                case READ -> predicates.add(cb.isTrue(root.get("read")));
+                case UNREAD -> predicates.add(cb.isFalse(root.get("read")));
+                case IN_PROGRESS -> {
+                    predicates.add(cb.isFalse(root.get("read")));
+                    predicates.add(cb.greaterThan(root.get("pagesRead"), 0));
+                }
+                case ALL -> { }
+            }
+            String missingProperty = switch (filter.missing()) {
+                case COVER -> "coverFileName";
+                case PAGES -> "totalPages";
+                case PUBLISHER -> "publisherId";
+                case SERIES -> "seriesId";
+                case PAID -> "referencePaidPrice";
+                case NONE -> null;
+            };
+            if (missingProperty != null) predicates.add(cb.isNull(root.get(missingProperty)));
             return cb.and(predicates.toArray(Predicate[]::new));
         };
     }

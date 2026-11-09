@@ -49,7 +49,7 @@ public record NavigationContext(String key, String label, String listUrl, String
     private static List<String> parameters(String path) {
         if (path.equals("/biblioteca-digital")) return List.of("q", "extension", "page");
         if (path.equals("/desejos")) return List.of("q", "status", "page");
-        if (path.equals("/edicoes")) return List.of("q", "publisherId", "seriesId", "format", "mediaType", "publicationType", "order", "page");
+        if (path.equals("/edicoes")) return List.of("q", "publisherId", "seriesId", "format", "mediaType", "publicationType", "reading", "missing", "order", "page");
         if (path.equals("/financeiro")) return List.of("start", "end", "seriesId", "creatorId", "characterId", "publisherId", "mediaType", "ranking", "page");
         if (path.equals("/relatorios")) return List.of("q", "start", "end", "seriesId", "creatorId", "creatorFunction", "characterId", "publisherId", "mediaType", "reading", "type", "page");
         if (path.matches("/series/" + UUID_PATTERN + "/(checklist|faltantes)")) return List.of("page");
@@ -74,7 +74,9 @@ public record NavigationContext(String key, String label, String listUrl, String
                 if (name.equals("start") || name.equals("end")) java.time.LocalDate.parse(value);
                 if (name.equals("mediaType") && !Set.of("PHYSICAL", "DIGITAL").contains(value) && !(Set.of("financeiro","relatorios").contains(key) && value.equals("UNSPECIFIED")) && !(key.equals("relatorios") && value.equals("ALL"))) continue;
                 if (name.equals("publicationType") && !Set.of("COMIC","BOOK").contains(value)) continue;
-                if (name.equals("reading") && !Set.of("ALL","READ","UNREAD").contains(value)) continue;
+                if (name.equals("reading") && !Set.of("ALL","READ","UNREAD").contains(value)
+                        && !(key.equals("edicoes") && value.equals("IN_PROGRESS"))) continue;
+                if (name.equals("missing") && !Set.of("NONE","COVER","PAGES","PUBLISHER","SERIES","PAID").contains(value)) continue;
                 if (name.equals("type") && !Set.of("SUMMARY","CATALOG").contains(value)) continue;
                 if (name.equals("creatorFunction")) br.com.minhagibiteca.catalog.domain.CreatorFunction.valueOf(value);
                 if (name.equals("order") && !Set.of("TITLE_ASC", "TITLE_DESC", "NEWEST", "OLDEST", "NUMBER_ASC", "NUMBER_DESC", "TITLE_NUMBER_ASC", "TITLE_NUMBER_DESC").contains(value)) continue;

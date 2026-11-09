@@ -5,7 +5,7 @@
 </head>
 <body class="dashboard-page"><a class="skip-link" href="#main-content">Pular para o conteúdo</a><div class="dashboard-layout"><aside th:replace="~{fragments/navigation :: sidebar}"></aside>
 <main id="main-content" tabindex="-1" class="content page-content edition-catalog" aria-labelledby="page-title"
-      th:with="hasFilters=${filter.publisherId != null or filter.seriesId != null or !#strings.isEmpty(filter.format) or filter.mediaType != null or filter.publicationType != null}, hasSearch=${!#strings.isEmpty(filter.query)}">
+      th:with="hasFilters=${filter.publisherId != null or filter.seriesId != null or !#strings.isEmpty(filter.format) or filter.mediaType != null or filter.publicationType != null or filter.reading.name() != 'ALL' or filter.missing.name() != 'NONE'}, hasSearch=${!#strings.isEmpty(filter.query)}">
     <div th:replace="~{fragments/navigation :: breadcrumbs(${navigation.label}, null, null)}"></div>
     <div class="page-heading">
         <div>
@@ -17,6 +17,17 @@
     </div>
     <p class="alert alert-success" th:if="${successMessage}" role="status" th:text="${successMessage}"></p>
     <p class="alert alert-error" th:if="${errorMessage}" role="alert" th:text="${errorMessage}"></p>
+    <div class="form-actions"><a th:href="@{/edicoes/pendencias}">Conferir cadastros incompletos</a></div>
+    <details class="catalog-saved-filters" th:unless="${savedFilters.empty}">
+        <summary>Meus filtros salvos</summary>
+        <ul class="resource-list">
+            <li th:each="item : ${savedFilters}">
+                <a th:if="${item.available}" th:href="${item.url}" th:text="${item.name}"></a>
+                <span th:unless="${item.available}" th:text="|O filtro “${item.name}” usa uma editora ou série que foi removida.|"></span>
+                <form method="post" th:action="@{/edicoes/filtros/{id}/excluir(id=${item.id})}"><button type="submit" th:aria-label="|Remover filtro ${item.name}|">Remover filtro</button></form>
+            </li>
+        </ul>
+    </details>
     <form class="edition-search-panel" method="get" th:action="@{/edicoes}" aria-label="Pesquisa e filtros do catálogo">
         <div class="edition-search-row">
             <div class="field">
@@ -69,6 +80,14 @@
                         <option th:each="media : ${mediaTypes}" th:value="${media}" th:text="${media.label}" th:selected="${media == filter.mediaType}"></option>
                     </select>
                 </div>
+                <div class="field">
+                    <label for="reading">Situação de leitura</label>
+                    <select id="reading" name="reading"><option th:each="item : ${readingOptions}" th:value="${item}" th:text="${item.label}" th:selected="${item == filter.reading}"></option></select>
+                </div>
+                <div class="field">
+                    <label for="missing">Campos pendentes</label>
+                    <select id="missing" name="missing"><option th:each="item : ${missingOptions}" th:value="${item}" th:text="${item.label}" th:selected="${item == filter.missing}"></option></select>
+                </div>
                 <div class="form-actions catalog-search">
                     <button type="submit">Aplicar filtros</button>
                     <a th:href="@{/edicoes}">Limpar filtros</a>
@@ -77,6 +96,23 @@
         </details>
         <p class="edition-query-note" th:if="${hasSearch or hasFilters}">Pesquisa ou filtros aplicados. <a th:href="@{/edicoes}">Ver todo o catálogo</a></p>
     </form>
+    <details class="catalog-save-filter">
+        <summary>Salvar esta pesquisa como filtro</summary>
+        <p class="help-text">O filtro guarda a pesquisa aplicada e a ordenação. Os resultados acompanham seu catálogo. Aplique os filtros antes de salvar.</p>
+        <form method="post" th:action="@{/edicoes/filtros}" class="stack">
+            <input type="hidden" name="q" th:value="${filter.query}">
+            <input type="hidden" name="publisherId" th:value="${filter.publisherId}">
+            <input type="hidden" name="seriesId" th:value="${filter.seriesId}">
+            <input type="hidden" name="format" th:value="${filter.format}">
+            <input type="hidden" name="mediaType" th:value="${filter.mediaType}">
+            <input type="hidden" name="publicationType" th:value="${filter.publicationType}">
+            <input type="hidden" name="reading" th:value="${filter.reading}">
+            <input type="hidden" name="missing" th:value="${filter.missing}">
+            <input type="hidden" name="order" th:value="${selectedOrder}">
+            <div class="field"><label for="filter-name">Nome do filtro</label><input id="filter-name" name="name" required maxlength="80" placeholder="Ex.: HQs digitais para ler"></div>
+            <div><button type="submit">Salvar filtro</button></div>
+        </form>
+    </details>
     <div class="edition-results-heading">
         <h2>Seu catálogo</h2>
         <p role="status">
@@ -131,9 +167,9 @@
         </ul>
         <p class="muted edition-price-note">Valores registrados por edição, não por exemplar. Abra Ver edição para consultar ISBN, variante, preço de capa e demais dados.</p>
         <nav class="pagination" th:if="${editions.totalPages > 1}" aria-label="Paginação">
-            <a th:if="${editions.hasPrevious()}" th:href="@{/edicoes(q=${query},publisherId=${filter.publisherId},seriesId=${filter.seriesId},format=${filter.format},mediaType=${filter.mediaType},publicationType=${filter.publicationType},order=${selectedOrder},page=${editions.number - 1})}">Anterior</a>
+            <a th:if="${editions.hasPrevious()}" th:href="@{/edicoes(q=${query},publisherId=${filter.publisherId},seriesId=${filter.seriesId},format=${filter.format},mediaType=${filter.mediaType},publicationType=${filter.publicationType},reading=${filter.reading},missing=${filter.missing},order=${selectedOrder},page=${editions.number - 1})}">Anterior</a>
             <span th:text="|Página ${editions.number + 1} de ${editions.totalPages}|">Página 1 de 1</span>
-            <a th:if="${editions.hasNext()}" th:href="@{/edicoes(q=${query},publisherId=${filter.publisherId},seriesId=${filter.seriesId},format=${filter.format},mediaType=${filter.mediaType},publicationType=${filter.publicationType},order=${selectedOrder},page=${editions.number + 1})}">Próxima</a>
+            <a th:if="${editions.hasNext()}" th:href="@{/edicoes(q=${query},publisherId=${filter.publisherId},seriesId=${filter.seriesId},format=${filter.format},mediaType=${filter.mediaType},publicationType=${filter.publicationType},reading=${filter.reading},missing=${filter.missing},order=${selectedOrder},page=${editions.number + 1})}">Próxima</a>
         </nav>
     </section>
 </main></div>

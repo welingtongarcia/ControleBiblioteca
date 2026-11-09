@@ -17,6 +17,20 @@
     </div>
     <form id="edition-entry-form" class="edition-form" th:action="${formAction}" th:object="${editionForm}" method="post">
         <input type="hidden" name="returnTo" th:value="${navigation.pageReturnUrl}">
+        <section class="alert" th:if="${duplicateCandidates}" role="alert" aria-labelledby="duplicate-title">
+            <h2 id="duplicate-title">Confira possíveis edições repetidas</h2>
+            <p>Encontramos cadastros semelhantes. Confira se é uma nova edição, uma variante ou um exemplar adicional.</p>
+            <ul>
+                <li th:each="candidate : ${duplicateCandidates}">
+                    <a th:href="@{/edicoes/{id}(id=${candidate.id})}" target="_blank" rel="noopener noreferrer" th:text="${candidate.title}"></a>
+                    <span th:if="${candidate.number}" th:text="| · Nº ${candidate.number}|"></span>
+                    <span th:if="${candidate.variant}" th:text="| · ${candidate.variant}|"></span>
+                    <span th:text="| — ${candidate.reason} (abre em nova aba)|"></span>
+                </li>
+            </ul>
+            <p>São exibidos até seis resultados da sua conta. Você pode ajustar os campos abaixo ou confirmar o cadastro.</p>
+            <button type="submit" name="confirmDuplicate" value="true">Cadastrar mesmo assim</button>
+        </section>
         <section class="alert alert-error edition-errors" th:if="${#fields.hasAnyErrors()}" role="alert" aria-labelledby="edition-errors-title">
             <h2 id="edition-errors-title">Revise os campos indicados</h2>
             <p>Seus dados foram mantidos. Corrija os erros antes de salvar ou buscar pelo ISBN.</p>

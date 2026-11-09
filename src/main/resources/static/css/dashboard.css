@@ -182,6 +182,11 @@
 .finance-metrics article { background:var(--surface); border:1px solid #414954; border-radius:.85rem; padding:1rem; min-width:0; overflow-wrap:anywhere; }
 .finance-metrics h3 { font-size:.9rem; color:var(--muted); margin:0 0 .75rem; }
 .report-page { min-width:0; overflow-wrap:anywhere; }
+.catalog-saved-filters, .catalog-save-filter { margin:1rem 0; padding:1rem; border:1px solid #414954; border-radius:.75rem; }
+.catalog-saved-filters summary, .catalog-save-filter summary { cursor:pointer; min-height:2.75rem; display:list-item; }
+.catalog-saved-filters li { flex-wrap:wrap; gap:.75rem; }
+.catalog-save-filter .stack { margin-top:.75rem; }
+.catalog-pending .finance-metrics h2 { font-size:1rem; color:var(--muted); margin:0 0 .75rem; }
 .report-page section { margin-bottom:1.75rem; }
 .report-page .page-heading h2,.report-page .page-heading h3 { margin-top:0; }
 .report-chart-format { display:flex; flex-wrap:wrap; gap:1rem; margin:0 0 1rem; border:0; padding:0; }

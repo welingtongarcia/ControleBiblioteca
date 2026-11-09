@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Pendências do catálogo')}"><title>Pendências do catálogo</title></head>
+<body class="dashboard-page">
+<a class="skip-link" href="#main-content">Pular para o conteúdo</a>
+<div class="dashboard-layout">
+    <aside th:replace="~{fragments/navigation :: sidebar}"></aside>
+    <main id="main-content" tabindex="-1" class="content page-content catalog-pending" aria-labelledby="page-title">
+        <div th:replace="~{fragments/navigation :: breadcrumbs('Pendências do catálogo', null, null)}"></div>
+        <header class="page-heading">
+            <div><h1 id="page-title">Pendências do catálogo</h1>
+                <p class="muted">Encontre os campos que ainda podem ser preenchidos na sua coleção.</p></div>
+            <a class="button-link" th:href="@{/edicoes}">Abrir catálogo</a>
+        </header>
+        <p class="help-text">Esses campos são opcionais. Uma edição pode aparecer em várias categorias. O valor zero informado conta como preenchido.</p>
+        <div class="finance-metrics">
+            <article th:each="item : ${pending}">
+                <h2 th:text="${item.kind.label}"></h2>
+                <strong th:text="${item.count}"></strong>
+                <p>Edições encontradas</p>
+                <a class="button-link" th:href="@{/edicoes(missing=${item.kind})}" th:aria-label="|Ver edições ${#strings.toLowerCase(item.kind.label)}|">Ver edições</a>
+            </article>
+        </div>
+        <p class="help-text">Os totais são atualizados ao abrir esta página depois de cadastrar, editar ou excluir edições.</p>
+    </main>
+</div>
+</body></html>

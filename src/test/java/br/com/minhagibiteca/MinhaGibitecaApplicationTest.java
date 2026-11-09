@@ -1748,7 +1748,8 @@ class MinhaGibitecaApplicationTest {
         var html = result.getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
         assertThat(html.split("class=\"edition-card\"", -1)).hasSize(5);
         assertThat(html.split("class=\"edition-delete\"", -1)).hasSize(5);
-        assertThat(html.split("name=\"_csrf\"", -1)).hasSize(10); // logout + leitura/exclusão por cartão
+        assertThat(org.jsoup.Jsoup.parse(html).select("form[method=post]")).allSatisfy(form ->
+                assertThat(form.select("input[name=_csrf]")).hasSize(1));
         assertThat(html).doesNotContain("class=\"edition-filter-details\" open", "class=\"edition-delete\" open");
         assertThat(html).contains("4 edições encontradas", "Exibindo 1–4", "Nº 1A", "2026", "Encadernado",
                 "39,50", "0,00", "Sem avaliação",

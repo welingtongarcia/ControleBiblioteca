@@ -19,6 +19,7 @@
         <summary class="nav-group-toggle">Minha coleção</summary>
         <div class="nav-group-links">
         <a th:href="@{/edicoes}" th:classappend="${navigation.key == 'edicoes'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'edicoes' ? 'page' : null}"><span aria-hidden="true">▤</span>Catálogo de edições</a>
+        <a th:href="@{/edicoes/pendencias}"><span aria-hidden="true">◇</span>Pendências do catálogo</a>
         <a th:href="@{/desejos}" th:classappend="${navigation.key == 'desejos'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'desejos' ? 'page' : null}"><span aria-hidden="true">♡</span>Lista de desejos</a>
         <a th:href="@{/biblioteca-digital}" th:classappend="${navigation.key == 'biblioteca-digital'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'biblioteca-digital' ? 'page' : null}"><span aria-hidden="true">☁</span>Biblioteca digital</a>
         <a th:href="@{/series}" th:classappend="${navigation.key == 'series'} ? 'nav-current'" th:attr="aria-current=${navigation.key == 'series' ? 'page' : null}"><span aria-hidden="true">✓</span>Séries e checklist</a>
