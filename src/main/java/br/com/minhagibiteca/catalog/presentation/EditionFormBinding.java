@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 public class EditionFormBinding {
     @InitBinder("editionForm")
     void bind(WebDataBinder binder) {
-        binder.setAllowedFields("title","editorialNumber","variant","isbn","publicationYear","format","notes","publicationType","mediaType","coverPrice","referencePaidPrice","publisherId","seriesId","workIds","creatorIds","characterIds","purchaseDate","totalPages","pagesRead","amazonCoverToken","useAmazonCover");
+        binder.setAllowedFields("title","editorialNumber","variant","isbn","publicationYear","format","notes","publicationType","mediaType","coverPrice","referencePaidPrice","publisherId","seriesId","workIds","creatorIds","creatorCredits","characterIds","purchaseDate","totalPages","pagesRead","amazonCoverToken","useAmazonCover");
         binder.registerCustomEditor(BigDecimal.class,new PropertyEditorSupport() {
             @Override public void setAsText(String text) {
                 if(text==null || text.isBlank()) { setValue(null);return; }

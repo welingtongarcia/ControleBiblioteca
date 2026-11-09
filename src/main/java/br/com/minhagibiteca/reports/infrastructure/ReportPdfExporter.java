@@ -45,7 +45,7 @@ public class ReportPdfExporter {
                         String title=++index+". "+e.title();
                         var details=List.of("Número: "+missing(e.number())+" | ISBN: "+missing(e.isbn()),
                                 "Coleção: "+e.series()+" | Editora: "+e.publisher(),
-                                "Criadores e funções gerais: "+e.creators(), "Personagens: "+e.characters(),
+                                "Criadores, funções gerais e créditos nesta edição: "+e.creators(), "Personagens: "+e.characters(),
                                 "Suporte: "+e.media()+" | Leitura: "+e.readingLabel()+" | Páginas: "+e.pagesLabel(),
                                 "Páginas restantes: "+missing(e.pagesUnread())+" | Preço pago: "+e.paidLabel()+" | Compra: "+e.dateLabel(),
                                 "Exemplares físicos: "+e.copies()+" | Localizações: "+e.locations());
@@ -56,7 +56,7 @@ public class ReportPdfExporter {
                         for(String detail:details) writer.paragraph(detail,10);
                         writer.rule();
                     }
-                    writer.paragraph("Funções indicam a atuação geral dos criadores, não créditos específicos por edição.",9);
+                    writer.paragraph("Funções gerais descrevem a atuação do criador. Os créditos nesta edição descrevem sua participação na publicação.",9);
                 }
                 if(writer.replacedGlyph) writer.paragraph("Alguns caracteres sem glifo nesta fonte foram substituídos por ?. O CSV preserva o texto original.",9);
             }

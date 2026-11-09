@@ -37,7 +37,9 @@
         const field = picker.dataset.field;
         const results = picker.querySelector('.picker-results');
         const selected = new Map();
-        results.querySelectorAll('label[data-id]').forEach(label => {
+        const creditTemplate = picker.querySelector('.picker-credit-template');
+        const credits = new Set(Array.from(results.querySelectorAll('input[name=creatorCredits]:checked'), input => input.value));
+        results.querySelectorAll('.picker-initial-option[data-id]').forEach(label => {
             if (label.querySelector('input[type=checkbox]').checked) selected.set(label.dataset.id, {
                 id: label.dataset.id, label: label.dataset.label, description: label.dataset.description
             });
@@ -62,7 +64,7 @@
                 const chip = element('div', null, 'picker-chip');
                 const input = element('input'); input.type = 'hidden'; input.name = field; input.value = item.id;
                 const name = element('span', item.label);
-                if (item.description) name.append(element('small', item.description, 'help-text'));
+                if (item.description) name.append(element('small', creditTemplate ? 'Funções gerais: ' + item.description : item.description, 'help-text'));
                 const remove = element('button', 'Remover'); remove.type = 'button';
                 remove.setAttribute('aria-label', 'Remover ' + item.label);
                 remove.addEventListener('click', () => {
@@ -70,6 +72,21 @@
                     status.textContent = item.label + ' removido. ' + selected.size + ' selecionados.';
                 });
                 chip.append(input, name, remove); chips.append(chip);
+                if (creditTemplate) {
+                    const roles = creditTemplate.content.firstElementChild.cloneNode(true);
+                    roles.querySelector('legend').textContent = 'Funções de ' + item.label + ' nesta edição';
+                    roles.querySelectorAll('input[type=checkbox]').forEach(checkbox => {
+                        const token = item.id + ':' + checkbox.value;
+                        checkbox.name = 'creatorCredits';
+                        checkbox.value = token;
+                        checkbox.checked = credits.has(token);
+                        checkbox.addEventListener('change', () => {
+                            if (checkbox.checked) credits.add(token);
+                            else credits.delete(token);
+                        });
+                    });
+                    chip.append(roles);
+                }
             });
             picker.querySelector('.picker-count').textContent = String(selected.size);
             if (!selected.size) chips.append(element('p', 'Nenhum registro selecionado.', 'help-text'));

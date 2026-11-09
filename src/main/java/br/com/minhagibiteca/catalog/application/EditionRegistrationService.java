@@ -8,8 +8,11 @@ public class EditionRegistrationService {
  private final EditionService editions;private final EditionAssociationService associations;private final CharacterService characters;private final EditionRepository repo;
  public EditionRegistrationService(EditionService editions,EditionAssociationService associations,CharacterService characters,EditionRepository repo){this.editions=editions;this.associations=associations;this.characters=characters;this.repo=repo;}
  @Transactional public UUID save(UUID owner,UUID id,EditionService.Command command,List<UUID> works,List<UUID> creators,List<UUID> characterIds){
+  return save(owner,id,command,works,creators,characterIds,null);
+ }
+ @Transactional public UUID save(UUID owner,UUID id,EditionService.Command command,List<UUID> works,List<UUID> creators,List<UUID> characterIds,List<String> credits){
   characters.validate(owner,characterIds);UUID target=id;
   if(id==null){target=editions.createId(owner,command);repo.flush();}else editions.update(id,owner,command);
-  associations.replace(target,owner,works,creators);characters.replace(owner,target,characterIds);return target;
+  associations.replace(target,owner,works,creators,credits);characters.replace(owner,target,characterIds);return target;
  }
 }

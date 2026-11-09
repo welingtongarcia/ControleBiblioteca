@@ -62,17 +62,32 @@ public class EditionCatalogViewService {
                 order by ew.sequence nulls last, w.id
                 """, (row, index) -> new WorkOption(row.getObject("id", UUID.class), row.getString("title")), id, owner, owner);
     }
-    public List<NamedOption> editionCreators(UUID id, UUID owner) {
+    public List<EditionCreator> editionCreators(UUID id, UUID owner) {
         return jdbc.query("""
                 select distinct c.id, c.name,
-                    (select string_agg(cf.function, ',') from creator_functions cf where cf.creator_id = c.id) as functions
+                    (select string_agg(cf.function, ',') from creator_functions cf where cf.creator_id = c.id) as functions,
+                    (select string_agg(credit.creator_role, ',' order by credit.creator_role) from edition_creators credit
+                        where credit.edition_id = e.id and credit.creator_id = c.id) as credits
                 from edition_creators ec
                 join editions e on e.id = ec.edition_id
                 join creators c on c.id = ec.creator_id
                 where e.id = ? and e.owner_user_id = ? and c.owner_user_id = ?
                 order by c.name, c.id
-                """, (row, index) -> new NamedOption(row.getObject("id", UUID.class), row.getString("name"),
-                        describeFunctions(row.getString("functions"))), id, owner, owner);
+                """, (row, index) -> new EditionCreator(row.getObject("id", UUID.class), row.getString("name"),
+                        describeFunctions(row.getString("functions")), describeCredits(row.getString("credits"))), id, owner, owner);
+    }
+    public record EditionCreator(UUID id, String name, String functionsDescription, String creditsDescription) {}
+
+    private static String describeCredits(String credits) {
+        if (credits == null) return "Não informada";
+        return java.util.Arrays.stream(credits.split(",")).map(role -> {
+            if (role.equals("NAO_INFORMADO")) return "Não informada";
+            try {
+                return br.com.minhagibiteca.catalog.domain.CreatorFunction.valueOf(role).getLabel();
+            } catch (IllegalArgumentException error) {
+                return "Outra função";
+            }
+        }).collect(java.util.stream.Collectors.joining(", "));
     }
     public List<NamedOption> seriesOptions(UUID owner) {
         return jdbc.query("select id, name from series where owner_user_id = ? order by normalized_name, id",

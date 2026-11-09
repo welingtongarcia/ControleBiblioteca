@@ -10,6 +10,10 @@ public class EditionForm { private UUID publisherId,seriesId; private List<UUID>
  public boolean isPurchaseDateValid(){return purchaseDate==null || !purchaseDate.isBefore(java.time.LocalDate.of(1900,1,1));}
  public java.time.LocalDate getPurchaseDate(){return purchaseDate;} public void setPurchaseDate(java.time.LocalDate value){purchaseDate=value;}
  private MediaType mediaType = MediaType.PHYSICAL;
+ @Size(max=1000,message="Há créditos demais neste cadastro.")
+ private List<@Size(max=80,message="Crédito inválido.") String> creatorCredits;
+ public List<String> getCreatorCredits() { return creatorCredits; }
+ public void setCreatorCredits(List<String> value) { creatorCredits = value; }
  private String amazonCoverToken;
  private boolean useAmazonCover;
  public String getAmazonCoverToken() { return amazonCoverToken; }

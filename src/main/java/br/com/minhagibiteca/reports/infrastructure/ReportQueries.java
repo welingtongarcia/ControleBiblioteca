@@ -63,7 +63,14 @@ public class ReportQueries {
                         when 'ROTEIRISTA' then 'Roteirista' when 'DESENHISTA' then 'Desenhista' when 'ARTE_FINALISTA' then 'Arte-finalista'
                         when 'COLORISTA' then 'Colorista' when 'LETRISTA' then 'Letrista' when 'CAPISTA' then 'Capista'
                         when 'EDITOR' then 'Editor' when 'TRADUTOR' then 'Tradutor' when 'ESCRITOR' then 'Escritor' else 'Outra função' end, ', ' order by cf.function)
-                        from creator_functions cf where cf.creator_id=c.id), 'Funções não informadas') || ')', '; ' order by c.name,c.id)
+                        from creator_functions cf where cf.creator_id=c.id), 'Funções não informadas') || ')'
+                        || ' [Créditos nesta edição: ' || coalesce((select string_agg(case credit.creator_role
+                            when 'ROTEIRISTA' then 'Roteirista' when 'DESENHISTA' then 'Desenhista' when 'ARTE_FINALISTA' then 'Arte-finalista'
+                            when 'COLORISTA' then 'Colorista' when 'LETRISTA' then 'Letrista' when 'CAPISTA' then 'Capista'
+                            when 'EDITOR' then 'Editor' when 'TRADUTOR' then 'Tradutor' when 'ESCRITOR' then 'Escritor'
+                            when 'NAO_INFORMADO' then 'Não informada' else 'Outra função' end, ', ' order by credit.creator_role)
+                            from edition_creators credit where credit.edition_id=e.id and credit.creator_id=c.id), 'Não informada')
+                        || ']', '; ' order by c.name,c.id)
                         from creators c where c.owner_user_id=:owner and exists(select 1 from edition_creators ec where ec.edition_id=e.id and ec.creator_id=c.id)) creators,
                     (select string_agg(c.name, '; ' order by c.name,c.id) from edition_characters ec join comic_characters c
                         on c.id=ec.character_id and c.owner_user_id=ec.owner_user_id where ec.edition_id=e.id and ec.owner_user_id=:owner) characters,

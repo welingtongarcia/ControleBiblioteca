@@ -180,6 +180,11 @@ select { background: #11151d; border: 1px solid #657084; border-radius: .5rem; c
 .edition-choice small.help-text { display: block; margin-top: .25rem; }
 .edition-choice-empty { color: var(--muted); font-size: .85rem; border: 1px dashed #657084; border-radius: .5rem; padding: 1rem; line-height: 1.5; }
 .association-actions { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.edition-credit-roles { display:flex; flex-wrap:wrap; gap:.25rem .75rem; border:1px solid #657084; border-radius:.5rem; padding:.5rem; margin:.5rem 0; min-width:0; }
+.edition-credit-roles legend { font-size:.85rem; padding:0 .25rem; overflow-wrap:anywhere; }
+.edition-credit-role { display:inline-flex; align-items:center; gap:.4rem; min-height:2.75rem; font-size:.85rem; cursor:pointer; }
+.picker-chip:has(.edition-credit-roles) { flex-wrap:wrap; }
+.picker-chip .edition-credit-roles { flex-basis:100%; }
 .association-create { display: inline-flex; flex-wrap: wrap; align-items: center; gap: .25rem; min-height: 2.75rem; width: fit-content; }
 .edition-form-footer { border-top: 1px solid #3a4251; padding-top: 1rem; }
 .edition-form-footer .form-actions { justify-content: flex-end; }

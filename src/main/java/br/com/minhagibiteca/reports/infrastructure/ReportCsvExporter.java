@@ -13,7 +13,7 @@ public class ReportCsvExporter {
         for(String filter:data.filters()) row(out,"Filtro",filter);
         row(out,"Origem dos valores","Preço pago cadastrado na edição; não inclui novamente valores dos exemplares nem valor de mercado.");
         if(catalog) {
-            row(out,"Título","Número","ISBN","Coleção","Editora","Criadores e funções gerais","Personagens","Suporte","Leitura","Páginas","Páginas lidas","Páginas restantes","Preço pago (R$)","Data da compra","Exemplares físicos","Localizações");
+            row(out,"Título","Número","ISBN","Coleção","Editora","Criadores e funções gerais / créditos nesta edição","Personagens","Suporte","Leitura","Páginas","Páginas lidas","Páginas restantes","Preço pago (R$)","Data da compra","Exemplares físicos","Localizações");
             for(var e:data.entries()) row(out,e.title(),e.number(),e.isbn(),e.series(),e.publisher(),e.creators(),e.characters(),e.media(),e.readingLabel(),
                     e.totalPages(),e.totalPages()==null?null:e.pagesRead(),e.pagesUnread(),decimal(e.paid()),e.purchaseDate(),e.copies(),e.locations());
         } else {
